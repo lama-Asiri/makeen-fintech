@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area@1.2.3";
+import * as ScrollAreaPrimitive from "@radix-ui/react-scroll-area";
 
 import { cn } from "./utils";
 
@@ -28,6 +28,12 @@ function ScrollArea({
   );
 }
 
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * A scrollbar component for the ScrollArea component.
+ *
+
+/*******  c7eac69e-642c-4f65-a90b-fd768d60295f  *******/
 function ScrollBar({
   className,
   orientation = "vertical",

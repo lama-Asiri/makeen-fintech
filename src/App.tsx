@@ -160,7 +160,7 @@ function DiscoverSection() {
           <div className="flex flex-col gap-[24px]">
             {/* Card 2 - Predictions Generation */}
       <div
-  className="rounded-[16px] p-[28px] pr-[320px] min-h-[600px] relative overflow-hidden"
+  className="rounded-[16px] p-[28px] pr-[320px] min-h-[800px] relative overflow-hidden"
   style={{
     backgroundImage:
       "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)",
