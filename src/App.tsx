@@ -213,23 +213,35 @@ function DiscoverSection() {
 // Mission Section
 function MissionSection() {
   return (
-    <section className="relative py-[150px] bg-[#141414]">
-      <div className="absolute right-0 top-0 w-[462px] h-[600px] overflow-hidden">
-        <img alt="" className="w-full h-full object-cover object-top opacity-70" src={imgOurMissonPhoto} />
+    <section className="relative bg-[#141414] min-h-[650px] flex items-center overflow-hidden">
+      {/* right image - full height of section */}
+      <div className="absolute right-0 top-0 h-full w-[462px] pointer-events-none">
+        <img
+          alt=""
+          className="w-full h-full object-cover object-top opacity-70"
+          src={imgOurMissonPhoto}
+        />
       </div>
-      
-      <div className="max-w-[1440px] mx-auto px-[120px] relative z-10">
-        <h2 className="text-[96px] font-['Roboto:Bold',sans-serif] font-bold leading-[40px] mb-8"
+
+      {/* content */}
+      <div className="max-w-[1440px] mx-auto px-[120px] relative z-10 w-full py-[150px]"
+      >
+        <h2
+          className="text-[96px] font-['Roboto:Bold',sans-serif] font-bold leading-[96px] mb-8"
           style={{
-            backgroundImage: "linear-gradient(90.2102deg, rgb(153, 151, 152) 0%, rgb(230, 228, 229) 29.815%, rgb(255, 252, 254) 65.384%, rgb(153, 151, 152) 99.992%)",
+            backgroundImage:
+              "linear-gradient(90.2102deg, rgb(153, 151, 152) 0%, rgb(230, 228, 229) 29.815%, rgb(255, 252, 254) 65.384%, rgb(153, 151, 152) 99.992%)",
             WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           Our Mission
         </h2>
-        <p className="font-['Radley:Regular',sans-serif] text-[40px] text-[#da876b] leading-[40px] mb-6">
+
+        <p className="font-['Radley:Regular',sans-serif] text-[40px] text-[#da876b] leading-[48px] mb-6">
           From Confusion To Clarity
         </p>
+
         <p className="font-['Roboto:Medium',sans-serif] font-medium text-[24px] text-[#fffcfe] leading-[40px] max-w-[666px]">
           Makeen shows you how models think, helping you take control of decisions with confidence.
         </p>
@@ -239,84 +251,112 @@ function MissionSection() {
 }
 
 // Team Section
+// Team Section
 function TeamSection() {
   const teamMembers = [
     {
       name: "Lama Asiri",
       role: "Integration & Project Leader",
-      description: "Connects all system components and leads the team to keep everything aligned and working end-to-end.",
+      description:
+        "Connects all system components and leads the team to keep everything aligned and working end-to-end.",
       image: imgEllipse1700,
-      linkedin: "https://www.linkedin.com/in/lamak2asiri"
+      linkedin: "https://www.linkedin.com/in/lamak2asiri",
     },
     {
       name: "Shahad Alsomali",
       role: "Frontend Developer",
-      description: "Develops clean, dynamic React interfaces featuring interactive data visualizations and seamless user experiences.",
+      description:
+        "Develops clean, dynamic React interfaces featuring interactive data visualizations and seamless user experiences.",
       image: imgEllipse1701,
-      linkedin: "https://www.linkedin.com/in/shahad-w-alsomali-11509b247"
+      linkedin: "https://www.linkedin.com/in/shahad-w-alsomali-11509b247",
     },
     {
       name: "Reem Alhijris",
       role: "Backend Developer",
-      description: "Builds SHAP/LIME explanations and turns model behavior into clear, understandable insights.",
+      description:
+        "Builds SHAP/LIME explanations and turns model behavior into clear, understandable insights.",
       image: imgEllipse1702,
-      linkedin: "https://www.linkedin.com/in/reem-alhijris"
+      linkedin: "https://www.linkedin.com/in/reem-alhijris",
     },
     {
       name: "Rahaf Almalki",
       role: "Backend Developer",
-      description: "Ensures the models run correctly, handles data processing, and keeps the backend stable and functional.",
+      description:
+        "Ensures the models run correctly, handles data processing, and keeps the backend stable and functional.",
       image: imgEllipse1703,
-      linkedin: "https://www.linkedin.com/in/rahafalmalkics"
-    }
+      linkedin: "https://www.linkedin.com/in/rahafalmalkics",
+    },
   ];
 
   return (
     <section className="relative py-[150px] bg-[#141414]">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 opacity-30 pointer-events-none rotate-[22.643deg]">
-        <img alt="" className="w-[833px] h-[734px] object-cover" src={imgBlack97Designrip} />
+        <img
+          alt=""
+          className="w-[833px] h-[734px] object-cover"
+          src={imgBlack97Designrip}
+        />
       </div>
 
       <div className="max-w-[1440px] mx-auto px-[120px] relative z-10">
-        <h2 className="text-center text-[96px] font-['Roboto:Bold',sans-serif] font-bold leading-[40px] mb-[120px]"
+        <h2
+          className="text-center text-[96px] font-['Roboto:Bold',sans-serif] font-bold leading-[96px] mb-[120px]"
           style={{
-            backgroundImage: "linear-gradient(90.2703deg, rgb(153, 151, 152) 0%, rgb(230, 228, 229) 29.815%, rgb(255, 252, 254) 65.384%, rgb(153, 151, 152) 99.992%)",
+            backgroundImage:
+              "linear-gradient(90.2703deg, rgb(153, 151, 152) 0%, rgb(230, 228, 229) 29.815%, rgb(255, 252, 254) 65.384%, rgb(153, 151, 152) 99.992%)",
             WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
+            WebkitTextFillColor: "transparent",
+          }}
+        >
           Meet The Team
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[24px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-[24px] items-stretch">
           {teamMembers.map((member, index) => (
-            <div key={index} className="relative">
-              <div className="bg-[#D9D9D9] rounded-[16px] p-[16px] pb-[60px] relative">
+            <div key={index} className="h-full">
+              <div className="bg-[#D9D9D9] rounded-[16px] p-[16px] h-full flex flex-col">
                 <div className="flex justify-center mb-4">
-                  <img alt={member.name} className="w-[110px] h-[110px] rounded-full" src={member.image} />
+                  <img
+                    alt={member.name}
+                    className="w-[110px] h-[110px] rounded-full"
+                    src={member.image}
+                  />
                 </div>
+
                 <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[20px] text-black text-center mb-2">
                   {member.name}
                 </h3>
+
                 <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-[#7760bd] text-center mb-4">
                   {member.role}
                 </p>
+
                 <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#333] leading-[24px] text-center">
                   {member.description}
                 </p>
 
-                <a
-                  href={member.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-[16px] right-[16px] bg-[#484848] px-[16px] py-[8px] rounded-[12px] flex items-center gap-[8px] hover:bg-[#585858] transition-colors"
-                >
-                  <span className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[16px] text-[#fffcfe]">
-                    Visit
-                  </span>
-                  <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
-                    <path d={svgPaths.p3d991900} stroke="#FFFCFE" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                  </svg>
-                </a>
+                {/* button pinned to bottom */}
+                <div className="mt-auto pt-6 flex justify-end">
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#484848] px-[16px] py-[8px] rounded-[12px] flex items-center gap-[8px] hover:bg-[#585858] transition-colors"
+                  >
+                    <span className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[16px] text-[#fffcfe]">
+                      Visit
+                    </span>
+                    <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
+                      <path
+                        d={svgPaths.p3d991900}
+                        stroke="#FFFCFE"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="1.5"
+                      />
+                    </svg>
+                  </a>
+                </div>
               </div>
             </div>
           ))}
@@ -325,6 +365,7 @@ function TeamSection() {
     </section>
   );
 }
+
 
 // FAQ Section with expandable items
 function FAQSection() {
@@ -435,12 +476,19 @@ function FAQSection() {
 // CTA Section
 function CTASection() {
   return (
-    <section className="relative py-[100px] bg-[#141414]">
-      <div className="absolute left-1/2 -translate-x-1/2 top-0 rotate-90 opacity-50">
-        <img alt="" className="w-[313px] h-[1229px] rounded-[16px] object-cover" src={imgImage50} />
-      </div>
-
+  <section className="relative py-[100px] bg-[#141414] overflow-hidden">
+  {/* background image */}
+  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+    <div style={{ transform: "rotate(90deg) scaleX(1.15)" }}>
+      <img
+        alt=""
+        src={imgImage50}
+        className="w-[313px] h-[1229px] rounded-[16px] object-cover opacity-50"
+      />
+    </div>
+  </div>
       <div className="max-w-[1440px] mx-auto px-[120px] relative z-10 text-center">
+      
         <h2 className="font-['Roboto:Regular',sans-serif] text-[64px] text-white leading-tight mb-[84px]">
           Ready To Try Makeen?
         </h2>
