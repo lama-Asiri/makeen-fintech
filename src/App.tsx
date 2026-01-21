@@ -167,7 +167,8 @@ function DiscoverSection() {
   }}
 >
   {/* image */}
-  <div className="absolute right-[27px] top-[8px] z-0 pointer-events-none">
+  <div className="absolute right-[27px] top-[8px] z-0 pointer-events-none"
+    style={{ transform: "translateX(130px) translateY(-100px)" }}>
     <img alt="" className="w-[250px] h-[249px]" src={imgTorusKnot} />
   </div>
 
@@ -191,7 +192,8 @@ function DiscoverSection() {
       "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)",
   }}
 >
-     <div className="absolute right-[27px] top-[27px]">
+     <div className="absolute right-[27px] top-[27px]"
+     style={{ transform: "translateX(120px) translateY(50px)" }}>
                 <img alt="" className="w-[268px] h-[249px]" src={imgIcosahedron} />
               </div>
               <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-white text-center mb-4">
