@@ -1,15 +1,15 @@
 import svgPaths from "./svg-hhup31ts9l";
-import imgImage39 from "figma:asset/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png";
-import imgIcosahedron from "figma:asset/b7e275b78aaa89a4a341109046d192edcfc5b207.png";
-import imgTorusKnot from "figma:asset/ca61b143546dc6d680b519138244975fd48d3cd6.png";
-import imgDarkMetallic from "figma:asset/eb1c030a1accb78fa3337e0e6602e2a5f5b8a9ff.png";
-import imgEllipse1700 from "figma:asset/913344e9d2dc0748ee55530016e90f39fe0ea854.png";
-import imgEllipse1701 from "figma:asset/0135563e88cb529bf78d0687ac5dd9ef20f1cddc.png";
-import imgEllipse1702 from "figma:asset/e70ad9c181cd1c602d57488904eebe2d61f4b8cb.png";
-import imgEllipse1703 from "figma:asset/6e5811598e554f2ed4d7062da58dc82d31f49945.png";
-import imgBlack97Designrip from "figma:asset/4c2b0c6a1882a2437352038134d50fc8dc273205.png";
-import imgOurMissonPhoto from "figma:asset/f0e48cf661e8b616f03050e3b9117048ab1fd1df.png";
-import imgImage50 from "figma:asset/56eebf0771904b27a256cae1f6e0a8245fa4bc66.png";
+import imgImage39 from "./asset/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png";
+import imgIcosahedron from "./asset/b7e275b78aaa89a4a341109046d192edcfc5b207.png";
+import imgTorusKnot from "./asset/ca61b143546dc6d680b519138244975fd48d3cd6.png";
+import imgDarkMetallic from "./asset/eb1c030a1accb78fa3337e0e6602e2a5f5b8a9ff.png";
+import imgEllipse1700 from "./asset/913344e9d2dc0748ee55530016e90f39fe0ea854.png";
+import imgEllipse1701 from "./asset/0135563e88cb529bf78d0687ac5dd9ef20f1cddc.png";
+import imgEllipse1702 from "./asset/e70ad9c181cd1c602d57488904eebe2d61f4b8cb.png";
+import imgEllipse1703 from "./asset/6e5811598e554f2ed4d7062da58dc82d31f49945.png";
+import imgBlack97Designrip from "./asset/4c2b0c6a1882a2437352038134d50fc8dc273205.png";
+import imgOurMissonPhoto from "./asset/f0e48cf661e8b616f03050e3b9117048ab1fd1df.png";
+import imgImage50 from "./asset/56eebf0771904b27a256cae1f6e0a8245fa4bc66.png";
 
 function Greadient() {
   return (

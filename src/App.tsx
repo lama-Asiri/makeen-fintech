@@ -1,16 +1,16 @@
 import { useState } from "react";
 import svgPaths from "./imports/svg-hhup31ts9l";
-import imgImage39 from "figma:asset/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png";
-import imgIcosahedron from "figma:asset/b7e275b78aaa89a4a341109046d192edcfc5b207.png";
-import imgTorusKnot from "figma:asset/ca61b143546dc6d680b519138244975fd48d3cd6.png";
-import imgDarkMetallic from "figma:asset/eb1c030a1accb78fa3337e0e6602e2a5f5b8a9ff.png";
-import imgEllipse1700 from "figma:asset/913344e9d2dc0748ee55530016e90f39fe0ea854.png";
-import imgEllipse1701 from "figma:asset/0135563e88cb529bf78d0687ac5dd9ef20f1cddc.png";
-import imgEllipse1702 from "figma:asset/e70ad9c181cd1c602d57488904eebe2d61f4b8cb.png";
-import imgEllipse1703 from "figma:asset/6e5811598e554f2ed4d7062da58dc82d31f49945.png";
-import imgBlack97Designrip from "figma:asset/4c2b0c6a1882a2437352038134d50fc8dc273205.png";
-import imgOurMissonPhoto from "figma:asset/f0e48cf661e8b616f03050e3b9117048ab1fd1df.png";
-import imgImage50 from "figma:asset/56eebf0771904b27a256cae1f6e0a8245fa4bc66.png";
+import imgImage39 from "./asset/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png";
+import imgIcosahedron from "./asset/b7e275b78aaa89a4a341109046d192edcfc5b207.png";
+import imgTorusKnot from "./asset/ca61b143546dc6d680b519138244975fd48d3cd6.png";
+import imgDarkMetallic from "./asset/eb1c030a1accb78fa3337e0e6602e2a5f5b8a9ff.png";
+import imgEllipse1700 from "./asset/913344e9d2dc0748ee55530016e90f39fe0ea854.png";
+import imgEllipse1701 from "./asset/0135563e88cb529bf78d0687ac5dd9ef20f1cddc.png";
+import imgEllipse1702 from "./asset/e70ad9c181cd1c602d57488904eebe2d61f4b8cb.png";
+import imgEllipse1703 from "./asset/6e5811598e554f2ed4d7062da58dc82d31f49945.png";
+import imgBlack97Designrip from "./asset/4c2b0c6a1882a2437352038134d50fc8dc273205.png";
+import imgOurMissonPhoto from "./asset/f0e48cf661e8b616f03050e3b9117048ab1fd1df.png";
+import imgImage50 from "./asset/56eebf0771904b27a256cae1f6e0a8245fa4bc66.png";
 
 // Gradient component
 function Gradient() {
@@ -142,9 +142,9 @@ function DiscoverSection() {
           Discover Makeen
         </h2>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px] items-stretch">
           {/* Card 3 - Large white card */}
-          <div className="bg-[#fffcfe] rounded-[16px] p-[28px] flex flex-col">
+          <div className="bg-[#fffcfe] rounded-[16px] p-[28px] flex flex-col h-full">
             <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-[#00000a] mb-4">
               Ask Questions in Plain Language
             </h3>
@@ -159,23 +159,39 @@ function DiscoverSection() {
           {/* Right column cards */}
           <div className="flex flex-col gap-[24px]">
             {/* Card 2 - Predictions Generation */}
-            <div className="rounded-[16px] p-[28px] relative overflow-hidden"
-              style={{ backgroundImage: "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)" }}>
-              <div className="absolute right-[27px] top-[27px]">
-                <img alt="" className="w-[250px] h-[249px]" src={imgTorusKnot} />
-              </div>
-              <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-white text-center mb-4">
-                Predictions Generation
-              </h3>
-              <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#fffcfe] leading-[24px] max-w-[445px]">
-                Generate AI predictions instantly for text, images, or tables. Each result comes with clear explanations and confidence indicators.
-              </p>
-            </div>
+      <div
+  className="rounded-[16px] p-[28px] pr-[320px] min-h-[600px] relative overflow-hidden"
+  style={{
+    backgroundImage:
+      "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)",
+  }}
+>
+  {/* image */}
+  <div className="absolute right-[27px] top-[8px] z-0 pointer-events-none">
+    <img alt="" className="w-[250px] h-[249px]" src={imgTorusKnot} />
+  </div>
+
+  {/* text */}
+  <div className="relative z-10">
+    <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-white text-center mb-4">
+      Predictions Generation
+    </h3>
+    <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#fffcfe] leading-[24px] max-w-[445px]">
+      Generate AI predictions instantly for text, images, or tables. Each result comes with clear explanations and confidence indicators.
+    </p>
+  </div>
+</div>
+
 
             {/* Card 1 - Designed for Everyone */}
-            <div className="rounded-[16px] p-[28px] relative overflow-hidden"
-              style={{ backgroundImage: "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)" }}>
-              <div className="absolute right-[27px] top-[27px]">
+         <div
+  className="rounded-[16px] p-[28px] pt-[140px] min-h-[420px] relative overflow-hidden"
+  style={{
+    backgroundImage:
+      "linear-gradient(22.2062deg, rgb(20, 20, 20) 41.94%, rgb(43, 30, 86) 114.53%)",
+  }}
+>
+     <div className="absolute right-[27px] top-[27px]">
                 <img alt="" className="w-[268px] h-[249px]" src={imgIcosahedron} />
               </div>
               <h3 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-white text-center mb-4">
@@ -196,8 +212,8 @@ function DiscoverSection() {
 function MissionSection() {
   return (
     <section className="relative py-[150px] bg-[#141414]">
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[462px] h-[1024px]">
-        <img alt="" className="w-full h-full object-cover opacity-70" src={imgOurMissonPhoto} />
+      <div className="absolute right-0 top-0 w-[462px] h-[600px] overflow-hidden">
+        <img alt="" className="w-full h-full object-cover object-top opacity-70" src={imgOurMissonPhoto} />
       </div>
       
       <div className="max-w-[1440px] mx-auto px-[120px] relative z-10">
