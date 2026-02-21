@@ -1,0 +1,227 @@
+import { useState } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router';
+import { motion, AnimatePresence } from 'motion/react';
+import { LoginForm } from './components/LoginForm';
+import { DashboardScreen } from './components/DashboardScreen';
+import { ForgotPasswordScreen } from './components/ForgotPasswordScreen';
+import { SignUpScreen } from './components/SignUpScreen';
+import { EmailVerificationScreen } from './components/EmailVerificationScreen';
+import { ResetPasswordScreen } from './components/ResetPasswordScreen';
+import { ChatPage } from './pages/Chat';
+import { LandingPageWrapper } from './pages/LandingPage';
+import { AuthLayout } from './components/AuthLayout';
+import { Toaster } from 'sonner';
+
+type Screen = 'landing' | 'login' | 'dashboard' | 'forgotPassword' | 'signUp' | 'emailVerification' | 'resetPassword' | 'chat';
+
+function MainApp() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [entryMode, setEntryMode] = useState<'login' | 'signup' | null>(null);
+
+  const handleLoginSuccess = () => {
+    setEntryMode('login');
+    setCurrentScreen('chat');
+  };
+
+  const handleLogout = () => {
+    // Clear chat data from localStorage on logout
+    localStorage.removeItem('makeen_chats');
+    localStorage.removeItem('makeen_active_chat_id');
+    // Reset entry mode
+    setEntryMode(null);
+    setCurrentScreen('landing');
+  };
+
+  const handleForgotPassword = () => {
+    setCurrentScreen('forgotPassword');
+  };
+
+  const handleSignUp = () => {
+    setCurrentScreen('signUp');
+  };
+
+  const handleGoToLogin = () => {
+    setCurrentScreen('login');
+  };
+
+  const handleBackToLogin = () => {
+    setCurrentScreen('login');
+  };
+
+  const handleBackToLanding = () => {
+    setCurrentScreen('landing');
+  };
+
+  const handleSignUpSuccess = () => {
+    setEntryMode('signup');
+    setCurrentScreen('chat');
+  };
+
+  const handleForgotPasswordSuccess = (email: string) => {
+    setUserEmail(email);
+    setCurrentScreen('emailVerification');
+  };
+
+  const handleEmailVerificationSuccess = () => {
+    setCurrentScreen('resetPassword');
+  };
+
+  const handleResetPasswordSuccess = () => {
+    setCurrentScreen('login');
+  };
+
+  const pageVariants = {
+    initial: { opacity: 0, x: 10 },
+    animate: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: -10 },
+  };
+
+  const pageTransition = {
+    duration: 0.3,
+    ease: "easeInOut",
+  };
+
+  return (
+    <div className="bg-[#141414] min-h-screen w-full">
+      <Toaster position="top-center" theme="dark" closeButton />
+      <AnimatePresence mode="wait">
+        {currentScreen === 'landing' && (
+          <motion.div
+            key="landing"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <LandingPageWrapper onLogin={handleGoToLogin} onSignUp={handleSignUp} />
+          </motion.div>
+        )}
+
+        {currentScreen === 'login' && (
+          <motion.div
+            key="login"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <AuthLayout onClose={handleBackToLanding}>
+              <LoginForm
+                onSuccess={handleLoginSuccess}
+                onForgotPassword={handleForgotPassword}
+                onSignUp={handleSignUp}
+                onGoogleLogin={handleLoginSuccess}
+                onAppleLogin={handleLoginSuccess}
+              />
+            </AuthLayout>
+          </motion.div>
+        )}
+
+
+        {currentScreen === 'signUp' && (
+          <motion.div
+            key="signUp"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <SignUpScreen onBack={handleBackToLogin} onSuccess={handleSignUpSuccess} onClose={handleBackToLanding} />
+          </motion.div>
+        )}
+
+        {currentScreen === 'forgotPassword' && (
+          <motion.div
+            key="forgotPassword"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <ForgotPasswordScreen onBack={handleBackToLogin} onSuccess={handleForgotPasswordSuccess} />
+          </motion.div>
+        )}
+
+        {currentScreen === 'emailVerification' && (
+          <motion.div
+            key="emailVerification"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <EmailVerificationScreen 
+              onBack={handleBackToLogin} 
+              onVerify={handleEmailVerificationSuccess} 
+              email={userEmail}
+            />
+          </motion.div>
+        )}
+
+        {currentScreen === 'resetPassword' && (
+          <motion.div
+            key="resetPassword"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <ResetPasswordScreen onSuccess={handleResetPasswordSuccess} onBack={handleBackToLogin} />
+          </motion.div>
+        )}
+
+        {currentScreen === 'dashboard' && (
+          <motion.div
+            key="dashboard"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <DashboardScreen onLogout={handleLogout} />
+          </motion.div>
+        )}
+
+        {currentScreen === 'chat' && (
+          <motion.div
+            key="chat"
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            variants={pageVariants}
+            transition={pageTransition}
+            className="w-full h-full"
+          >
+            <ChatPage onLogout={handleLogout} entryMode={entryMode} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Main app route */}
+        <Route path="*" element={<MainApp />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
