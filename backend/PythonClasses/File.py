@@ -2,16 +2,16 @@ from datetime import datetime
 import os
 
 class File:
-    def __init__(self, name, file_type, path):
+    def __init__(self, name, fileType, path):
       self.name = name                  # validated via setter
-      self._file_type = file_type       # validated manually
+      self._fileType = fileType       # validated manually
       self._path = path                 # validated manually
       self._upload_date = datetime.now()  # auto timestamp
 
         # Optional: check that file exists and is CSV
       if not os.path.isfile(self._path):
          raise FileNotFoundError(f"No file found at {self._path}")
-      if not self._file_type.lower() == "csv":
+      if not self._fileType.lower() == "csv":
          raise ValueError("File type must be 'csv'")
 
     @property
@@ -25,8 +25,8 @@ class File:
        self._name = new_name
 
     @property
-    def file_type(self):
-      return self._file_type
+    def fileType(self):
+      return self._fileType
 
     @property
     def path(self):
@@ -43,4 +43,4 @@ class File:
       pass
 
     def __str__(self):
-      return f"{self.name} ({self.file_type}) uploaded at {self.upload_date}"
+      return f"{self.name} ({self.fileType}) uploaded at {self.upload_date}"
