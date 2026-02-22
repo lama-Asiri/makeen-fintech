@@ -19,5 +19,11 @@ class Query:
         raise TypeError("Query's Text must be a string")
     self._queryText = new_queryText
   
+  def parse():
+    pass
+
+  def resopnd():
+    pass
+
   def __str__(self):
     return f"queryText: {self.queryText} queryDate: {self.queryDate}"
