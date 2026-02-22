@@ -28,11 +28,6 @@ class Rating:
 
   #maybe move them somewhare else: addRating and viewRating inside Rating don’t make sense, because a single rating object cannot hold multiple ratings.
 
-  def addRating(self,ratingScore,comment):
-    pass
-
-  def viewRating(self):
-    pass
 
   
 
