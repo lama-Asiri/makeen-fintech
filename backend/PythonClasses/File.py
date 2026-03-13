@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 
 class File:
@@ -6,7 +5,6 @@ class File:
       self.name = name                  # validated via setter
       self._fileType = fileType       # validated manually
       self._path = path                 # validated manually
-      self._upload_date = datetime.now()  # auto timestamp
 
         # Optional: check that file exists and is CSV
       if not os.path.isfile(self._path):
@@ -31,10 +29,6 @@ class File:
     @property
     def path(self):
       return self._path
-
-    @property
-    def upload_date(self):
-      return self._upload_date
     
     def preprocess():
       pass

@@ -2,9 +2,10 @@ from File import File
 from Query import Query
 
 class Chat:
-    def __init__(self, file, queries):
+    def __init__(self, file, queries, title):
         self.file = file
         self.queries = queries
+        self.title = title
 
     @property
     def file(self):
@@ -36,14 +37,29 @@ class Chat:
     def receiveUserQuery():
       pass
 
+    def add_query(self, query):
+      """Add a Query object"""
+      if not isinstance(query, Query):
+          raise TypeError("query must be a Query object")
+      self._queries.append(query)
+
     def answerQuery(file,nlq):
       pass
 
-    def add_query(self, query):
-        """Add a Query object"""
-        if not isinstance(query, Query):
-            raise TypeError("query must be a Query object")
-        self._queries.append(query)
+    def renameChat(name):
+       pass
+
+    @property
+    def title(self):
+      return self._title
+
+    @title.setter
+    def title(self, value): 
+      if not isinstance(value, str):
+          raise TypeError("title must be a string")
+      if len(value.strip()) == 0:
+          raise ValueError("title cannot be empty")
+      self._title = value.strip()
 
     def __str__(self):
         return f"Chat: {self.file}, {len(self._queries)} queries"

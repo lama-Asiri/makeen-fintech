@@ -44,7 +44,7 @@ class Account:
       return self._username
 
   @username.setter
-  def username(self, value):
+  def username(self, value): 
       if not isinstance(value, str):
           raise TypeError("Username must be a string")
       if len(value.strip()) == 0:
@@ -68,6 +68,14 @@ class Account:
         return True
       return False
 
+  def viewHistory():
+    pass
+  
+  def updatePassword(oldPassword):
+    pass
+  
+  def uploadFile(File):
+    pass
   
   def __str__(self):
     return f"Account: {self.username}, Email: {self.email}, Status: {self.user_status}"

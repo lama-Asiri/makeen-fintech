@@ -1,21 +1,22 @@
 class Rating:
-  def __init__(self, ratingScore, comment):
-    self.ratingScore = ratingScore
+  def __init__(self, score, comment, category):
+    self.score = score
     self.comment = comment
+    self.category = category
 
   @property
-  def ratingScore(self):
-    return self._ratingScore
+  def score(self):
+    return self._score
   
   @property
   def comment(self):
     return self._comment
 
-  @ratingScore.setter
-  def ratingScore(self, new_ratingScore):
-    if not isinstance(new_ratingScore, (int, float)):
+  @score.setter
+  def score(self, new_score):
+    if not isinstance(new_score, (int, float)):
       raise TypeError("Rating Score must be a number")
-    self._ratingScore = new_ratingScore
+    self._score = new_score
 
   @comment.setter
   def comment(self, new_comment):
@@ -23,10 +24,20 @@ class Rating:
         raise TypeError("Comment must be a string")
     self._comment = new_comment
 
-  def __str__(self):
-    return f"ratingScore: {self.ratingScore} comment: {self.comment}"
+  @property
+  def category(self):
+    return self._category
 
-  #maybe move them somewhare else: addRating and viewRating inside Rating don’t make sense, because a single rating object cannot hold multiple ratings.
+  @category.setter
+  def category(self, new_category):
+    if not isinstance(new_category, str):
+        raise TypeError("category must be a string")
+    self._category = new_category
+
+  def __str__(self):
+    return f"score: {self.score} comment: {self.comment} category:{self.catrgory}"
+
+
 
 
   
