@@ -4,6 +4,7 @@ import { LoginInput } from './LoginInput';
 import { LoginButton } from './LoginButton';
 import { LoginCheckbox } from './LoginCheckbox';
 import { Toast } from './Toast';
+import { supabase } from '../../lib/supabase';  // used to set session after login
 
 interface LoginFormData {
   email: string;
@@ -40,13 +41,28 @@ export function LoginForm({
   });
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
+  const [isAppleLoading] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const onSubmit = async (data: LoginFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log('Login data:', data);
+    setErrorMessage(null);
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: data.email, password: data.password }),
+    });
+
+    if (!res.ok) {
+      const { detail } = await res.json();
+      setErrorMessage(detail);
+      return;
+    }
+
+    const { access_token, refresh_token } = await res.json();
+    await supabase.auth.setSession({ access_token, refresh_token });
+
     onSuccess();
   };
 
@@ -117,6 +133,10 @@ export function LoginForm({
             {...register('rememberMe')} 
           />
         </div>
+
+        {errorMessage && (
+          <p className="text-red-400 text-sm">{errorMessage}</p>
+        )}
 
         <LoginButton
           variant="primary"

@@ -7,6 +7,7 @@ import { Toast } from './Toast';
 
 interface SignUpFormData {
   fullName: string;
+  username: string;
   email: string;
   password: string;
   agreeToTerms: boolean;
@@ -33,6 +34,7 @@ export function SignUpForm({
     mode: 'onBlur',
     defaultValues: {
       fullName: '',
+      username: '',
       email: '',
       password: '',
       agreeToTerms: false,
@@ -42,12 +44,30 @@ export function SignUpForm({
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [verificationSent, setVerificationSent] = useState(false);
 
   const onSubmit = async (data: SignUpFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    console.log('Sign up data:', data);
-    onSuccess();
+    setErrorMessage(null);
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/auth/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        username: data.username,
+        full_name: data.fullName,
+      }),
+    });
+
+    if (!res.ok) {
+      const { detail } = await res.json();
+      setErrorMessage(detail);
+      return;
+    }
+
+    setVerificationSent(true);
   };
 
   const handleGoogleSignUp = async () => {
@@ -77,6 +97,24 @@ export function SignUpForm({
           error={errors.fullName?.message}
           {...register('fullName', {
             required: 'Full name is required.',
+          })}
+        />
+
+        <LoginInput
+          label="Username"
+          type="text"
+          placeholder="johndoe"
+          error={errors.username?.message}
+          {...register('username', {
+            required: 'Username is required.',
+            minLength: {
+              value: 3,
+              message: 'Username must be at least 3 characters.',
+            },
+            pattern: {
+              value: /^[a-zA-Z0-9_]+$/,
+              message: 'Username can only contain letters, numbers, and underscores.',
+            },
           })}
         />
 
@@ -133,10 +171,21 @@ export function SignUpForm({
           )}
         </div>
 
+        {errorMessage && (
+          <p className="text-red-400 text-sm">{errorMessage}</p>
+        )}
+
+        {verificationSent && (
+          <p className="text-green-400 text-sm">
+            Account created! Check your email and click the verification link before signing in.
+          </p>
+        )}
+
         <LoginButton
           variant="primary"
           type="submit"
           isLoading={isSubmitting}
+          disabled={verificationSent}
           className="mt-4"
         >
           Create account
@@ -181,7 +230,7 @@ export function SignUpForm({
 
       {/* Coming Soon Toast */}
       {showComingSoon && (
-        <Toast 
+        <Toast
           message="Coming soon"
           onClose={() => setShowComingSoon(false)}
         />

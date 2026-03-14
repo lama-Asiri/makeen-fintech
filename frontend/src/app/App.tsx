@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { LoginForm } from './components/LoginForm';
@@ -11,24 +11,39 @@ import { ChatPage } from './pages/Chat';
 import { LandingPageWrapper } from './pages/LandingPage';
 import { AuthLayout } from './components/AuthLayout';
 import { Toaster } from 'sonner';
+import { useAuth } from './context/AuthContext';
 
 type Screen = 'landing' | 'login' | 'dashboard' | 'forgotPassword' | 'signUp' | 'emailVerification' | 'resetPassword' | 'chat';
 
 function MainApp() {
+  const { user, loading, logout } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
   const [userEmail, setUserEmail] = useState<string>('');
   const [entryMode, setEntryMode] = useState<'login' | 'signup' | null>(null);
+
+  // Restore session on refresh
+  useEffect(() => {
+    if (!loading && user) {
+      setCurrentScreen('chat');
+    }
+  }, [loading, user]);
+
+  // Show loading spinner while checking session
+  if (loading) {
+    return (
+      <div className="bg-[#141414] min-h-screen w-full flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const handleLoginSuccess = () => {
     setEntryMode('login');
     setCurrentScreen('chat');
   };
 
-  const handleLogout = () => {
-    // Clear chat data from localStorage on logout
-    localStorage.removeItem('makeen_chats');
-    localStorage.removeItem('makeen_active_chat_id');
-    // Reset entry mode
+  const handleLogout = async () => {
+    await logout();
     setEntryMode(null);
     setCurrentScreen('landing');
   };
@@ -79,7 +94,7 @@ function MainApp() {
 
   const pageTransition = {
     duration: 0.3,
-    ease: "easeInOut",
+    ease: "easeInOut" as const,
   };
 
   return (
