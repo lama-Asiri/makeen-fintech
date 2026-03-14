@@ -1,15 +1,39 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from routers import auth
+from database.connection import engine
+from sqlalchemy import text
+from PythonClasses.Account import Account
+import os
 
-app = FastAPI()
+USERNAME = "testUser"
+CSV_PATH = "uploads/TestFile.csv"
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# check user
+with engine.connect() as conn:
+    result = conn.execute(
+        text("SELECT * FROM \"User\" WHERE username = :username"),
+        {"username": USERNAME}
+    )
+    user = result.fetchone()
 
-app.include_router(auth.router)
+if not user:
+    print("User not found")
+    exit()
+
+print("User exists:", user)
+
+# check file
+if not os.path.exists(CSV_PATH):
+    print("CSV file not found")
+    exit()
+
+if not CSV_PATH.lower().endswith(".csv"):
+    print("Only CSV files allowed")
+    exit()
+
+# upload
+account = Account("test@gmail.com", "123456", USERNAME)
+
+with open(CSV_PATH, "rb") as file:
+    success, result = account.uploadFile(file)
+
+print("Success:", success)
+print("Result:", result)
