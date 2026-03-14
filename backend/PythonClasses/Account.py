@@ -1,5 +1,6 @@
 import re  # for email validation
-from Chat import Chat  
+from PythonClasses.Chat import Chat  
+from supabase_client import supabase
 
 class Account:
   def __init__(self, email, password, username):
@@ -44,7 +45,7 @@ class Account:
       return self._username
 
   @username.setter
-  def username(self, value):
+  def username(self, value): 
       if not isinstance(value, str):
           raise TypeError("Username must be a string")
       if len(value.strip()) == 0:
@@ -68,6 +69,24 @@ class Account:
         return True
       return False
 
+  def viewHistory():
+    pass
+  
+  def updatePassword(oldPassword):
+    pass
+  
+  def uploadFile(self,file):
+        # Allow only CSV
+        filename = file.name
+        if not filename.lower().endswith(".csv"):
+            return False, "Only CSV files are allowed."
+
+        path = f"{self.username}/{filename}"
+        response = supabase.storage.from_("user-files").upload(path, file)
+
+        if response.get("error"):
+            return False, response["error"]
+        return True, response["data"]
   
   def __str__(self):
     return f"Account: {self.username}, Email: {self.email}, Status: {self.user_status}"

@@ -1,9 +1,9 @@
-from Rating import Rating
+from PythonClasses.Rating import Rating
 
 class Response:
-  def __init__(self, answer, ex):
+  def __init__(self, answer, explanation):
     self._answer = answer
-    self._ex = ex
+    self._explanation = explanation
     self._rating = None   # initialize
 
   @property
@@ -11,8 +11,8 @@ class Response:
     return self._answer
   
   @property
-  def ex(self):
-    return self._ex
+  def explanation(self):
+    return self._explanation
   
   @property
   def rating(self):
@@ -31,6 +31,6 @@ class Response:
     pass
 
   def __str__(self):
-    return f"answer: {self.answer} explanation: {self.ex} rating: {self.rating}"
+    return f"answer: {self.answer} explanationplanation: {self.explanation} rating: {self.rating}"
   
   
