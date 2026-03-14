@@ -1,4 +1,4 @@
-from Rating import Rating
+from PythonClasses.Rating import Rating
 
 class Response:
   def __init__(self, answer, explanation):

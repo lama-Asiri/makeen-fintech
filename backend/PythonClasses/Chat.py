@@ -1,5 +1,5 @@
-from File import File
-from Query import Query
+from PythonClasses.File import File
+from PythonClasses.Query import Query
 
 class Chat:
     def __init__(self, file, queries, title):

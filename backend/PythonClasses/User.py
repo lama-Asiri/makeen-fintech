@@ -1,4 +1,4 @@
-from Account import Account
+from PythonClasses.Account import Account
 import uuid
 
 class User:

@@ -1,6 +1,6 @@
 import re  # for email validation
-from Chat import Chat  
-from backend.supabase_client import supabase
+from PythonClasses.Chat import Chat  
+from supabase_client import supabase
 
 class Account:
   def __init__(self, email, password, username):
