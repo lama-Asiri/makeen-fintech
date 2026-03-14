@@ -1,0 +1,29 @@
+MAKEEN - TODO LIST
+==================
+
+AUTH
+[ ] 1. Add forgot-password and reset-password endpoints to backend
+[ ] 2. Connect ForgotPassword and ResetPassword forms to backend
+
+BACKEND CLEANUP
+[ ] 3. Clean up PythonClasses/ folder — move models into routers as Pydantic models
+[ ] 4. Decide on database/connection.py — keep SQLAlchemy or remove in favour of Supabase client
+
+DATABASE CONNECTIONS (features currently not saving to DB)
+[ ] 5. Chat history — currently localStorage only, save/load from chat table per user
+[ ] 6. Edit Profile — save display name + avatar to public.user (needs PUT /user/profile endpoint)
+[ ] 7. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
+[ ] 8. Report bug modal — console.log only, save reports to DB or send via email
+[ ] 9. File uploads — save actual file to Supabase Storage, not just metadata in chat object
+
+COMPLETED
+==================
+[x] Fix service role key in backend .env
+[x] Move backend URL to frontend env variable (VITE_API_URL)
+[x] Auth context + session persistence across page refreshes (Supabase JWT, no extra cookie work needed)
+[x] Loading spinner while checking session on startup
+[x] Backend restructured into routers/ and core/
+[x] Delete 27 unused files from frontend/src/imports/
+[x] Sign up stores user in public.user via DB trigger
+[x] Login blocks unverified users
+[x] Email confirmation required before sign in
