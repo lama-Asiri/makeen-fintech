@@ -22,6 +22,18 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
   const fileInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const prevIsOpenRef = useRef(false);
+
+  // Sync internal state only when modal transitions from closed → open
+  useEffect(() => {
+    const justOpened = isOpen && !prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+    if (justOpened) {
+      setDisplayName(currentDisplayName);
+      setAvatarUrl(currentAvatarUrl);
+      setHasChanges(false);
+    }
+  }, [isOpen, currentDisplayName, currentAvatarUrl]);
 
   // Handle outside click to close menu
   useEffect(() => {

@@ -2950,7 +2950,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             console.log('[AVATAR] storage upload error:', error?.message ?? 'none');
             if (!error) {
               const { data } = supabase.storage.from('user-files').getPublicUrl(path);
-              finalAvatarUrl = data.publicUrl;
+              finalAvatarUrl = `${data.publicUrl}?t=${Date.now()}`;
               setAvatarUrl(finalAvatarUrl);
             }
           }

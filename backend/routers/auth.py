@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from core.supabase_client import supabase
+from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 
 router = APIRouter(prefix="/auth")
 
@@ -77,6 +77,8 @@ def _get_user_id(authorization: str | None) -> str:
         user = supabase.auth.get_user(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
+    # Reset PostgREST to service role — get_user() may switch auth context to user token
+    supabase.postgrest.auth(SUPABASE_SERVICE_KEY)
     return str(user.user.id)
 
 
@@ -86,6 +88,7 @@ async def get_profile(authorization: str = Header(None)):
     try:
         result = supabase.table("User").select("username, avatar_url").eq("USER_ID", user_id).single().execute()
     except Exception as e:
+        print(f"[PROFILE GET ERROR] user_id={user_id} error={str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
     return result.data
 
