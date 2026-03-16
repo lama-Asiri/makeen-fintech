@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '../../lib/supabase';
+import { supabase, initialHash } from '../../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
@@ -19,15 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const recoveryInProgress = useRef(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(() => {
-    const hash = window.location.hash;
-    const recovery = hash.includes('type=recovery');
-    console.log('[AUTH] Init — hash:', hash, '| isRecoveryMode:', recovery);
+    const recovery = initialHash.includes('type=recovery');
+    console.log('[AUTH] Init — initialHash:', initialHash, '| isRecoveryMode:', recovery);
     return recovery;
   });
 
   useEffect(() => {
-    const recovery = window.location.hash.includes('type=recovery');
-    console.log('[AUTH] useEffect — hash recovery check:', recovery);
+    const recovery = initialHash.includes('type=recovery');
+    console.log('[AUTH] useEffect — initialHash recovery check:', recovery);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       console.log('[AUTH] getSession —', session ? `user: ${session.user.email}` : 'no session', '| skipping setUser:', recovery);
@@ -46,8 +45,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsRecoveryMode(true);
         return;
       }
-      if (recoveryInProgress.current && event === 'INITIAL_SESSION') {
-        console.log('[AUTH] Ignoring INITIAL_SESSION during recovery');
+      if (recoveryInProgress.current && (event === 'INITIAL_SESSION' || event === 'USER_UPDATED')) {
+        console.log('[AUTH] Ignoring', event, 'during recovery');
+        if (event === 'USER_UPDATED') {
+          recoveryInProgress.current = false;
+          setIsRecoveryMode(false);
+          supabase.auth.signOut();
+        }
         return;
       }
       recoveryInProgress.current = false;
