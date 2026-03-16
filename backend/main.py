@@ -30,7 +30,7 @@ if not CSV_PATH.lower().endswith(".csv"):
     exit()
 
 # upload
-account = Account("test@gmail.com", "123456", USERNAME)
+account = Account("test@gmail.com", "Makeen@1234", USERNAME)
 
 with open(CSV_PATH, "rb") as file:
     success, result = account.uploadFile(file)
