@@ -30,23 +30,33 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const password = watch('password');
   const confirmPassword = watch('confirmPassword');
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    // Extract tokens from URL hash if present (from the reset email link)
+    setErrorMessage('');
+
+    // Extract tokens from URL hash if present
     const hash = window.location.hash;
     const params = new URLSearchParams(hash.replace('#', ''));
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
+    console.log('[RESET] hash present:', !!hash, '| accessToken:', !!accessToken, '| refreshToken:', !!refreshToken);
 
     if (accessToken && refreshToken) {
-      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+      console.log('[RESET] setSession error:', sessionError?.message ?? 'none');
     }
 
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('[RESET] session before updateUser:', sessionData.session ? sessionData.session.user.email : 'NO SESSION');
+
     const { error } = await supabase.auth.updateUser({ password: data.password });
+    console.log('[RESET] updateUser error:', error?.message ?? 'none');
+
     if (error) {
-      console.error('Reset password error:', error.message);
+      setErrorMessage(error.message);
       return;
     }
     await supabase.auth.signOut();
@@ -119,6 +129,10 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
             validate: (value) => value === password || 'Passwords do not match.',
           })}
         />
+
+        {errorMessage && (
+          <p className="text-[#dc2626] text-sm text-center">{errorMessage}</p>
+        )}
 
         <LoginButton
           variant="primary"

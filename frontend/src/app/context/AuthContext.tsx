@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const recoveryInProgress = useRef(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(() => {
     const hash = window.location.hash;
     const recovery = hash.includes('type=recovery');
@@ -41,9 +42,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log('[AUTH] onAuthStateChange — event:', event, '| user:', session?.user?.email ?? 'none');
       if (event === 'PASSWORD_RECOVERY') {
         console.log('[AUTH] PASSWORD_RECOVERY detected — setting recoveryMode=true');
+        recoveryInProgress.current = true;
         setIsRecoveryMode(true);
         return;
       }
+      if (recoveryInProgress.current && event === 'INITIAL_SESSION') {
+        console.log('[AUTH] Ignoring INITIAL_SESSION during recovery');
+        return;
+      }
+      recoveryInProgress.current = false;
       setIsRecoveryMode(false);
       setSession(session);
       setUser(session?.user ?? null);
