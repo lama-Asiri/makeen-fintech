@@ -16,17 +16,24 @@ import { useAuth } from './context/AuthContext';
 type Screen = 'landing' | 'login' | 'dashboard' | 'forgotPassword' | 'signUp' | 'emailVerification' | 'resetPassword' | 'chat';
 
 function MainApp() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, isRecoveryMode } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<Screen>('landing');
-  const [userEmail, setUserEmail] = useState<string>('');
+  const [userEmail] = useState<string>('');
   const [entryMode, setEntryMode] = useState<'login' | 'signup' | null>(null);
 
-  // Restore session on refresh
+  // Restore session on refresh, but not during password recovery
   useEffect(() => {
+    console.log('[APP] useEffect — loading:', loading, '| user:', user?.email ?? 'null', '| isRecoveryMode:', isRecoveryMode, '| currentScreen:', currentScreen);
+    if (isRecoveryMode) {
+      console.log('[APP] Recovery mode active — navigating to resetPassword');
+      setCurrentScreen('resetPassword');
+      return;
+    }
     if (!loading && user) {
+      console.log('[APP] User logged in — navigating to chat');
       setCurrentScreen('chat');
     }
-  }, [loading, user]);
+  }, [loading, user, isRecoveryMode]);
 
   // Show loading spinner while checking session
   if (loading) {
@@ -73,9 +80,8 @@ function MainApp() {
     setCurrentScreen('chat');
   };
 
-  const handleForgotPasswordSuccess = (email: string) => {
-    setUserEmail(email);
-    setCurrentScreen('emailVerification');
+  const handleForgotPasswordSuccess = (_email: string) => {
+    // Success state is handled inside ForgotPasswordForm
   };
 
   const handleEmailVerificationSuccess = () => {

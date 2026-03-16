@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
 from core.supabase_client import supabase
 
@@ -15,6 +15,16 @@ class SignUpRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    access_token: str
+    refresh_token: str
+    new_password: str
 
 
 @router.post("/signup")
@@ -52,3 +62,64 @@ async def login(body: LoginRequest):
         "access_token": result.session.access_token,
         "refresh_token": result.session.refresh_token,
     }
+
+
+class UpdateProfileRequest(BaseModel):
+    username: str
+    avatar_url: str | None = None
+
+
+def _get_user_id(authorization: str | None) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = authorization.split(" ")[1]
+    try:
+        user = supabase.auth.get_user(token)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    return str(user.user.id)
+
+
+@router.get("/user/profile")
+async def get_profile(authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    try:
+        result = supabase.table("User").select("username, avatar_url").eq("USER_ID", user_id).single().execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return result.data
+
+
+@router.put("/user/profile")
+async def update_profile(body: UpdateProfileRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    update_data: dict = {"username": body.username}
+    if body.avatar_url is not None:
+        update_data["avatar_url"] = body.avatar_url
+    try:
+        supabase.table("User").update(update_data).eq("USER_ID", user_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "Profile updated"}
+
+
+@router.post("/forgot-password")
+async def forgot_password(body: ForgotPasswordRequest):
+    try:
+        supabase.auth.reset_password_email(
+            body.email,
+            options={"redirect_to": "http://localhost:5173"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "Password reset email sent."}
+
+
+@router.post("/reset-password")
+async def reset_password(body: ResetPasswordRequest):
+    try:
+        supabase.auth.set_session(body.access_token, body.refresh_token)
+        supabase.auth.update_user({"password": body.new_password})
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"message": "Password reset successful."}

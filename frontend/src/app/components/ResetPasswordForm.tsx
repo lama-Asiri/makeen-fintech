@@ -4,6 +4,7 @@ import { LoginInput } from './LoginInput';
 import { LoginButton } from './LoginButton';
 import { SuccessModal } from './SuccessModal';
 import { KeyRound } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface ResetPasswordFormData {
   password: string;
@@ -33,11 +34,22 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
   const confirmPassword = watch('confirmPassword');
 
   const onSubmit = async (data: ResetPasswordFormData) => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log('Password reset successful');
-    
-    // Show success modal
+    // Extract tokens from URL hash if present (from the reset email link)
+    const hash = window.location.hash;
+    const params = new URLSearchParams(hash.replace('#', ''));
+    const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
+
+    if (accessToken && refreshToken) {
+      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+    }
+
+    const { error } = await supabase.auth.updateUser({ password: data.password });
+    if (error) {
+      console.error('Reset password error:', error.message);
+      return;
+    }
+    await supabase.auth.signOut();
     setShowSuccessModal(true);
   };
 
