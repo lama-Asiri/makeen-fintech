@@ -2947,6 +2947,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             const { error } = await supabase.storage
               .from('user-files')
               .upload(path, blob, { upsert: true, contentType: blob.type });
+            console.log('[AVATAR] storage upload error:', error?.message ?? 'none');
             if (!error) {
               const { data } = supabase.storage.from('user-files').getPublicUrl(path);
               finalAvatarUrl = data.publicUrl;

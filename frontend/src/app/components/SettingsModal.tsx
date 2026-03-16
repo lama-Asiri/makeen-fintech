@@ -1,5 +1,6 @@
 import svgPathsSettings from '@/imports/svg-92ly2gkslu';
 import { useState, useRef, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Palette, Shield, Database, Settings as SettingsIcon, X, ChevronRight, ArrowLeft, Eye, EyeOff, Key } from 'lucide-react';
 import { DefaultAvatar } from '@/app/components/DefaultAvatar';
 import { Toast } from '@/app/components/Toast';
@@ -222,32 +223,41 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
   
   const handlePasswordSubmit = async () => {
     if (!validateChangePasswordForm()) return;
-    
     setIsSubmittingPassword(true);
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Simulate success/failure (90% success rate)
-    const isSuccess = Math.random() > 0.1;
-    
-    if (isSuccess) {
-      setPasswordToast({ type: 'success', message: 'Password updated successfully.' });
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-      setPasswordErrors({});
-      
-      // Auto-hide toast and return to overview after 2 seconds
-      setTimeout(() => {
-        setPasswordToast(null);
-        setSecurityView('overview');
-      }, 2000);
-    } else {
+
+    // Verify current password by re-signing in
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: userEmail ?? '',
+      password: currentPassword,
+    });
+
+    if (signInError) {
       setPasswordToast({ type: 'error', message: 'Current password is incorrect.' });
       setTimeout(() => setPasswordToast(null), 3000);
+      setIsSubmittingPassword(false);
+      return;
     }
-    
+
+    // Update to new password
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (updateError) {
+      setPasswordToast({ type: 'error', message: updateError.message });
+      setTimeout(() => setPasswordToast(null), 3000);
+      setIsSubmittingPassword(false);
+      return;
+    }
+
+    setPasswordToast({ type: 'success', message: 'Password updated successfully.' });
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordErrors({});
+    setTimeout(() => {
+      setPasswordToast(null);
+      setSecurityView('overview');
+    }, 2000);
+
     setIsSubmittingPassword(false);
   };
   
