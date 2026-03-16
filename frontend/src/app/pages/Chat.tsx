@@ -21,6 +21,8 @@ import { SubscriptionPage } from '@/app/pages/Subscription';
 import { DefaultAvatar } from '@/app/components/DefaultAvatar';
 import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
+import { useAuth } from '@/app/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -255,6 +257,7 @@ const loadFromLocalStorage = (): { chats: Chat[]; activeChatId: string | null } 
 };
 
 export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
+  const { user, session } = useAuth();
   // Load initial state from localStorage
   const initialState = loadFromLocalStorage();
   
@@ -297,8 +300,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showAccountDropdown, setShowAccountDropdown] = useState(false);
   const [accountDropdownRect, setAccountDropdownRect] = useState<DOMRect | undefined>(undefined);
-  const [displayName, setDisplayName] = useState('Username');
-  const [userEmail, setUserEmail] = useState('username@gmail.com');
+  const [displayName, setDisplayName] = useState(() => user?.user_metadata?.username ?? user?.email?.split('@')[0] ?? 'User');
+  const [userEmail, setUserEmail] = useState(() => user?.email ?? '');
   const [avatarUrl, setAvatarUrl] = useState(''); // Empty by default - shows first letter of username
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
   const [showReportBugModal, setShowReportBugModal] = useState(false);
@@ -350,6 +353,21 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       chat.isPersisted !== false // Only show persisted chats in sidebar
     )
     .sort((a, b) => a.lastUsedAt.getTime() - b.lastUsedAt.getTime());
+
+  // Load profile (username + avatar) from DB on mount
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch(`${import.meta.env.VITE_API_URL}/auth/user/profile`, {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    })
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (!data) return;
+        if (data.username) setDisplayName(data.username);
+        if (data.avatar_url) setAvatarUrl(data.avatar_url);
+      })
+      .catch(() => {});
+  }, [session?.access_token]);
 
   // Save to localStorage whenever chats or activeChatId changes
   useEffect(() => {
@@ -2912,10 +2930,38 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         currentDisplayName={displayName}
         currentEmail={userEmail}
         currentAvatarUrl={avatarUrl}
-        onSave={(newDisplayName, newEmail, newAvatarUrl) => {
+        onSave={async (newDisplayName, newEmail, newAvatarUrl) => {
           setDisplayName(newDisplayName);
           setUserEmail(newEmail);
           setAvatarUrl(newAvatarUrl);
+          if (!session?.access_token || !user) return;
+
+          let finalAvatarUrl = newAvatarUrl;
+
+          // If avatar is a base64 image, upload to Supabase Storage
+          if (newAvatarUrl?.startsWith('data:')) {
+            const res = await fetch(newAvatarUrl);
+            const blob = await res.blob();
+            const ext = blob.type.split('/')[1] ?? 'jpg';
+            const path = `avatars/${user.id}.${ext}`;
+            const { error } = await supabase.storage
+              .from('user-files')
+              .upload(path, blob, { upsert: true, contentType: blob.type });
+            if (!error) {
+              const { data } = supabase.storage.from('user-files').getPublicUrl(path);
+              finalAvatarUrl = data.publicUrl;
+              setAvatarUrl(finalAvatarUrl);
+            }
+          }
+
+          await fetch(`${import.meta.env.VITE_API_URL}/auth/user/profile`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ username: newDisplayName, avatar_url: finalAvatarUrl || null }),
+          });
         }}
         onAvatarChange={(newAvatarUrl) => {
           setAvatarUrl(newAvatarUrl);

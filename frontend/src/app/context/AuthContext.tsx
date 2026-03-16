@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isRecoveryMode: boolean;
   logout: () => Promise<void>;
 }
 
@@ -16,17 +17,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isRecoveryMode, setIsRecoveryMode] = useState(() => {
+    const hash = window.location.hash;
+    const recovery = hash.includes('type=recovery');
+    console.log('[AUTH] Init — hash:', hash, '| isRecoveryMode:', recovery);
+    return recovery;
+  });
 
   useEffect(() => {
-    // Check for existing session on mount
+    const recovery = window.location.hash.includes('type=recovery');
+    console.log('[AUTH] useEffect — hash recovery check:', recovery);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      console.log('[AUTH] getSession —', session ? `user: ${session.user.email}` : 'no session', '| skipping setUser:', recovery);
+      if (!recovery) {
+        setSession(session);
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
-    // Listen for auth changes (login, logout, token refresh)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[AUTH] onAuthStateChange — event:', event, '| user:', session?.user?.email ?? 'none');
+      if (event === 'PASSWORD_RECOVERY') {
+        console.log('[AUTH] PASSWORD_RECOVERY detected — setting recoveryMode=true');
+        setIsRecoveryMode(true);
+        return;
+      }
+      setIsRecoveryMode(false);
       setSession(session);
       setUser(session?.user ?? null);
     });
@@ -41,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, logout }}>
+    <AuthContext.Provider value={{ user, session, loading, isRecoveryMode, logout }}>
       {children}
     </AuthContext.Provider>
   );
