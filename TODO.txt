@@ -13,10 +13,18 @@ BACKEND CLEANUP
 DATABASE CONNECTIONS (features currently not saving to DB)
 [ ] 5. Chat history — currently localStorage only, save/load from chat table per user
 [x] 6. Edit Profile — display name + avatar saved to public."User" and Supabase Storage, loaded from DB on mount
-[x] 7. Test edit profile — change display name, change avatar, verify both persist after page refresh
-[ ] 8. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
+[x] 7. Test edit profile — change display name, change avatar, verify both persist after page refre[ ] 8. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
 [ ] 8. Report bug modal — console.log only, save reports to DB or send via email
 [ ] 9. File uploads — save actual file to Supabase Storage, not just metadata in chat object
+
+AI / CHAT FUNCTIONALITY
+[ ] 10. Integrate xAI (Grok) or chosen LLM — add API key to backend .env, create POST /chat/message endpoint that forwards messages to the model
+[ ] 11. Stream AI responses — use SSE or chunked response so the reply appears word-by-word instead of all at once
+[ ] 12. Persist chat history to DB — save each message (role, content, timestamp) to a chat/messages table linked to the user
+[ ] 13. Load chat history on login — fetch previous conversations from DB so history survives page refresh
+[ ] 14. Multi-conversation support — allow users to start new chats and switch between past conversations (conversation_id per session)
+[ ] 15. File upload to AI — send uploaded file content to the model as context (text extraction / base64 for images)
+[ ] 16. System prompt / persona config — define Makeen's personality and context in a server-side system prompt
 
 COMPLETED
 ==================
