@@ -1,33 +1,43 @@
 MAKEEN - TODO LIST
 ==================
 
-AUTH
-[x] 1. Add forgot-password and reset-password endpoints to backend
-[x] 2. Connect ForgotPassword and ResetPassword forms to backend
-[x] 3. Test forgot password and reset password full flow end-to-end
-
 BACKEND CLEANUP
-[ ] 3. Clean up PythonClasses/ folder — move models into routers as Pydantic models
-[ ] 4. Decide on database/connection.py — keep SQLAlchemy or remove in favour of Supabase client
+[ ] 1. Clean up PythonClasses/ folder — move models into routers as Pydantic models - LESS PRIORTY 
+[ ] 2. Decide on database/connection.py — keep SQLAlchemy or remove in favour of Supabase client LESS PRIORTY 
 
-DATABASE CONNECTIONS (features currently not saving to DB)
-[ ] 5. Chat history — currently localStorage only, save/load from chat table per user
-[x] 6. Edit Profile — display name + avatar saved to public."User" and Supabase Storage, loaded from DB on mount
-[x] 7. Test edit profile — change display name, change avatar, verify both persist after page refre[ ] 8. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
-[ ] 8. Report bug modal — console.log only, save reports to DB or send via email
-[ ] 9. File uploads — save actual file to Supabase Storage, not just metadata in chat object
+DATABASE CONNECTIONS (features currently not saving to DB) - HIGH PRIORTY reem backend routers lama features
+[ ] 3. Chat history — currently localStorage only, save/load from chat table per user remmber 3 max
+[ ] 4. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
+[ ] 5. Report bug modal — console.log only, save reports to DB or send via email
+[ ] 6. File uploads — save actual file to Supabase Storage, not just metadata in chat object 
 
-AI / CHAT FUNCTIONALITY
-[ ] 10. Integrate xAI (Grok) or chosen LLM — add API key to backend .env, create POST /chat/message endpoint that forwards messages to the model
-[ ] 11. Stream AI responses — use SSE or chunked response so the reply appears word-by-word instead of all at once
-[ ] 12. Persist chat history to DB — save each message (role, content, timestamp) to a chat/messages table linked to the user
-[ ] 13. Load chat history on login — fetch previous conversations from DB so history survives page refresh
-[ ] 14. Multi-conversation support — allow users to start new chats and switch between past conversations (conversation_id per session)
-[ ] 15. File upload to AI — send uploaded file content to the model as context (text extraction / base64 for images)
-[ ] 16. System prompt / persona config — define Makeen's personality and context in a server-side system prompt
+AI / CHAT FUNCTIONALITY - high but not now
+[ ] 7. Integrate xAI (Grok) or chosen LLM — add API key to backend .env, create POST /chat/message endpoint that forwards messages to the model
+[ ] 8. Stream AI responses — use SSE or chunked response so the reply appears word-by-word instead of all at once
+[ ] 9. Persist chat history to DB — save each message (role, content, timestamp) to a chat/messages table linked to the user
+[ ] 10. Load chat history on login — fetch previous conversations from DB so history survives page refresh
+[ ] 11. Multi-conversation support — allow users to start new chats and switch between past conversations (conversation_id per session)
+[ ] 12. File upload to AI — send uploaded file content to the model as context (text extraction / base64 for images)
+[ ] 13. System prompt / persona config — define Makeen's personality and context in a server-side system prompt
+
+CHAT MANAGEMENT - MID PRIORTY - backend reem frontend lama
+[ ] 14. Rename chat — allow user to rename a conversation from the sidebar
+[ ] 15. Delete single chat — delete one conversation and all its messages from DB and sidebar
+[ ] 16. Delete all chats — "Clear all conversations" button that wipes every chat for the user from DB
+[ ] 17. Clear local cache — utility to purge any localStorage/sessionStorage chat data (used during dev or on logout)
+
+FILE PROCESSING (RAHAF) - HIGH 
+[ ] 18. Extract text from uploaded FILES — parse PDF content server-side so it can be passed to the LLM as context
+[ ] 19. File size + type validation — enforce limits (e.g. max 10 MB, allowed types: XSLX, CSV) before upload - RECHECK VALIDATION SOME ALREADY EXIST
+[ ] 20. Show file processing status — loading indicator while file is being parsed/uploaded before sending to AI
 
 COMPLETED
 ==================
+[x] 1. Add forgot-password and reset-password endpoints to backend
+[x] 2. Connect ForgotPassword and ResetPassword forms to backend
+[x] 3. Test forgot password and reset password full flow end-to-end
+[x] 4. Edit Profile — display name + avatar saved to public."User" and Supabase Storage, loaded from DB on mount
+[x] 5. Test edit profile — change display name, change avatar, verify both persist after page refresh
 [x] Fix service role key in backend .env
 [x] Move backend URL to frontend env variable (VITE_API_URL)
 [x] Auth context + session persistence across page refreshes (Supabase JWT, no extra cookie work needed)
