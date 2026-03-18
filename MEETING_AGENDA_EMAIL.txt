@@ -1,0 +1,93 @@
+Subject: Makeen Team Meeting — Agenda
+
+Hi everyone,
+
+Please find below the agenda for our upcoming meeting. Come prepared with a quick update on what you've been working on.
+
+------------------------------------------------------------------
+MAKEEN TEAM MEETING
+------------------------------------------------------------------
+
+1. STATUS UPDATE  (~10 min)
+   Each person briefly covers:
+   - What have you worked on since last time?
+   - Is anything blocking you?
+   - What are you planning to work on next?
+
+------------------------------------------------------------------
+2. DECISIONS — pipeline cannot start until these are resolved  (~20 min)
+------------------------------------------------------------------
+
+   A. API Response Contract
+      We need to agree on the exact JSON shape the backend returns
+      to the frontend so Lama can build the UI independently.
+
+      Proposed:
+        {
+          "answer":      string    <- LLM explanation text
+          "prediction":  string    <- model output (e.g. "Approved")
+          "shap_values": {}        <- { feature: value, ... }
+          "lime_values": {}        <- { feature: value, ... } or null
+        }
+
+   B. LLM API Provider
+      We need to pick one and get the API key ready.
+      Options: OpenAI GPT-4o-mini / Claude / xAI Grok
+      Recommendation: OpenAI GPT-4o-mini (cheapest, fastest, best documented)
+
+   C. Target Column Selection
+      How does the model know which column to predict on?
+      Option 1: always use the last column in the dataset (fragile)
+      Option 2: user selects from a dropdown after uploading the file (recommended)
+
+   D. LIME Computation
+      When should LIME be computed?
+      Option 1: always alongside SHAP — adds ~20 seconds to every request
+      Option 2: only when user clicks "Show LIME explanation" (recommended)
+
+------------------------------------------------------------------
+3. PIPELINE WALKTHROUGH  (~10 min)
+------------------------------------------------------------------
+
+   Quick walkthrough of the full flow so everyone is aligned
+   on their role and what they hand off to the next person:
+
+   [Lama]   User uploads file → selects target column from dropdown
+       ↓
+   [Rahaf]  Backend parses file → trains RandomForest → generates prediction
+       ↓
+   [Rahaf]  SHAP computes feature importance for that prediction
+       ↓
+   [Reem]   SHAP values + user question sent to LLM API → human-readable answer returned
+       ↓
+   [Lama]   Frontend displays answer text + feature importance bar chart
+
+------------------------------------------------------------------
+4. TASK ASSIGNMENT CONFIRMATION  (~5 min)
+------------------------------------------------------------------
+
+   Reem  — Backend cleanup + DB connection endpoints (#3–6) +
+           Chat management backend (#7–10) + LLM API (#15) +
+           LIME (#18) + Export & Rating backend (#21, #22)
+
+   Rahaf — File processing (#11–14) + ML model (#16) + SHAP (#17)
+
+   Lama  — All frontend: DB connections, chat management, file upload UI,
+           XAI charts (#19), loading indicator (#20),
+           Export & Rating frontend (#21, #22)
+
+------------------------------------------------------------------
+5. WHAT WE START ON AFTER THIS MEETING  (~5 min)
+------------------------------------------------------------------
+
+   Rahaf  → #13 — file parsing endpoint (critical path start)
+   Reem   → get LLM API key + work on DB connection tasks (#3–6)
+   Lama   → file upload UI + target column dropdown + chat management UI (#7–10)
+
+   We should set a date for a follow-up check-in once #13, #16, and #17 are done.
+
+------------------------------------------------------------------
+
+Please come with your status update ready and any thoughts on the decisions above.
+
+See you then!

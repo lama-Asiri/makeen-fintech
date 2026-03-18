@@ -1,0 +1,89 @@
+╔══════════════════════════════════════════════════════════════╗
+║                MAKEEN — TEAM MEETING AGENDA                  ║
+╚══════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. STATUS UPDATE  (~10 min)
+  Each person answers:
+    - What did you work on since last meeting?
+    - Is anything blocking you?
+    - What will you work on next?
+
+  Reem   → backend endpoints, any DB work done?
+  Rahaf  → file parsing started? any ML/SHAP research?
+  Lama   → frontend status, any chat UI progress?
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  2. DECISIONS — must resolve today before coding pipeline  (~20 min)
+
+  A. API Response Contract
+     Agree on the exact JSON the backend sends to frontend.
+     Proposed shape:
+       {
+         "answer":      string,   ← LLM explanation text
+         "prediction":  string,   ← model output (e.g. "Approved")
+         "shap_values": {},       ← { feature: value, ... }
+         "lime_values": {}        ← { feature: value, ... } or null
+       }
+     Action: everyone agrees and Lama can start building frontend off this.
+
+  B. LLM API Provider
+     Pick one: OpenAI GPT-4o-mini (recommended) / Claude / xAI Grok
+     Recommendation: OpenAI GPT-4o-mini — cheapest and best documented.
+     Action: Reem gets the API key and adds it to backend .env today.
+
+  C. Target Column Selection
+     How does the model know which column to predict?
+     Option 1: always use last column (fragile on real data)
+     Option 2: user picks from a dropdown after uploading the file (recommended)
+     Action: agree on option, Lama adds dropdown UI, Rahaf receives it as a parameter.
+
+  D. LIME — when is it computed?
+     Option 1: always compute alongside SHAP (adds ~20s to every request)
+     Option 2: on-demand only via a "Show LIME explanation" button (recommended)
+     Action: agree on option so Reem knows how to build it.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  3. PIPELINE WALKTHROUGH  (~10 min)
+  Walk through the full flow together so everyone understands their part:
+
+    [Lama]  User uploads file → picks target column from dropdown
+        ↓
+    [Rahaf] Backend parses file → trains RandomForest → generates prediction
+        ↓
+    [Rahaf] SHAP computes feature importance for that prediction
+        ↓
+    [Reem]  SHAP values + user question sent to LLM API → human-readable answer
+        ↓
+    [Lama]  Frontend displays answer text + feature importance bar chart
+
+  Make sure everyone is clear on what they hand off to the next person.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  4. TASK ASSIGNMENT REVIEW  (~5 min)
+  Go through the TODO list sections and confirm everyone agrees with their tasks.
+
+  Reem  → Sections 1, 2, 3 (backend) + #15 LLM API + #18 LIME + #21 #22 backend
+  Rahaf → Section 4 (file processing) + #16 ML model + #17 SHAP
+  Lama  → Sections 2, 3, 4 (frontend) + #19 charts + #20 loading + #21 #22 frontend
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  5. BUILD ORDER & NEXT STEPS  (~5 min)
+  Agree on what everyone works on first after this meeting:
+
+    Rahaf  → start on #13 (file parsing endpoint) — this is the critical path start
+    Reem   → get LLM API key + start on DB connection tasks (#3–6) while waiting on Rahaf
+    Lama   → build the file upload UI + target column dropdown (#11, #13 frontend)
+             and start on chat management UI (#7–10)
+
+  Next meeting: set a date to check critical path progress (#13 → #16 → #17)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  DECISIONS LOG  (fill in during meeting)
+
+  A. API contract agreed?          YES / NO  — notes: ________________
+  B. LLM provider chosen?          ________  — key added to .env: YES / NO
+  C. Target column method?         AUTO / DROPDOWN
+  D. LIME on-demand or always?     ON-DEMAND / ALWAYS
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
