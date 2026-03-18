@@ -6,11 +6,9 @@ class File:
       self._fileType = fileType       # validated manually
       self._path = path                 # validated manually
 
-        # Optional: check that file exists and is CSV
-      if not os.path.isfile(self._path):
-         raise FileNotFoundError(f"No file found at {self._path}")
-      if not self._fileType.lower() == "csv":
-         raise ValueError("File type must be 'csv'")
+        # Optional: check that file is CSV oe xlsx
+      if self._fileType.lower() not in ["csv", "xlsx"]:
+        raise ValueError("File type must be 'csv' or 'xlsx'")
 
     @property
     def name(self):

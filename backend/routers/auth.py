@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel
+import os
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
+from PythonClasses import File as FileObj
 
 router = APIRouter(prefix="/auth")
 
@@ -126,3 +128,58 @@ async def reset_password(body: ResetPasswordRequest):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"message": "Password reset successful."}
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    authorization: str = Header(None),
+    chat_id: int = None  # MUST DO CHAT THEN RETURN TO THIS LATER
+):
+    # 1. Get user ID from auth token
+    user_id = _get_user_id(authorization)
+
+    # 2. Get username from database
+    try:
+        result = supabase.table("User") \
+            .select("username") \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        username = result.data["username"]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to get username: {str(e)}")
+
+    # 3. Get file name and validate type
+    filename = os.path.basename(file.filename)
+    if not filename.lower().endswith((".csv", ".xlsx")):
+        raise HTTPException(status_code=400, detail="Only CSV or XLSX allowed")
+    
+    file_type = "xlsx" if filename.lower().endswith(".xlsx") else "csv"
+
+    # 4. Set storage path
+    path = f"{username}/{filename}"
+
+    # 5. Upload file to Supabase storage
+    try:
+        supabase.storage.from_("user-files").upload(path, file.file)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
+
+    # 6. Save metadata in the database
+    try:
+        supabase.table("File").insert({
+            "name": filename,
+            "filetype": file_type,
+            "path": path,
+            "CHAT_ID": chat_id
+        }).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"DB insert failed: {str(e)}")
+
+    # 7. Create Python File object (optional)
+    file_obj = FileObj(name=filename, fileType=file_type, storage_path=path)
+
+    return {
+        "message": "Uploaded",
+        "file": str(file_obj)
+    }

@@ -77,13 +77,5 @@ class Account:
     pass
   
   def uploadFile(self, file):
-    filename = os.path.basename(file.name)
-    if not filename.lower().endswith(".csv"):
-        return False, "Only CSV files are allowed."
-    path = f"{self.username}/{filename}"
-    try:
-        response = supabase.storage.from_("user-files").upload(path, file)
-        return True, response
-    except Exception as e:
-        return False, str(e)
+    pass #done in router, because in not an "user behavior”, it’s a system operation.
 
