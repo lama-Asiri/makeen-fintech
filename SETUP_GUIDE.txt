@@ -1,0 +1,155 @@
+MAKEEN — SETUP GUIDE
+====================
+Run this once on your machine to get the project working locally.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1 — INSTALL REQUIRED SOFTWARE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Install these if you don't have them already:
+
+  [ ] Python 3.11+         https://www.python.org/downloads/
+      - During install: check "Add Python to PATH"
+
+  [ ] Node.js 18+          https://nodejs.org/
+      - Download the LTS version
+
+  [ ] Git                  https://git-scm.com/downloads
+      - Needed to clone and push code
+
+  [ ] VS Code (recommended) https://code.visualstudio.com/
+
+To verify everything is installed, open a terminal and run:
+  python --version
+  node --version
+  npm --version
+  git --version
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2 — CLONE THE PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  git clone https://github.com/lama-Asiri/Makeen.git
+  cd Makeen
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3 — BACKEND SETUP (Python / FastAPI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open a terminal inside the backend/ folder:
+
+  cd backend
+
+  # Create a virtual environment
+  python -m venv venv
+
+  # Activate it
+  Windows:   venv\Scripts\activate
+  Mac/Linux: source venv/bin/activate
+
+  # Install dependencies
+  pip install -r requirements.txt
+
+  # Install the AI/ML libraries (needed for the XAI pipeline) - still not done for most of us
+  pip install pandas openpyxl scikit-learn shap openai
+
+
+--- BACKEND .env FILE ---
+
+Create a file called  backend/.env  and fill in the values below.
+Ask Lama for the actual keys — do NOT share them publicly.
+
+  SUPABASE_URL=https://your-project.supabase.co
+  SUPABASE_KEY=your-service-role-key
+  OPENAI_API_KEY=your-openai-api-key
+
+
+--- RUN THE BACKEND ---
+
+  # Make sure venv is activated, then:
+  uvicorn app:app --reload
+
+  Backend will be running at: http://localhost:8000
+  API docs available at:      http://localhost:8000/docs
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 4 — FRONTEND SETUP (React / Vite)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open a NEW terminal inside the frontend/ folder:
+
+  cd frontend
+
+  # Install dependencies
+  npm install
+
+
+--- FRONTEND .env FILE ---
+
+Create a file called  frontend/.env  and fill in the values below:
+
+  VITE_API_URL=http://localhost:8000
+  VITE_SUPABASE_URL=https://your-project.supabase.co
+  VITE_SUPABASE_ANON_KEY=your-anon-key
+
+
+--- RUN THE FRONTEND ---
+
+  npm run dev
+
+  Frontend will be running at: http://localhost:5173
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 5 — RUNNING THE FULL PROJECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+You need TWO terminals open at the same time:
+
+  Terminal 1 (backend):
+    cd backend
+    venv\Scripts\activate      (Windows)
+    uvicorn app:app --reload
+
+  Terminal 2 (frontend):
+    cd frontend
+    npm run dev
+
+Then open your browser at: http://localhost:5173
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+COMMON ERRORS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  "ModuleNotFoundError"
+  → venv is not activated. Run: venv\Scripts\activate
+
+  "python is not recognized"
+  → Python was not added to PATH during install. Reinstall and check the box.
+
+  "npm is not recognized"
+  → Node.js is not installed. Download from nodejs.org
+
+  "CORS error" in browser
+  → Backend is not running. Start it in Terminal 1.
+
+  "Invalid API key"
+  → .env file is missing or has wrong values. Check with Lama.
+
+  "Cannot find module" in frontend
+  → Run npm install again inside the frontend/ folder.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+QUICK REFERENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Frontend         http://localhost:5173
+  Backend          http://localhost:8000
+  API Docs         http://localhost:8000/docs
+  Supabase         https://supabase.com/dashboard
