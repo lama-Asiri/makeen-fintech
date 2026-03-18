@@ -60,7 +60,7 @@
   [ ] 10. Clear local cache — purge localStorage/sessionStorage chat data (on logout or dev reset)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+ CRITICAL PATH   #13 → #16 → #17 → #15 → #19
   SECTION 4 — FILE PROCESSING
   Owner: Rahaf (backend) + Lama (frontend) | Priority: HIGH
   Note: #11–12 are independent — #13 is the critical path start
