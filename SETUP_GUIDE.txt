@@ -144,6 +144,30 @@ COMMON ERRORS
   "Cannot find module" in frontend
   → Run npm install again inside the frontend/ folder.
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+MISSING FILES — must be shared manually by Lama
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+These files are blocked by .gitignore and will NOT come from GitHub.
+You must receive them directly from Lama (WhatsApp/Discord — never email or GitHub).
+
+  backend/.env
+  ├── SUPABASE_URL
+  ├── SUPABASE_SERVICE_KEY
+  ├── DATABASE_URL
+  └── OPENAI_API_KEY            ← added once team picks LLM provider
+
+  frontend/.env
+  ├── VITE_SUPABASE_URL
+  ├── VITE_SUPABASE_ANON_KEY
+  └── VITE_API_URL=http://localhost:8000
+
+  Supabase access
+  └── Ask Reem to invite you from: Supabase dashboard → Settings → Team
+      Without this you cannot see the tables, storage buckets, or logs.
+
+
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUICK REFERENCE
