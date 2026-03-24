@@ -219,4 +219,26 @@ async def add_chat(
         "Title": chat["Title"]
     }
 
+@router.get("/viewHistory")
+async def view_history(authorization: str = Header(None)):
+    # 1. Get user ID
+    user_id = _get_user_id(authorization)
+
+    # 2. Select all chats for this user
+    try:
+        result = supabase.table("Chat") \
+            .select("*") \
+            .eq("USER_ID", user_id) \
+            .order("created_at", desc=True) \
+            .execute()
+        chats = result.data or []
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch chats: {str(e)}")
+
+    # 3. Return chat list
+    return {
+        "message": "User chat history",
+        "chats": chats
+    }
+
     

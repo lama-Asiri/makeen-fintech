@@ -33,7 +33,7 @@ with engine.connect() as conn:
         """),
         {
             "user_id": user.USER_ID,   # make sure this matches your column name
-            "Title": "Test Chat from main"
+            "Title": "Test Chat from main3"
         }
     )
 
@@ -58,3 +58,21 @@ with engine.connect() as conn:
 
 print("Fetched from DB:", fetched_chat)
 
+# -----------------------------
+# TEST: view all chats for this user
+# -----------------------------
+with engine.connect() as conn:
+    history_result = conn.execute(
+        text("""
+            SELECT * FROM "Chat"
+            WHERE "USER_ID" = :user_id
+            ORDER BY "Created_at" DESC
+        """),
+        {"user_id": user.USER_ID}
+    )
+
+    all_chats = history_result.fetchall()
+
+print(f"All chats for {USERNAME}:")
+for c in all_chats:
+    print(c)
