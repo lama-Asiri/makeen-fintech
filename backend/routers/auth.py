@@ -1,8 +1,7 @@
-from fastapi import APIRouter, HTTPException, Header, UploadFile, File
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
 import os
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
-from PythonClasses import File as FileObj
 
 router = APIRouter(prefix="/auth")
 
@@ -133,7 +132,7 @@ async def reset_password(body: ResetPasswordRequest):
 async def upload_file(
     file: UploadFile = File(...),
     authorization: str = Header(None),
-    chat_id: int = None  # MUST DO CHAT THEN RETURN TO THIS LATER
+    chat_id: int = Form(...)
 ):
     # 1. Get user ID from auth token
     user_id = _get_user_id(authorization)
@@ -178,6 +177,32 @@ async def upload_file(
 
     return {
         "message": "Uploaded",
+    }
+
+@router.post("/addChat")
+async def add_chat(
+    authorization: str = Header(None),
+    Title: str = "New Chat"  # optional name from frontend
+):
+    # 1. Get user ID
+    user_id = _get_user_id(authorization)
+
+    # 2. Insert new chat into DB
+    try:
+        result = supabase.table("Chat").insert({
+            "USER_ID": user_id,
+            "Title": Title
+        }).execute()
+
+        chat = result.data[0]  # inserted row
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat creation failed: {str(e)}")
+
+    # 3. Return chat info
+    return {
+        "message": "Chat created",
+        "CHAT_ID": chat["CHAT_ID"],
+        "Title": chat["Title"]
     }
 
     

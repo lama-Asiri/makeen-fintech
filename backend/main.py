@@ -1,10 +1,8 @@
 from database.connection import engine
 from sqlalchemy import text
-from PythonClasses.Account import Account
 import os
 
 USERNAME = "testUser"
-CSV_PATH = "uploads/TestFile.csv"
 
 # check user
 with engine.connect() as conn:
@@ -20,20 +18,40 @@ if not user:
 
 print("User exists:", user)
 
-# check file
-if not os.path.exists(CSV_PATH):
-    print("CSV file not found")
-    exit()
+# -----------------------------
+# TEST: add chat
+# -----------------------------
+with engine.connect() as conn:
+    # 1. insert new chat
+    insert_result = conn.execute(
+        text("""
+            INSERT INTO "Chat" ("USER_ID", "Title")
+            VALUES (:user_id, :Title)
+            RETURNING "CHAT_ID", "USER_ID", "Title"
+        """),
+        {
+            "user_id": user.USER_ID,   # make sure this matches your column name
+            "Title": "Test Chat from main"
+        }
+    )
 
-if not CSV_PATH.lower().endswith(".csv"):
-    print("Only CSV files allowed")
-    exit()
+    chat = insert_result.fetchone()
+    conn.commit()
 
-# upload
-account = Account("test@gmail.com", "Makeen@1234", USERNAME)
+print("Created chat:", chat)
 
-with open(CSV_PATH, "rb") as file:
-    success, result = account.uploadFile(file)
+# -----------------------------
+# VERIFY: fetch it back
+# -----------------------------
+with engine.connect() as conn:
+    verify_result = conn.execute(
+        text("""
+            SELECT * FROM "Chat"
+            WHERE "CHAT_ID" = :chat_id
+        """),
+        {"chat_id": chat.CHAT_ID}
+    )
 
-print("Success:", success)
-print("Result:", result)
+    fetched_chat = verify_result.fetchone()
+
+print("Fetched from DB:", fetched_chat)
