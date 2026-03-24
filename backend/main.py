@@ -1,6 +1,8 @@
 from database.connection import engine
 from sqlalchemy import text
 import os
+from fastapi import UploadFile
+from routers.auth import upload_file  # adjust import path
 
 USERNAME = "testUser"
 
@@ -55,3 +57,4 @@ with engine.connect() as conn:
     fetched_chat = verify_result.fetchone()
 
 print("Fetched from DB:", fetched_chat)
+
