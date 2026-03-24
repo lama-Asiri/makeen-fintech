@@ -182,23 +182,37 @@ async def upload_file(
 @router.post("/addChat")
 async def add_chat(
     authorization: str = Header(None),
-    Title: str = "New Chat"  # optional name from frontend
+    Title: str = "New Chat"
 ):
     # 1. Get user ID
     user_id = _get_user_id(authorization)
 
-    # 2. Insert new chat into DB
+    # 2. Count existing chats
+    try:
+        count_result = supabase.table("Chat") \
+            .select("CHAT_ID", count="exact") \
+            .eq("USER_ID", user_id) \
+            .execute()
+        chat_count = count_result.count or 0
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to count chats: {str(e)}")
+
+    # 3. Limit to 3 chats
+    if chat_count >= 3:
+        raise HTTPException(status_code=400, detail="You cannot have more than 3 chats")
+
+    # 4. Insert new chat
     try:
         result = supabase.table("Chat").insert({
             "USER_ID": user_id,
             "Title": Title
         }).execute()
 
-        chat = result.data[0]  # inserted row
+        chat = result.data[0]
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat creation failed: {str(e)}")
 
-    # 3. Return chat info
+    # 5. Return chat info
     return {
         "message": "Chat created",
         "CHAT_ID": chat["CHAT_ID"],
