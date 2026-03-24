@@ -176,10 +176,8 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"DB insert failed: {str(e)}")
 
-    # 7. Create Python File object (optional)
-    file_obj = FileObj(name=filename, fileType=file_type, storage_path=path)
-
     return {
         "message": "Uploaded",
-        "file": str(file_obj)
     }
+
+    
