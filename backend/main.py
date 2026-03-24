@@ -21,46 +21,9 @@ if not user:
 print("User exists:", user)
 
 # -----------------------------
-# TEST: add chat
-# -----------------------------
-with engine.connect() as conn:
-    # 1. insert new chat
-    insert_result = conn.execute(
-        text("""
-            INSERT INTO "Chat" ("USER_ID", "Title")
-            VALUES (:user_id, :Title)
-            RETURNING "CHAT_ID", "USER_ID", "Title"
-        """),
-        {
-            "user_id": user.USER_ID,   # make sure this matches your column name
-            "Title": "Test Chat from main3"
-        }
-    )
-
-    chat = insert_result.fetchone()
-    conn.commit()
-
-print("Created chat:", chat)
-
-# -----------------------------
-# VERIFY: fetch it back
-# -----------------------------
-with engine.connect() as conn:
-    verify_result = conn.execute(
-        text("""
-            SELECT * FROM "Chat"
-            WHERE "CHAT_ID" = :chat_id
-        """),
-        {"chat_id": chat.CHAT_ID}
-    )
-
-    fetched_chat = verify_result.fetchone()
-
-print("Fetched from DB:", fetched_chat)
-
-# -----------------------------
 # TEST: view all chats for this user
 # -----------------------------
+
 with engine.connect() as conn:
     history_result = conn.execute(
         text("""
@@ -76,3 +39,28 @@ with engine.connect() as conn:
 print(f"All chats for {USERNAME}:")
 for c in all_chats:
     print(c)
+
+# -----------------------------
+# TEST: delete a chat
+# -----------------------------
+
+chat_id_to_delete = 3
+
+with engine.connect() as conn:
+    delete_result = conn.execute(
+        text("""
+            DELETE FROM "Chat"
+            WHERE "CHAT_ID" = :chat_id
+            AND "USER_ID" = :user_id
+            RETURNING "CHAT_ID", "Title"
+        """),
+        {"chat_id": chat_id_to_delete, "user_id": user.USER_ID}
+    )
+    deleted_chat = delete_result.fetchone()  # fetch **once**
+    conn.commit()
+
+# Use the result immediately, don’t call fetchone again
+if deleted_chat is not None:
+    print(f"Deleted chat: {deleted_chat}")
+else:
+    print("No chat was deleted (maybe it didn't exist or didn't belong to the user).")

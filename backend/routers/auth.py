@@ -241,4 +241,72 @@ async def view_history(authorization: str = Header(None)):
         "chats": chats
     }
 
+@router.delete("/deleteChat")
+async def delete_chat(chat_id: int, authorization: str = Header(None)):
+    # 1. Get user ID
+    user_id = _get_user_id(authorization)
+
+    # 2. Verify the chat exists for this user
+    try:
+        check = supabase.table("Chat") \
+            .select("CHAT_ID", "Title") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(
+                status_code=404,
+                detail="No chat was deleted (maybe it didn't exist or didn't belong to the user)"
+            )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error verifying chat: {str(e)}")
+
+    # 3. Delete the chat
+    try:
+        result = supabase.table("Chat") \
+            .delete() \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to delete chat: {str(e)}")
+
+    return {
+        "message": "Chat deleted successfully",
+        "CHAT_ID": chat_id,
+        "Title": check.data["Title"]
+    }
+
+@router.delete("/deleteAllChats")
+async def delete_all_chats(authorization: str = Header(None)):
+    # 1. Get user ID
+    user_id = _get_user_id(authorization)
+
+    # 2. Fetch all chats for the user (to return info if needed)
+    try:
+        chats_result = supabase.table("Chat") \
+            .select("CHAT_ID", "Title") \
+            .eq("USER_ID", user_id) \
+            .execute()
+        user_chats = chats_result.data or []
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch user chats: {str(e)}")
+
+    if not user_chats:
+        raise HTTPException(status_code=404, detail="No chats found to delete")
+
+    # 3. Delete all chats
+    try:
+        supabase.table("Chat") \
+            .delete() \
+            .eq("USER_ID", user_id) \
+            .execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to delete chats: {str(e)}")
+
+    return {
+        "message": "All chats deleted successfully",
+        "deleted_chats": user_chats  # optional, info about what was deleted
+    }
     
