@@ -18,9 +18,10 @@
         Recommended: OpenAI GPT-4o-mini — cheapest, fastest, best documented for grad project budget
         Owner: Reem
 
-  [ ] C. Decide how target column is selected — auto (last column) vs user picks from dropdown after upload
-        Recommended: user picks from dropdown — auto-detect breaks on real messy datasets
+  [x] C. Decide how target column is selected — auto (last column) vs user picks from dropdown after upload
+        Decision: user picks from dropdown — auto-detect breaks on real messy datasets
         Owner: Rahaf (backend logic) + Lama (dropdown UI)
+        Note: build AFTER rename chat + load file on refresh are done (file parsing needed first)
 
   [ ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
         Recommended: on-demand button ("Show LIME explanation") — keeps response time under 10s instead of 30s+
@@ -43,10 +44,13 @@
   Owner: Reem (backend) + Lama (frontend) | Priority: HIGH
   Note: independent — can run in parallel with pipeline work
 
-  [ ] 3. Chat history — currently localStorage only, save/load from chat table per user (max 3 chats)
-  [ ] 4. Feedback modal — onSubmit does nothing, save to rating table (needs POST /feedback endpoint)
+  [x] 3. Chat history — save/load from DB (max 3 chats), correct titles (Chat 1/2/3), persist on refresh
+  [x] 3a. Messages persist on refresh — save to Query/Response tables, load via getMessages on mount
+  [x] 3b. File upload to Supabase Storage — actual bytes sent to bucket, File table row created
+  [ ] 4. Feedback modal — onSubmit does nothing, save to Rating table (needs POST /feedback endpoint)
   [ ] 5. Report bug modal — console.log only, save reports to DB or send via email
-  [ ] 6. File uploads — save actual file to Supabase Storage, not just metadata in chat object
+  [ ] 6. Load file attachment on refresh — fileAttachment lost after refresh, reload from File table on mount
+        Note: needed before column selection UI can work
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -55,9 +59,9 @@
   Note: independent — can run in parallel with pipeline work
 
   [ ] 7.  Rename chat — allow user to rename a conversation from the sidebar
-  [ ] 8.  Delete single chat — delete one conversation and all its messages from DB and sidebar
-  [ ] 9.  Delete all chats — "Clear all conversations" button that wipes every chat for the user from DB
-  [ ] 10. Clear local cache — purge localStorage/sessionStorage chat data (on logout or dev reset)
+  [x] 8.  Delete single chat — delete one conversation and all its messages from DB and sidebar (with 8s undo)
+  [x] 9.  Delete all chats — "Clear all conversations" button that wipes every chat for the user from DB
+  [x] 10. 3-chat limit — New Chat button disabled when limit reached, toast shown on attempt
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  CRITICAL PATH   #13 → #16 → #17 → #15 → #19
@@ -65,9 +69,10 @@
   Owner: Rahaf (backend) + Lama (frontend) | Priority: HIGH
   Note: #11–12 are independent — #13 is the critical path start
 
-  [ ] 11. Accept Excel/CSV uploads — validate file type (XLSX, CSV only), show error for unsupported formats   | Rahaf + Lama
-  [ ] 12. File size validation — enforce max 10 MB limit before upload                                         | Rahaf
+  [x] 11. Accept Excel/CSV uploads — validate file type (XLSX, CSV only), show error for unsupported formats   | Rahaf + Lama
+  [x] 12. File size validation — enforce max 10 MB limit before upload                                         | Rahaf
   [ ] 13. Parse uploaded file server-side — read rows/columns into structured format for AI pipeline           | Rahaf        ← CRITICAL PATH START
+  [ ] 13a. Column selection UI — after file is parsed, show dropdown for user to pick target column            | Lama         [needs #13, needs #6]
   [ ] 14. Show file processing status — loading indicator while file is being parsed/uploaded                  | Rahaf + Lama
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -117,5 +122,13 @@
   [x] Sign up stores user in public.user via DB trigger
   [x] Login blocks unverified users
   [x] Email confirmation required before sign in
+  [x] Chat history — viewHistory/addChat/deleteChat/deleteAllChats/saveMessage/getMessages connected to DB
+  [x] Chat titles save correctly (Chat 1/2/3) — fixed Title sent as JSON body not query param
+  [x] backendId assigned to pendingNewChat so saveMessageAPI works after file upload
+  [x] Messages persist on refresh — saved to Query/Response tables, loaded via getMessagesAPI
+  [x] File uploaded to Supabase Storage (user-files bucket) and File table row created
+  [x] 3-chat limit — enforced in backend (400 error) and frontend (disabled button + toast)
+  [x] Delete single chat with 8-second undo window
+  [x] Delete all chats — clears DB and sidebar, no auto-recreate
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
