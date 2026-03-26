@@ -16,6 +16,7 @@ CREATE TABLE public.File (
   path text NOT NULL,
   uploaded_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
   CHAT_ID integer NOT NULL UNIQUE,
+  target_column text,
   CONSTRAINT File_pkey PRIMARY KEY (FILE_ID),
   CONSTRAINT fk_file_chat FOREIGN KEY (CHAT_ID) REFERENCES public.Chat(CHAT_ID)
 );

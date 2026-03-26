@@ -23,7 +23,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, updateFileColumnAPI } from '@/lib/chatApi';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -391,9 +391,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             messages: local?.messages ?? [],
             createdAt: new Date(bc.Created_at),
             lastUsedAt: local?.lastUsedAt ?? new Date(bc.Created_at),
-            // Restore file chip from localStorage if available, otherwise fall back to DB File join.
-            // The DB join is the source of truth after logout (localStorage is cleared on logout).
+            // Restore file chip and target column from localStorage if available,
+            // otherwise fall back to DB File join (source of truth after logout).
             fileAttachment: local?.fileAttachment ?? (bc.File ? { name: bc.File.name, type: bc.File.filetype as 'csv' | 'xlsx' } : null),
+            targetColumn: local?.targetColumn ?? bc.File?.target_column ?? undefined,
             isPersisted: true,
           };
         });
@@ -750,12 +751,18 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   };
 
   // Called when user confirms their target column selection in step 2 of the upload modal.
-  // Saves the column to the active chat so the AI pipeline can use it.
+  // Saves the column locally and persists it to the DB so it survives logout/login.
   const handleConfirmColumn = () => {
+    const chat = chats.find((c) => c.id === activeChatId);
     if (selectedColumn && activeChatId) {
       setChats((prev) =>
         prev.map((c) => (c.id === activeChatId ? { ...c, targetColumn: selectedColumn } : c))
       );
+      // Persist to DB so it's restored after logout — File table has a target_column column
+      if (chat?.backendId !== undefined && session?.access_token) {
+        updateFileColumnAPI(session.access_token, chat.backendId, selectedColumn)
+          .catch((err) => console.error('[updateFileColumn] Failed to save to backend:', err));
+      }
     }
     setUploadStep('file');
     setAvailableColumns([]);
@@ -2163,26 +2170,45 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         {/* Chat Interface (shown when file is uploaded) */}
         {!showUploadModal && activeChat?.fileAttachment && (
           <div className="h-full flex flex-col p-[16px] md:p-[40px]">
-            {/* File Chip */}
+            {/* File bar — max width capped, right-aligned, shrinks on small screens */}
             <div className="mb-[24px] flex justify-end">
-              <button 
+            <div className="w-full max-w-[480px] bg-[#333] border border-[#555] rounded-[8px] px-[16px] py-[12px] flex items-center gap-[12px] shadow-lg">
+              {/* File icon + name — clicking opens file preview */}
+              <button
                 onClick={() => setShowFilePreview(true)}
-                className="bg-[#333] border border-[#555] rounded-[8px] px-[16px] py-[12px] flex gap-[12px] items-center shadow-lg hover:border-[#7760bd] hover:bg-[#3a3a3a] transition-all cursor-pointer"
+                className="flex gap-[12px] items-center flex-1 min-w-0 hover:opacity-80 transition-opacity"
               >
-                <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24">
+                <svg className="w-[24px] h-[24px] flex-shrink-0" fill="none" viewBox="0 0 24 24">
                   <path d={svgPaths.p2c7f0600} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   <path d={svgPaths.p18d48b80} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   <path d="M8 11H16V18H8V11Z" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   <path d="M8 15H16" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                 </svg>
-                <div className="flex flex-col">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">{activeChat.fileAttachment.name}</p>
+                <div className="flex flex-col min-w-0 text-left">
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white truncate">{activeChat.fileAttachment.name}</p>
                   <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
                 </div>
               </button>
-            </div>
 
+              {/* Target column — shown on right with chevron hinting it's changeable (TODO #13b) */}
+              {activeChat.targetColumn && (
+                <>
+                  <div className="w-[1px] h-[32px] bg-[#555] flex-shrink-0" />
+                  <div className="flex flex-col items-end flex-shrink-0">
+                    <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] uppercase tracking-wide">Target Column</p>
+                    <div className="flex items-center gap-[4px]">
+                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">{activeChat.targetColumn}</p>
+                      {/* Chevron indicates this will be changeable once pipeline is wired (TODO #13b) */}
+                      <svg className="w-[12px] h-[12px] text-[#9e9e9e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+            </div>
 
 
             {/* Chat Messages Area */}

@@ -268,6 +268,39 @@ async def view_history(authorization: str = Header(None)):
     }
 
 
+class UpdateFileColumnRequest(BaseModel):
+    chat_id: int       # used to find the File row (CHAT_ID is unique in File table)
+    target_column: str # the column the user picked for AI analysis
+
+
+@router.patch("/updateFileColumn")
+async def update_file_column(body: UpdateFileColumnRequest, authorization: str = Header(None)):
+    # Verify token and confirm the chat belongs to this user before updating
+    user_id = _get_user_id(authorization)
+    try:
+        check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", body.chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Chat not found or does not belong to this user")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Ownership check failed: {str(e)}")
+
+    # Save the selected target column to the File row for this chat
+    try:
+        supabase.table("File") \
+            .update({"target_column": body.target_column}) \
+            .eq("CHAT_ID", body.chat_id) \
+            .execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to save target column: {str(e)}")
+
+    return {"message": "Target column saved", "target_column": body.target_column}
+
+
 class RenameChatRequest(BaseModel):
     chat_id: int
     new_title: str

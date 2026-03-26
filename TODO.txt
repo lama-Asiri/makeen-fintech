@@ -131,6 +131,8 @@
   [x] Delete all chats
   [x] Rename chat — PATCH /renameChat backend + frontend wired
   [x] Column selection — upload modal step 2: spinner → dropdown to pick target column, stored in chat
+  [x] Target column saved to DB — File.target_column column, PATCH /updateFileColumn endpoint, restored on login
   [x] File chip restored after logout/login — viewHistory joins File table, no longer relies on localStorage
+  [x] Target column indicator in file bar — shows active column with chevron, right-aligned, dynamically sized
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -18,7 +18,7 @@ export interface BackendChat {
   Title: string;
   USER_ID: string;
   Created_at: string;
-  File: { name: string; filetype: string } | null; // joined from File table — null if no file uploaded yet
+  File: { name: string; filetype: string; target_column: string | null } | null; // joined from File table
 }
 
 // ─── API Functions ────────────────────────────────────────────────────────────
@@ -92,6 +92,18 @@ export async function getMessagesAPI(token: string, chatId: number): Promise<Bac
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
   return data.messages as BackendMessage[];
+}
+
+// Save the user's chosen target column to the File table in the DB.
+// Called after the user confirms their column selection in the upload modal step 2.
+// Needed so the column is restored after logout (localStorage is cleared on logout).
+export async function updateFileColumnAPI(token: string, chatId: number, targetColumn: string): Promise<void> {
+  const res = await fetch(`${BASE}/auth/updateFileColumn`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ chat_id: chatId, target_column: targetColumn }),
+  });
+  if (!res.ok) throw new Error(await res.text());
 }
 
 // Rename a chat in the DB — called when the user confirms a rename in the sidebar.
