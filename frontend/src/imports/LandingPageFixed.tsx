@@ -1,4 +1,4 @@
-import { motion, useInView, useScroll, useTransform } from "motion/react";
+import { motion, AnimatePresence, useInView, useScroll, useTransform } from "motion/react";
 import { useRef, useState, useEffect } from "react";
 import Greadient from "./Greadient";
 import svgPaths from "./svg-n85plffo05";
@@ -39,6 +39,16 @@ function Container({ children, className = "" }: { children: React.ReactNode; cl
 
 // HEADER / NAVBAR
 function Header() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navLinks = [
+    { label: 'Features',       href: '#discover' },
+    { label: 'How It Works',   href: '#how-it-works' },
+    { label: 'Meet the Team',  href: '#team' },
+    { label: 'Our Mission',    href: '#mission' },
+    { label: 'FAQ',            href: '#faq' },
+  ];
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#141414]/90 backdrop-blur-sm border-b border-[#ffffff10]">
       <Container>
@@ -51,21 +61,61 @@ function Header() {
             <span className="font-['Roboto'] font-semibold text-xl text-white">Makeen</span>
           </div>
 
-          {/* Navigation */}
+          {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-8">
-            <a href="#discover" className="text-white hover:text-[#7760bd] transition-colors cursor-pointer">Features</a>
-            <a href="#mission" className="text-white hover:text-[#7760bd] transition-colors cursor-pointer">Our Mission</a>
-            <a href="#contact" className="text-white hover:text-[#7760bd] transition-colors cursor-pointer">Contact Us</a>
-            <a href="#faq" className="text-white hover:text-[#7760bd] transition-colors cursor-pointer">FAQ</a>
+            {navLinks.map((l) => (
+              <a key={l.href} href={l.href} className="text-white hover:text-[#7760bd] transition-colors cursor-pointer">{l.label}</a>
+            ))}
           </div>
 
-          {/* CTA */}
+          {/* Desktop CTA + Mobile Hamburger */}
           <div className="flex items-center gap-3">
             <button className="hidden sm:block px-4 py-2 text-white hover:text-[#7760bd] transition-colors">Login</button>
-            <button className="px-6 py-2.5 bg-[#7760bd] text-white rounded-lg hover:bg-[#8a75d4] transition-colors font-semibold">Sign Up</button>
+            <button className="hidden sm:block px-6 py-2.5 bg-[#7760bd] text-white rounded-lg hover:bg-[#8a75d4] transition-colors font-semibold">Sign Up</button>
+            {/* Hamburger — mobile only */}
+            <button
+              className="lg:hidden p-2 text-white hover:text-[#7760bd] transition-colors"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
           </div>
         </nav>
       </Container>
+
+      {/* Mobile Menu Dropdown */}
+      <motion.div
+        initial={false}
+        animate={mobileOpen ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+        className="lg:hidden overflow-hidden bg-[#141414]/95 border-t border-[#ffffff10]"
+      >
+        <div className="flex flex-col px-6 py-4 gap-1">
+          {navLinks.map((l) => (
+            <a
+              key={l.href}
+              href={l.href}
+              onClick={() => setMobileOpen(false)}
+              className="text-white hover:text-[#7760bd] py-3 text-[16px] font-['Roboto'] border-b border-[#ffffff08] last:border-0 transition-colors"
+            >
+              {l.label}
+            </a>
+          ))}
+          <div className="flex gap-3 pt-4">
+            <button className="flex-1 py-2.5 text-white border border-[#ffffff30] rounded-lg hover:border-[#7760bd] transition-colors text-[15px] font-semibold">Login</button>
+            <button className="flex-1 py-2.5 bg-[#7760bd] text-white rounded-lg hover:bg-[#8a75d4] transition-colors text-[15px] font-semibold">Sign Up</button>
+          </div>
+        </div>
+      </motion.div>
     </header>
   );
 }
@@ -100,17 +150,9 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.2, ease: MOTION_EASE }}
             className="font-['Inter'] font-semibold text-[clamp(3.5rem,8vw,6.5rem)] leading-[1.05] text-white mb-4"
           >
-            Think Beyond
+            Your Data,
+            <br /><span className="italic text-[#f8ec93]">Explained.</span>
           </motion.h1>
-
-          <motion.p
-            initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3, ease: MOTION_EASE }}
-            className="font-['Inter'] font-semibold text-[clamp(2.5rem,5vw,4.5rem)] leading-[1.1] text-[#f8ec93] mb-6"
-          >
-            Discover Makeen
-          </motion.p>
 
           <motion.p
             initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
@@ -118,7 +160,7 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4, ease: MOTION_EASE }}
             className="font-['Roboto'] text-[clamp(1.1rem,1.5vw,1.35rem)] leading-relaxed text-white/90 mb-10 max-w-[650px]"
           >
-            Experience AI like never before. Generate predictions, ask questions in plain language, and gain clear, actionable insights, all through a seamless, intuitive interface. Designed for both beginners and professionals, Makeen makes complex AI transparent and understandable.
+            Upload your data. Ask a question in plain language. Get a prediction — and a clear explanation of exactly why the AI answered that way. No technical background needed.
           </motion.p>
 
           <motion.button
@@ -178,6 +220,7 @@ function FeaturesSection() {
 
   return (
     <section id="discover" ref={ref} className="relative py-24 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
       <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         <motion.h2
           initial={prefersReducedMotion ? {} : { opacity: 0, y: 50, scale: 0.95 }}
@@ -192,7 +235,7 @@ function FeaturesSection() {
             backgroundClip: "text"
           }}
         >
-          Discover Makeen
+          What You Can Do
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-[0.85fr_1.15fr] gap-4 md:gap-5 lg:gap-7">
@@ -281,7 +324,239 @@ function FeaturesSection() {
   );
 }
 
+// HOW IT WORKS SECTION
+function HowItWorksSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, margin: "-100px" });
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const steps = [
+    {
+      number: "01",
+      title: "Upload your file",
+      description: "Drop in a CSV or Excel file — your sales data, survey results, medical records, anything tabular. Makeen reads it instantly.",
+      icon: (
+        <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+        </svg>
+      ),
+    },
+    {
+      number: "02",
+      title: "Ask your question",
+      description: "Type whatever you want to know in plain English. \"Which product will sell out first?\" \"What drives customer churn?\" No SQL, no code.",
+      icon: (
+        <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-3.155-.502l-4.345 2.17v-3.233C3.612 15.55 3 13.86 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+        </svg>
+      ),
+    },
+    {
+      number: "03",
+      title: "Get an explanation",
+      description: "Makeen trains a model on your data, returns a prediction, and shows you exactly which columns drove that answer — with a chart you can actually read.",
+      icon: (
+        <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
+        </svg>
+      ),
+    },
+  ];
+
+  return (
+    <section id="how-it-works" ref={ref} className="relative py-24 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
+        {/* Heading */}
+        <motion.div
+          className="text-center mb-[64px]"
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 50, scale: 0.95 }}
+          animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+          transition={{ duration: SECTION_DURATION, ease: SECTION_EASE }}
+        >
+          <p className="text-[#7760bd] text-[13px] font-['Inter'] font-semibold uppercase tracking-widest mb-[12px]">Simple by design</p>
+          <h2
+            className="font-['Roboto'] font-bold leading-tight mb-[16px]"
+            style={{
+              fontSize: "clamp(36px, 5vw, 56px)",
+              backgroundImage: "linear-gradient(90.21deg, #999798 0%, #e6e4e5 29.82%, #fffcfe 65.38%, #999798 99.99%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            How it works
+          </h2>
+          <p className="font-['Inter'] text-[18px] text-[#9e9e9e] max-w-[520px] mx-auto">
+            Three steps from raw data to a result you can trust and explain.
+          </p>
+        </motion.div>
+
+        {/* Steps */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[2px] relative">
+          {/* Connector line (desktop only) */}
+          <div className="hidden lg:block absolute top-[52px] left-[calc(16.67%+16px)] right-[calc(16.67%+16px)] h-[1px] bg-gradient-to-r from-[#7760bd]/40 via-[#7760bd] to-[#7760bd]/40 z-0" />
+
+          {steps.map((step, i) => (
+            <motion.div
+              key={step.number}
+              className="relative z-10 flex flex-col items-center text-center px-[32px] py-[40px]"
+              initial={prefersReducedMotion ? {} : { opacity: 0, y: 60, scale: 0.92 }}
+              animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+              transition={{ duration: SECTION_DURATION, delay: 0.3 + (i * SECTION_STAGGER), ease: SECTION_EASE }}
+            >
+              {/* Number + icon circle */}
+              <div className="relative mb-[24px]">
+                <div className="w-[80px] h-[80px] rounded-full bg-[#1a1a1a] border-2 border-[#7760bd]/60 flex items-center justify-center text-[#7760bd] shadow-[0_0_30px_rgba(119,96,189,0.25)]">
+                  {step.icon}
+                </div>
+                <span className="absolute -top-[8px] -right-[8px] w-[24px] h-[24px] rounded-full bg-[#7760bd] flex items-center justify-center font-['Inter'] font-bold text-[10px] text-white">
+                  {i + 1}
+                </span>
+              </div>
+
+              <h3 className="font-['Roboto'] font-bold text-[20px] text-white mb-[12px]">{step.title}</h3>
+              <p className="font-['Inter'] text-[15px] text-[#9e9e9e] leading-[1.7]">{step.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // MISSION SECTION
+function XaiExplainerSection() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: false, margin: "-100px" });
+  const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const concepts = [
+    {
+      tag: "XAI",
+      title: "Explainable AI",
+      tagline: "AI that shows its work",
+      analogy: "Like a doctor who doesn't just say \"take this pill\" — they explain which symptoms led to the diagnosis, so you can ask questions and actually trust the answer.",
+      forYou: "Instead of a black-box result, Makeen tells you exactly which parts of your data drove the prediction — and why.",
+      icon: (
+        <svg className="w-[28px] h-[28px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      ),
+      color: "#7760bd",
+    },
+    {
+      tag: "SHAP",
+      title: "Feature Importance",
+      tagline: "Which factors matter most?",
+      analogy: "Imagine deciding whether to bring an umbrella. SHAP tells you: clouds count for 60% of the decision, humidity 30%, and season 10%. Each factor gets a score.",
+      forYou: "The bar chart in your results shows how much each column in your data pushed the prediction up or down — so you know where to focus.",
+      icon: (
+        <svg className="w-[28px] h-[28px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+        </svg>
+      ),
+      color: "#08B839",
+    },
+    {
+      tag: "LIME",
+      title: "Local Explanations",
+      tagline: "Why this specific answer?",
+      analogy: "SHAP explains the big picture. LIME zooms in on one specific prediction and explains it in the simplest possible terms — as if you're seeing your data for the first time.",
+      forYou: "Used as a second opinion alongside SHAP to confirm or challenge the result, giving you more confidence in what the AI found.",
+      icon: (
+        <svg className="w-[28px] h-[28px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      ),
+      color: "#e0a020",
+    },
+  ];
+
+  return (
+    <section id="understand" ref={ref} className="relative py-24 bg-[#0f0f0f]">
+      {/* Subtle top border */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
+
+      <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
+        {/* Heading */}
+        <motion.div
+          className="text-center mb-[60px]"
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 50, scale: 0.95 }}
+          animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+          transition={{ duration: SECTION_DURATION, ease: SECTION_EASE }}
+        >
+          <p className="text-[#7760bd] text-[13px] font-['Inter'] font-semibold uppercase tracking-widest mb-[12px]">Under the Hood</p>
+          <h2 className="font-['Roboto'] font-bold text-[36px] lg:text-[48px] text-white leading-tight mb-[16px]">
+            What is XAI, SHAP, and LIME?
+          </h2>
+          <p className="font-['Inter'] text-[18px] text-[#9e9e9e] max-w-[600px] mx-auto">
+            No technical background needed. Here's what these words actually mean — and why they matter for your data.
+          </p>
+        </motion.div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-[24px]">
+          {concepts.map((c, i) => (
+            <motion.div
+              key={c.tag}
+              className="relative bg-[#1a1a1a] border border-[#2a2a2a] rounded-[16px] p-[28px] flex flex-col gap-[20px] cursor-default"
+              initial={prefersReducedMotion ? {} : { opacity: 0, y: 60, scale: 0.92 }}
+              animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+              transition={{ duration: SECTION_DURATION, delay: 0.3 + (i * SECTION_STAGGER), ease: SECTION_EASE }}
+              whileHover={prefersReducedMotion ? {} : {
+                y: -16,
+                scale: 1.02,
+                boxShadow: "0 25px 50px rgba(0,0,0,0.4)",
+                transition: { duration: 0.4, ease: [0.2, 0.8, 0.2, 1] }
+              }}
+            >
+              {/* Tag + Icon */}
+              <div className="flex items-center justify-between">
+                <span
+                  className="text-[11px] font-['Inter'] font-bold uppercase tracking-widest px-[10px] py-[4px] rounded-full"
+                  style={{ color: c.color, backgroundColor: `${c.color}18`, border: `1px solid ${c.color}40` }}
+                >
+                  {c.tag}
+                </span>
+                <div style={{ color: c.color }}>{c.icon}</div>
+              </div>
+
+              {/* Title + Tagline */}
+              <div>
+                <h3 className="font-['Roboto'] font-bold text-[22px] text-white mb-[4px]">{c.title}</h3>
+                <p className="font-['Inter'] text-[13px] font-semibold" style={{ color: c.color }}>{c.tagline}</p>
+              </div>
+
+              {/* Analogy */}
+              <div className="bg-[#141414] rounded-[10px] px-[16px] py-[14px] border-l-[3px]" style={{ borderColor: c.color }}>
+                <p className="font-['Inter'] text-[13px] text-[#9e9e9e] leading-[1.6] italic">"{c.analogy}"</p>
+              </div>
+
+              {/* What it means for you */}
+              <div className="flex gap-[10px] items-start mt-auto">
+                <div className="w-[6px] h-[6px] rounded-full mt-[6px] flex-shrink-0" style={{ backgroundColor: c.color }} />
+                <p className="font-['Inter'] text-[14px] text-white leading-[1.6]">{c.forYou}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Bottom note */}
+        <motion.p
+          className="text-center font-['Inter'] text-[13px] text-[#555] mt-[40px]"
+          initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: SECTION_DURATION, delay: 0.3 + (3 * SECTION_STAGGER), ease: SECTION_EASE }}
+        >
+          You don't need to understand the math — Makeen handles it. This section just helps you read your results with confidence.
+        </motion.p>
+      </div>
+    </section>
+  );
+}
+
 function MissionSection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-50px" });
@@ -289,6 +564,7 @@ function MissionSection() {
 
   return (
     <section id="mission" ref={ref} className="relative py-24 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
       <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
           {/* Text Content - Left Column (55%) */}
@@ -327,7 +603,7 @@ function MissionSection() {
               transition={{ duration: 1, delay: 0.6, ease: SECTION_EASE }}
               className="font-['Roboto'] text-[16px] leading-[1.7] text-white/90 max-w-[520px]"
             >
-              Makeen shows you how models think, helping you take control of decisions with confidence. Experience AI like never before with clear, actionable insights that make complex predictions transparent and understandable for everyone.
+              AI predictions are only useful if you can understand and justify them. We built Makeen because students, researchers, and decision-makers shouldn't need a data science degree to trust — or challenge — what a model tells them. Every result comes with a plain-language explanation of why.
             </motion.p>
           </motion.div>
 
@@ -377,7 +653,8 @@ function TeamSection() {
   ];
 
   return (
-    <section id="contact" ref={ref} className="relative py-24 bg-[#141414]">
+    <section id="team" ref={ref} className="relative py-24 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
       <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         <motion.h2
           initial={prefersReducedMotion ? {} : { opacity: 0, y: 50, scale: 0.95 }}
@@ -391,7 +668,7 @@ function TeamSection() {
             backgroundClip: "text"
           }}
         >
-          Contact Us
+          Meet the Team
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-[18px] xl:gap-[22px]">
@@ -412,11 +689,10 @@ function TeamSection() {
                 boxShadow: "0 25px 50px rgba(119, 96, 189, 0.3)",
                 transition: { duration: 0.5, ease: [0.2, 0.8, 0.2, 1] }
               }}
-              className="bg-[#f5f5f5] overflow-hidden p-6 flex flex-col items-center text-center group"
+              className="bg-[#1a1a1a] border border-[#2a2a2a] overflow-hidden p-6 flex flex-col items-center text-center group"
               style={{
                 minHeight: "240px",
                 borderRadius: "24px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                 transition: "transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s ease"
               }}
             >
@@ -444,7 +720,7 @@ function TeamSection() {
                   delay: 0.5 + (index * SECTION_STAGGER), 
                   ease: SECTION_EASE 
                 }}
-                className="font-['Roboto'] font-bold text-xl text-[#1a1a1a] mb-1 leading-tight"
+                className="font-['Roboto'] font-bold text-xl text-white mb-1 leading-tight"
               >
                 {member.name}
               </motion.h3>
@@ -468,7 +744,7 @@ function TeamSection() {
                   delay: 0.7 + (index * SECTION_STAGGER), 
                   ease: SECTION_EASE 
                 }}
-                className="font-['Roboto'] text-[15px] text-[#444] leading-relaxed mb-6 flex-grow"
+                className="font-['Roboto'] text-[15px] text-[#9e9e9e] leading-relaxed mb-6 flex-grow"
               >
                 {member.description}
               </motion.p>
@@ -513,12 +789,13 @@ function FAQSection({ onOpenHelpCenter }: { onOpenHelpCenter: () => void }) {
     { q: "Do I need technical skills to use Makeen?", a: "No! Makeen is designed for everyone. Simply upload your data and ask questions in plain language—no coding required." },
     { q: "What kind of data can I upload?", a: "Makeen supports CSV and XLSX files. You can upload datasets for predictions and analysis." },
     { q: "Is my data secure?", a: "Yes. We use industry-standard encryption and security measures to protect your data. Your information is never shared with third parties." },
-    { q: "Is there a free plan?", a: "Yes! Makeen offers a free tier to get you started. Check our pricing page for more details on plans and features." },
+    { q: "Is there a free plan?", a: "Yes — Makeen is completely free to use during our beta. Sign up and start exploring your data at no cost." },
     { q: "How accurate are the AI predictions?", a: "Prediction accuracy depends on your data quality and the model used. Makeen provides confidence scores and explanations so you can evaluate each prediction's reliability." }
   ];
 
   return (
     <section id="faq" ref={ref} className="relative py-24 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
       <div className="w-full max-w-[900px] mx-auto px-6 lg:px-12">
         <motion.h2
           initial={prefersReducedMotion ? {} : { opacity: 0, y: 50, scale: 0.95 }}
@@ -612,13 +889,14 @@ function FAQSection({ onOpenHelpCenter }: { onOpenHelpCenter: () => void }) {
 }
 
 // READY TO TRY MAKEEN CTA - SINGLE SET ONLY (matches reference)
-function CTASection() {
+function CTASection({ onSignUp }: { onSignUp: () => void }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: false, margin: "-50px" });
   const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   return (
     <section ref={ref} className="relative py-20 bg-[#141414]">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#7760bd]/30 to-transparent" />
       <div className="w-full max-w-[1200px] mx-auto px-6 lg:px-12">
         <motion.div
           initial={prefersReducedMotion ? {} : { opacity: 0, y: 14 }}
@@ -649,8 +927,8 @@ function CTASection() {
               Ready To Try Makeen?
             </h2>
             <div className="flex flex-wrap gap-[18px]">
-              <a
-                href="#discover"
+              <button
+                onClick={onSignUp}
                 className="bg-[#7760bd] text-white font-['Roboto'] font-medium text-lg hover:bg-[#8a75d4] shadow-lg flex items-center gap-2 cursor-pointer"
                 style={{
                   height: '44px',
@@ -663,9 +941,9 @@ function CTASection() {
                 <svg width="16" height="14" viewBox="0 0 16 14" fill="none">
                   <path d="M15 7L1 7M15 7L9 1M15 7L9 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-              </a>
+              </button>
               <a
-                href="#discover"
+                href="#how-it-works"
                 className="bg-transparent text-white font-['Roboto'] font-medium text-lg border-2 border-white hover:bg-white hover:text-[#141414] flex items-center gap-2 cursor-pointer"
                 style={{
                   height: '44px',
@@ -702,26 +980,22 @@ function Footer({ onOpenTerms }: { onOpenTerms: () => void }) {
           </div>
 
           {/* Navigation Links */}
-          <div className="flex flex-wrap items-center justify-center gap-10 text-white/70 font-['Roboto'] font-medium">
+          <div className="flex flex-wrap items-center justify-center gap-8 text-white/70 font-['Roboto'] font-medium">
             <a href="#discover" className="hover:text-[#7760bd] transition-all hover:scale-105">Features</a>
+            <a href="#how-it-works" className="hover:text-[#7760bd] transition-all hover:scale-105">How It Works</a>
+            <a href="#understand" className="hover:text-[#7760bd] transition-all hover:scale-105">XAI Explained</a>
+            <a href="#team" className="hover:text-[#7760bd] transition-all hover:scale-105">Meet the Team</a>
             <a href="#mission" className="hover:text-[#7760bd] transition-all hover:scale-105">Our Mission</a>
-            <a href="#contact" className="hover:text-[#7760bd] transition-all hover:scale-105">Contact Us</a>
             <a href="#faq" className="hover:text-[#7760bd] transition-all hover:scale-105">FAQ</a>
           </div>
 
-          {/* Social Icons */}
+          {/* Email only */}
           <div className="flex items-center gap-4">
-            <motion.a 
-              whileHover={{ scale: 1.1, backgroundColor: "#0a66c2" }}
-              href="#" className="w-10 h-10 bg-[#222] border border-[#ffffff10] rounded-xl flex items-center justify-center transition-colors"
-            >
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="white">
-                <path d="M14 0H2C0.9 0 0 0.9 0 2V14C0 15.1 0.9 16 2 16H14C15.1 16 16 15.1 16 14V2C16 0.9 15.1 0 14 0ZM5 14H2V5H5V14ZM3.5 4C2.7 4 2 3.3 2 2.5C2 1.7 2.7 1 3.5 1C4.3 1 5 1.7 5 2.5C5 3.3 4.3 4 3.5 4ZM14 14H11V9.5C11 8.7 10.3 8 9.5 8C8.7 8 8 8.7 8 9.5V14H5V5H8V6.2C8.5 5.4 9.6 5 10.5 5C12.4 5 14 6.6 14 8.5V14Z"/>
-              </svg>
-            </motion.a>
-            <motion.a 
+            <motion.a
               whileHover={{ scale: 1.1, backgroundColor: "#7760bd" }}
-              href="mailto:contact@makeen.ai" className="w-10 h-10 bg-[#222] border border-[#ffffff10] rounded-xl flex items-center justify-center transition-colors"
+              href="mailto:makeen.chat@gmail.com"
+              title="makeen.chat@gmail.com"
+              className="w-10 h-10 bg-[#222] border border-[#ffffff10] rounded-xl flex items-center justify-center transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="2" y="4" width="20" height="16" rx="2"/>
@@ -743,9 +1017,21 @@ function Footer({ onOpenTerms }: { onOpenTerms: () => void }) {
 }
 
 // MAIN LANDING PAGE - ALL SECTIONS, NO DUPLICATIONS
-export default function LandingPage() {
+export default function LandingPage({ onSignUp }: { onSignUp?: () => void } = {}) {
   const [showHelpCenter, setShowHelpCenter] = useState(false);
   const [showTermsAndPolicies, setShowTermsAndPolicies] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const container = document.getElementById('landing-scroll');
+    const el: EventTarget = container ?? window;
+    const onScroll = () => {
+      const scrollY = container ? container.scrollTop : window.scrollY;
+      setShowBackToTop(scrollY > 500);
+    };
+    el.addEventListener('scroll', onScroll);
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   // Smooth scroll handler for navigation
   useEffect(() => {
@@ -800,12 +1086,37 @@ export default function LandingPage() {
         <Header />
         <HeroSection />
         <FeaturesSection />
-        <MissionSection />
+        <HowItWorksSection />
+        <XaiExplainerSection />
         <TeamSection />
+        <MissionSection />
         <FAQSection onOpenHelpCenter={() => setShowHelpCenter(true)} />
-        <CTASection />
+        <CTASection onSignUp={onSignUp ?? (() => {})} />
         <Footer onOpenTerms={() => setShowTermsAndPolicies(true)} />
       </div>
+
+      {/* Back to top */}
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => {
+              const el = document.getElementById('landing-scroll');
+              if (el) el.scrollTo({ top: 0, behavior: 'smooth' });
+              else window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="fixed bottom-[32px] right-[32px] z-50 w-[44px] h-[44px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer transition-colors"
+            aria-label="Back to top"
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+            </svg>
+          </motion.button>
+        )}
+      </AnimatePresence>
     </>
   );
 }

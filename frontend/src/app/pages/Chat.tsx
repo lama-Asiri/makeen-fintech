@@ -94,6 +94,11 @@ interface ChatPageProps {
   entryMode?: 'login' | 'signup' | null; // Indicates if user just logged in or signed up
 }
 
+interface XaiData {
+  prediction: string;
+  shapValues: Record<string, number>; // feature → SHAP value (positive = pushes toward prediction)
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -101,6 +106,7 @@ interface Message {
   timestamp: Date;
   feedback?: 'up' | 'down' | null;
   edited?: boolean;
+  xaiData?: XaiData; // populated by real pipeline; mock data used until #15 is wired
 }
 
 interface FileAttachment {
@@ -116,7 +122,8 @@ interface Chat {
   createdAt: Date;
   lastUsedAt: Date;
   fileAttachment: FileAttachment | null;
-  targetColumn?: string; // The column the user selected for AI analysis
+  targetColumn?: string;  // The column the user selected for AI analysis
+  columns?: string[];     // All column names from the uploaded file — used for mid-chat column switching
   shareId?: string;
   isPersisted?: boolean; // Track if chat should be saved to localStorage
   backendId?: number;   // CHAT_ID returned by the backend DB — used for delete/rename API calls
@@ -297,6 +304,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
   const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [processingStage, setProcessingStage] = useState(0);
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const [sendPulse, setSendPulse] = useState(false);
   const [feedbackModalMessageId, setFeedbackModalMessageId] = useState<string | null>(null);
@@ -334,6 +343,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const columnPickerRef = useRef<HTMLDivElement>(null);
 
   // Handle entry greeting mode (shown once per session)
   useEffect(() => {
@@ -474,6 +484,38 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       setShowUploadModal(true);
     }
   }, [activeChat, isProcessing, uploadStep]);
+
+  // Close column picker dropdown when clicking outside
+  useEffect(() => {
+    if (!showColumnPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (columnPickerRef.current && !columnPickerRef.current.contains(e.target as Node)) {
+        setShowColumnPicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showColumnPicker]);
+
+  // Cycle through pipeline stages while processing
+  useEffect(() => {
+    if (!isProcessing) {
+      setProcessingStage(0);
+      return;
+    }
+    // Stage durations (ms): advances every 2s for demo — swap to [5000,10000,10000] when real pipeline is wired
+    const delays = [2000, 2000, 2000];
+    let stage = 0;
+    const timers: NodeJS.Timeout[] = [];
+    delays.forEach((delay, i) => {
+      const accumulated = delays.slice(0, i + 1).reduce((a, b) => a + b, 0);
+      timers.push(setTimeout(() => {
+        stage = i + 1;
+        setProcessingStage(stage);
+      }, accumulated));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [isProcessing]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -730,6 +772,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       uploadFileAPI(session.access_token, selectedFile, backendId)
         .then((columns) => {
           setAvailableColumns(columns);
+          // Save columns on the chat so they're available for mid-chat column switching
+          setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, columns } : c));
           // Default selection: last column (most commonly the target in tabular datasets)
           setSelectedColumn(columns.length > 0 ? columns[columns.length - 1] : '');
           setUploadStep('columns');
@@ -747,6 +791,21 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       setSelectedFile(null);
       setShowUploadModal(false);
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
+    }
+  };
+
+  // Called when user picks a new target column from the mid-chat dropdown in the file bar.
+  // New messages will use the new column; old messages keep their original context (Option A).
+  const handleChangeColumn = (newColumn: string) => {
+    if (!activeChatId) return;
+    setShowColumnPicker(false);
+    setChats((prev) =>
+      prev.map((c) => (c.id === activeChatId ? { ...c, targetColumn: newColumn } : c))
+    );
+    const chat = chats.find((c) => c.id === activeChatId);
+    if (chat?.backendId !== undefined && session?.access_token) {
+      updateFileColumnAPI(session.access_token, chat.backendId, newColumn)
+        .catch((err) => console.error('[changeColumn] Failed to save to backend:', err));
     }
   };
 
@@ -962,12 +1021,24 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setIsProcessing(true);
     setShouldStopTyping(false); // Reset stop flag for new message
 
-    // Simulate AI processing and response
+    // Simulate AI processing and response (~8s to let all 4 stages cycle through)
     // TODO: replace this with the real LLM API call (TODO #15) once Reem builds it
     processingTimeoutRef.current = setTimeout(() => {
       const aiContent = activeChat?.fileAttachment
-        ? `Increase chocolate cake production because it's selling the fastest and running out the most often.\n\nBased on Column A (showing high demand), Column B (showing low production cost), it's recommended to increase chocolate cake production.`
+        ? `Based on your data, I recommend increasing chocolate cake production — it has the highest demand and lowest stock levels.\n\nThe model predicts this product will sell out within 3 days unless restocked.`
         : 'I can help you with that. Please upload a CSV or Excel file first to analyze the data.';
+
+      // Mock XAI data — replace with real pipeline response (TODO #15)
+      const mockXaiData: XaiData | undefined = activeChat?.fileAttachment ? {
+        prediction: 'High Demand',
+        shapValues: {
+          'Sales Velocity':  0.38,
+          'Stock Level':    -0.27,
+          'Price Point':     0.18,
+          'Seasonality':     0.11,
+          'Region':          0.06,
+        },
+      } : undefined;
 
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -975,6 +1046,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         content: aiContent,
         timestamp: new Date(),
         feedback: null,
+        xaiData: mockXaiData,
       };
       if (activeChat) {
         setLatestAiMessageId(aiMessage.id); // Track for typewriter effect
@@ -993,7 +1065,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       }
       setIsProcessing(false);
       processingTimeoutRef.current = null;
-    }, 2000);
+    }, 8000);
   };
 
   const stopGeneration = () => {
@@ -2191,19 +2263,62 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                 </div>
               </button>
 
-              {/* Target column — shown on right with chevron hinting it's changeable (TODO #13b) */}
+              {/* Target column — clickable to change mid-chat (#13b) */}
               {activeChat.targetColumn && (
                 <>
                   <div className="w-[1px] h-[32px] bg-[#555] flex-shrink-0" />
-                  <div className="flex flex-col items-end flex-shrink-0">
-                    <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] uppercase tracking-wide">Target Column</p>
-                    <div className="flex items-center gap-[4px]">
-                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">{activeChat.targetColumn}</p>
-                      {/* Chevron indicates this will be changeable once pipeline is wired (TODO #13b) */}
-                      <svg className="w-[12px] h-[12px] text-[#9e9e9e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
+                  <div className="relative flex-shrink-0" ref={columnPickerRef}>
+                    <button
+                      type="button"
+                      onClick={() => activeChat.columns?.length ? setShowColumnPicker((v) => !v) : undefined}
+                      className={`flex flex-col items-end ${activeChat.columns?.length ? 'cursor-pointer hover:opacity-80' : 'cursor-default'} transition-opacity`}
+                      title={activeChat.columns?.length ? 'Change target column' : undefined}
+                    >
+                      <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] uppercase tracking-wide">Target Column</p>
+                      <div className="flex items-center gap-[4px]">
+                        <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">{activeChat.targetColumn}</p>
+                        {activeChat.columns?.length && (
+                          <svg
+                            className={`w-[12px] h-[12px] text-[#9e9e9e] transition-transform duration-200 ${showColumnPicker ? 'rotate-180' : ''}`}
+                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Dropdown */}
+                    <AnimatePresence>
+                    {showColumnPicker && activeChat.columns && (
+                      <motion.div
+                        className="absolute right-0 top-[calc(100%+8px)] bg-[#2c2c2c] border border-[#444] rounded-[8px] shadow-xl z-50 min-w-[160px] max-h-[200px] overflow-y-auto"
+                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <p className="px-[12px] pt-[10px] pb-[6px] font-['Inter:Regular',sans-serif] text-[10px] text-[#666] uppercase tracking-wide">Select column</p>
+                        {activeChat.columns.map((col) => (
+                          <button
+                            type="button"
+                            key={col}
+                            onClick={() => handleChangeColumn(col)}
+                            className={`w-full text-left px-[12px] py-[8px] text-[13px] transition-colors hover:bg-[#3a3a3a] ${
+                              col === activeChat.targetColumn
+                                ? 'text-[#7760bd] font-semibold'
+                                : 'text-white font-normal'
+                            }`}
+                          >
+                            {col}
+                            {col === activeChat.targetColumn && (
+                              <span className="ml-[6px] text-[10px] text-[#7760bd]">✓</span>
+                            )}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                    </AnimatePresence>
                   </div>
                 </>
               )}
@@ -2346,8 +2461,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                           className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#fffcfe] whitespace-pre-line"
                           style={{ fontVariationSettings: "'wdth' 100" }}
                         >
-                          <TypewriterText 
-                            text={message.content} 
+                          <TypewriterText
+                            text={message.content}
                             messageId={message.id}
                             isLatest={message.id === latestAiMessageId}
                             onTypingStart={() => setIsTyping(true)}
@@ -2356,6 +2471,73 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                           />
                         </p>
                       </div>
+
+                      {/* XAI Results Card — shown when pipeline data is available */}
+                      {message.xaiData && (
+                        <motion.div
+                          className="mt-[16px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.3, ease: 'easeOut' }}
+                        >
+                          {/* Header */}
+                          <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between">
+                            <div className="flex items-center gap-[8px]">
+                              <svg className="w-[16px] h-[16px] text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                              </svg>
+                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">XAI Explanation</p>
+                            </div>
+                            {/* Prediction badge */}
+                            <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px]">
+                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[11px] text-[#7760bd]">
+                                {message.xaiData.prediction}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* SHAP Feature Importance Chart */}
+                          <div className="px-[20px] py-[14px]">
+                            <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (SHAP)</p>
+                            {(() => {
+                              const entries = Object.entries(message.xaiData.shapValues);
+                              const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)));
+                              return entries
+                                .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
+                                .map(([feature, value]) => {
+                                  const pct = (Math.abs(value) / maxAbs) * 100;
+                                  const positive = value >= 0;
+                                  return (
+                                    <div key={feature} className="flex items-center gap-[10px] mb-[8px] last:mb-0">
+                                      <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                      <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                                        <motion.div
+                                          className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${pct}%` }}
+                                          transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
+                                        />
+                                      </div>
+                                      <p className={`font-['Inter:Regular',sans-serif] text-[11px] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                                        {positive ? '+' : ''}{value.toFixed(2)}
+                                      </p>
+                                    </div>
+                                  );
+                                });
+                            })()}
+                          </div>
+
+                          {/* Footer */}
+                          <div className="px-[20px] py-[8px] border-t border-[#3a3a3a] flex items-center gap-[6px]">
+                            <svg className="w-[12px] h-[12px] text-[#555]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#555]">Powered by SHAP — purple bars push toward prediction, red bars push against</p>
+                          </div>
+                        </motion.div>
+                      )}
+
                       {/* Action Icons */}
                       <div className="flex gap-[12px] mt-[12px]">
                         {/* Copy Button */}
@@ -2488,29 +2670,74 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
               {/* Processing Indicator */}
               <AnimatePresence>
-              {isProcessing && (
-                <motion.div 
-                  className="mb-[24px]"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, ease: "easeOut" }}
-                >
-                  <div className="flex items-center gap-[12px]">
-                    <div className="flex gap-[4px]">
-                      <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                      <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                      <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              {isProcessing && (() => {
+                const stages = [
+                  { label: 'Parsing data',          icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                  { label: 'Training model',         icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2' },
+                  { label: 'Computing SHAP values',  icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
+                  { label: 'Generating explanation', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+                ];
+                return (
+                  <motion.div
+                    className="mb-[24px]"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                  >
+                    <div className="max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] px-[20px] py-[16px]">
+                      {/* Stage steps */}
+                      <div className="flex flex-col gap-[10px] mb-[14px]">
+                        {stages.map((s, i) => {
+                          const done = i < processingStage;
+                          const active = i === processingStage;
+                          return (
+                            <div key={i} className="flex items-center gap-[10px]">
+                              {/* Icon circle */}
+                              <div className={`w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
+                                done   ? 'bg-[#7760bd]' :
+                                active ? 'bg-[#7760bd]/20 border border-[#7760bd]' :
+                                         'bg-[#333] border border-[#444]'
+                              }`}>
+                                {done ? (
+                                  <svg className="w-[14px] h-[14px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className={`w-[14px] h-[14px] ${active ? 'text-[#7760bd]' : 'text-[#555]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d={s.icon} />
+                                  </svg>
+                                )}
+                              </div>
+                              {/* Label */}
+                              <p className={`font-['Inter:Regular',sans-serif] text-[13px] transition-colors duration-500 ${
+                                done   ? 'text-[#7760bd] line-through' :
+                                active ? 'text-white' :
+                                         'text-[#555]'
+                              }`}>{s.label}</p>
+                              {/* Spinner on active step */}
+                              {active && (
+                                <svg className="w-[14px] h-[14px] text-[#7760bd] animate-spin ml-auto flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                                </svg>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {/* Progress bar */}
+                      <div className="h-[3px] w-full bg-[#3a3a3a] rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-[#7760bd] rounded-full"
+                          animate={{ width: `${(processingStage / (stages.length - 1)) * 100}%` }}
+                          transition={{ duration: 0.6, ease: 'easeInOut' }}
+                        />
+                      </div>
                     </div>
-                    <p
-                      className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#9e9e9e]"
-                      style={{ fontVariationSettings: "'wdth' 100" }}
-                    >
-                      {activeChat.fileAttachment ? `Analyzing your ${activeChat.fileAttachment.type.toUpperCase()} file and request...` : 'Processing...'}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
+                  </motion.div>
+                );
+              })()}
               </AnimatePresence>
 
               {/* Regenerating Indicator */}

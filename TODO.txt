@@ -85,7 +85,8 @@
   [ ] 16. ML Model — auto-train RandomForest, user-selected target column               | Rahaf   [needs #13]
   [ ] 17. SHAP integration — compute SHAP values per prediction                         | Rahaf   [needs #16]
   [ ] 15. LLM API — send NLQ + data summary + SHAP values to LLM, get answer            | Reem    [needs #17]
-  [ ] 19. Display XAI results — render feature importance charts in chat response        | Lama    [needs #15]
+  [x] 19. Display XAI results — XAI card with prediction badge + animated SHAP bar chart in chat bubble | Lama
+  [ ] 19b. Wire real pipeline data into XAI card — replace mockXaiData with actual { prediction, shap_values } from API response | Lama  [needs #15]
 
   └────────────────────────────────────────────────────────────┘
 
@@ -97,7 +98,8 @@
 
   ┌─ AFTER PIPELINE WORKS ──────────────────────────────────────┐
 
-  [ ] 20. Loading indicator — show progress while model + XAI runs (up to 30s)           | Lama
+  [x] 20. Loading indicator — 4-step pipeline progress (Parsing → Training → SHAP → Explanation) with progress bar | Lama
+  [ ] 20b. Update loading indicator timings — swap demo delays [2s,2s,2s] to real [5s,10s,10s] and remove fake setTimeout once pipeline (#15) is wired | Lama
   [ ] 21. Export results — download prediction + explanation as PDF/Excel/HTML            | Reem + Lama
   [ ] 22. Rate explanation — user rates clarity/usefulness, saves to Rating table         | Reem + Lama
 
@@ -134,5 +136,7 @@
   [x] Target column saved to DB — File.target_column column, PATCH /updateFileColumn endpoint, restored on login
   [x] File chip restored after logout/login — viewHistory joins File table, no longer relies on localStorage
   [x] Target column indicator in file bar — shows active column with chevron, right-aligned, dynamically sized
+  [x] Loading indicator (#20) — 4-step progress card (Parsing → Training → SHAP → Explanation) with animated progress bar; stages swap to real timings when pipeline is wired
+  [x] XAI results card (#19) — prediction badge + animated SHAP feature importance bars; mock data until pipeline is wired
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

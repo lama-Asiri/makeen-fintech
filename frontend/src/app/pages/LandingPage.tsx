@@ -48,7 +48,7 @@ export function LandingPageWrapper({ onLogin, onSignUp }: LandingPageProps) {
           return;
         }
         if (text?.includes('Start now')) {
-          onLogin();
+          onSignUp();
           return;
         }
         if (text?.includes('Learn More')) {
@@ -62,11 +62,12 @@ export function LandingPageWrapper({ onLogin, onSignUp }: LandingPageProps) {
   };
 
   return (
-    <div 
+    <div
+      id="landing-scroll"
       className="w-full h-screen overflow-y-auto overflow-x-hidden bg-[#141414]"
       onClick={handleClick}
     >
-      <LandingPageImport />
+      <LandingPageImport onSignUp={onSignUp} />
     </div>
   );
 }
