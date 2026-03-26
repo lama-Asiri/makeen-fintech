@@ -158,20 +158,25 @@ async def upload_file(
     # 4. Set storage path
     path = f"{username}/{filename}"
 
-    # 5. Upload file to Supabase storage
+    # 5. Read file bytes — Supabase storage requires bytes, not a SpooledTemporaryFile object.
+    file_bytes = await file.read()
+
+    # 6. Upload to Supabase storage.
+    # upsert=True overwrites if the same path already exists (e.g. user re-uploads same filename).
     try:
-        supabase.storage.from_("user-files").upload(path, file.file)
+        supabase.storage.from_("user-files").upload(path, file_bytes, file_options={"upsert": "true"})
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
 
-    # 6. Save metadata in the database
+    # 7. Save metadata in the database.
+    # on_conflict="CHAT_ID" upserts so re-uploading a file for the same chat updates the row instead of failing.
     try:
-        supabase.table("File").insert({
+        supabase.table("File").upsert({
             "name": filename,
             "filetype": file_type,
             "path": path,
             "CHAT_ID": chat_id
-        }).execute()
+        }, on_conflict="CHAT_ID").execute()
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"DB insert failed: {str(e)}")
 
@@ -179,15 +184,21 @@ async def upload_file(
         "message": "Uploaded",
     }
 
+class AddChatRequest(BaseModel):
+    # Title sent as JSON body from the frontend (e.g. "Chat 1", "Chat 2", "Chat 3")
+    Title: str = "New Chat"
+
+
 @router.post("/addChat")
 async def add_chat(
+    body: AddChatRequest,
     authorization: str = Header(None),
-    Title: str = "New Chat"
 ):
-    # 1. Get user ID
+    # Verify the token and extract the user's UUID from Supabase auth
     user_id = _get_user_id(authorization)
 
-    # 2. Count existing chats
+    # Count how many chats this user already has.
+    # We enforce a max of 3 chats per user (project requirement).
     try:
         count_result = supabase.table("Chat") \
             .select("CHAT_ID", count="exact") \
@@ -197,56 +208,60 @@ async def add_chat(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to count chats: {str(e)}")
 
-    # 3. Limit to 3 chats
+    # Block creation if limit is already reached
     if chat_count >= 3:
         raise HTTPException(status_code=400, detail="You cannot have more than 3 chats")
 
-    # 4. Insert new chat
+    # Insert the new chat row — Supabase auto-generates CHAT_ID
     try:
         result = supabase.table("Chat").insert({
             "USER_ID": user_id,
-            "Title": Title
+            "Title": body.Title   # read from JSON body, not query param
         }).execute()
-
         chat = result.data[0]
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat creation failed: {str(e)}")
 
-    # 5. Return chat info
+    # Return the CHAT_ID so the frontend can store it for future delete/rename calls
     return {
         "message": "Chat created",
         "CHAT_ID": chat["CHAT_ID"],
         "Title": chat["Title"]
     }
 
+
 @router.get("/viewHistory")
 async def view_history(authorization: str = Header(None)):
-    # 1. Get user ID
+    # Verify token and get user ID
     user_id = _get_user_id(authorization)
 
-    # 2. Select all chats for this user
+    # Fetch all chats for this user, newest first.
+    # Frontend uses this on mount to load the sidebar and get the real CHAT_IDs
+    # (needed for delete/rename — localStorage doesn't persist CHAT_IDs across sessions)
     try:
         result = supabase.table("Chat") \
             .select("*") \
             .eq("USER_ID", user_id) \
-            .order("created_at", desc=True) \
+            .order("Created_at", desc=True) \
             .execute()
         chats = result.data or []
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch chats: {str(e)}")
 
-    # 3. Return chat list
     return {
         "message": "User chat history",
         "chats": chats
     }
 
+
 @router.delete("/deleteChat")
 async def delete_chat(chat_id: int, authorization: str = Header(None)):
-    # 1. Get user ID
+    # Verify token and get user ID
     user_id = _get_user_id(authorization)
 
-    # 2. Verify the chat exists for this user
+    # Check the chat belongs to this user before deleting.
+    # Without this check, any logged-in user could delete someone else's chat
+    # by guessing a CHAT_ID.
     try:
         check = supabase.table("Chat") \
             .select("CHAT_ID", "Title") \
@@ -257,14 +272,14 @@ async def delete_chat(chat_id: int, authorization: str = Header(None)):
         if not check.data:
             raise HTTPException(
                 status_code=404,
-                detail="No chat was deleted (maybe it didn't exist or didn't belong to the user)"
+                detail="Chat not found or does not belong to this user"
             )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error verifying chat: {str(e)}")
 
-    # 3. Delete the chat
+    # Safe to delete — ownership confirmed above
     try:
-        result = supabase.table("Chat") \
+        supabase.table("Chat") \
             .delete() \
             .eq("CHAT_ID", chat_id) \
             .eq("USER_ID", user_id) \
@@ -278,12 +293,14 @@ async def delete_chat(chat_id: int, authorization: str = Header(None)):
         "Title": check.data["Title"]
     }
 
+
 @router.delete("/deleteAllChats")
 async def delete_all_chats(authorization: str = Header(None)):
-    # 1. Get user ID
+    # Verify token and get user ID
     user_id = _get_user_id(authorization)
 
-    # 2. Fetch all chats for the user (to return info if needed)
+    # Fetch existing chats first so we can return what was deleted.
+    # Also acts as a check — if no chats exist we return 404 instead of silently doing nothing.
     try:
         chats_result = supabase.table("Chat") \
             .select("CHAT_ID", "Title") \
@@ -296,7 +313,7 @@ async def delete_all_chats(authorization: str = Header(None)):
     if not user_chats:
         raise HTTPException(status_code=404, detail="No chats found to delete")
 
-    # 3. Delete all chats
+    # Delete all rows for this user in one query
     try:
         supabase.table("Chat") \
             .delete() \
@@ -307,6 +324,82 @@ async def delete_all_chats(authorization: str = Header(None)):
 
     return {
         "message": "All chats deleted successfully",
-        "deleted_chats": user_chats  # optional, info about what was deleted
+        "deleted_chats": user_chats
     }
-    
+
+
+class SaveMessageRequest(BaseModel):
+    chat_id: int
+    query_text: str    # the user's message
+    answer: str        # the AI's response text
+    explanation: str = ""  # optional extra explanation (used later by SHAP/LLM)
+
+
+@router.post("/saveMessage")
+async def save_message(body: SaveMessageRequest, authorization: str = Header(None)):
+    # Verify ownership — ensure the chat belongs to this user before saving
+    user_id = _get_user_id(authorization)
+    try:
+        check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", body.chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Chat not found or does not belong to this user")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Ownership check failed: {str(e)}")
+
+    # Save the user's message to the Query table
+    try:
+        query_result = supabase.table("Query").insert({
+            "query_text": body.query_text,
+            "CHAT_ID": body.chat_id,
+        }).execute()
+        query_id = query_result.data[0]["QUERY_ID"]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to save query: {str(e)}")
+
+    # Save the AI response to the Response table, linked to the query above.
+    # QUERY_ID must reference a real Query row — requires the schema fix:
+    # ALTER TABLE public."Response" ALTER COLUMN "QUERY_ID" DROP IDENTITY;
+    try:
+        supabase.table("Response").insert({
+            "answer": body.answer,
+            "explanation": body.explanation,
+            "QUERY_ID": query_id,
+        }).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to save response: {str(e)}")
+
+    return {"message": "Message saved", "QUERY_ID": query_id}
+
+
+@router.get("/getMessages/{chat_id}")
+async def get_messages(chat_id: int, authorization: str = Header(None)):
+    # Verify ownership before returning messages
+    user_id = _get_user_id(authorization)
+    try:
+        check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Chat not found or does not belong to this user")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Ownership check failed: {str(e)}")
+
+    # Fetch all queries for this chat, oldest first so messages appear in order
+    try:
+        queries = supabase.table("Query") \
+            .select("*, Response(answer, explanation, created_at)") \
+            .eq("CHAT_ID", chat_id) \
+            .order("created_at", desc=False) \
+            .execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to fetch messages: {str(e)}")
+
+    return {"messages": queries.data}

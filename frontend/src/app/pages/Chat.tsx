@@ -23,6 +23,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI } from '@/lib/chatApi';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -117,9 +118,10 @@ interface Chat {
   fileAttachment: FileAttachment | null;
   shareId?: string;
   isPersisted?: boolean; // Track if chat should be saved to localStorage
+  backendId?: number;   // CHAT_ID returned by the backend DB — used for delete/rename API calls
 }
 
-const MAX_CHATS = 10;
+const MAX_CHATS = 3; // Backend enforces this limit — matches POST /auth/addChat constraint
 
 // Seed data with pre-populated chats
 const getInitialChats = (): Chat[] => [
@@ -354,6 +356,45 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     )
     .sort((a, b) => a.lastUsedAt.getTime() - b.lastUsedAt.getTime());
 
+  // On mount, fetch the user's real chat list from the backend and use it as
+  // the source of truth. This replaces any seed/localStorage data so the sidebar
+  // always reflects what's actually saved in the DB.
+  // Messages are preserved from localStorage by matching on CHAT_ID (stored as backendId).
+  useEffect(() => {
+    if (!session?.access_token) return;
+    viewHistoryAPI(session.access_token)
+      .then((backendChats) => {
+        if (backendChats.length === 0) {
+          // No chats in DB — clear sidebar so seed data doesn't show
+          setChats([]);
+          return;
+        }
+        // Load any locally saved messages from localStorage
+        const localRaw = localStorage.getItem('makeen_chats');
+        const localChats: Chat[] = localRaw ? JSON.parse(localRaw, (key, value) => {
+          if (key === 'createdAt' || key === 'timestamp' || key === 'lastUsedAt') return new Date(value);
+          return value;
+        }) : [];
+
+        // Map backend chats to the Chat interface, merging in any local messages
+        const merged: Chat[] = backendChats.map((bc) => {
+          const local = localChats.find((lc) => lc.backendId === bc.CHAT_ID);
+          return {
+            id: local?.id ?? bc.CHAT_ID.toString(),
+            backendId: bc.CHAT_ID,
+            title: bc.Title,
+            messages: local?.messages ?? [],
+            createdAt: new Date(bc.Created_at),
+            lastUsedAt: local?.lastUsedAt ?? new Date(bc.Created_at),
+            fileAttachment: local?.fileAttachment ?? null,
+            isPersisted: true,
+          };
+        });
+        setChats(merged);
+      })
+      .catch((err) => console.error('[viewHistory] Failed to load from backend:', err));
+  }, [session?.access_token]);
+
   // Load profile (username + avatar) from DB on mount
   useEffect(() => {
     if (!session?.access_token) return;
@@ -373,6 +414,45 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   useEffect(() => {
     saveToLocalStorage(chats, activeChatId);
   }, [chats, activeChatId]);
+
+  // When the user switches to a chat, load its messages from the DB.
+  // This ensures messages persist across page refreshes and different devices.
+  // We skip loading if messages are already in memory (already loaded this session).
+  useEffect(() => {
+    if (!activeChatId || !session?.access_token) return;
+    const activeChat = chats.find((c) => c.id === activeChatId);
+    if (!activeChat?.backendId || activeChat.messages.length > 0) return;
+
+    getMessagesAPI(session.access_token, activeChat.backendId)
+      .then((backendMessages) => {
+        if (backendMessages.length === 0) return;
+        // Convert backend Query+Response rows into the frontend Message format
+        const messages: Message[] = [];
+        backendMessages.forEach((q) => {
+          // User message
+          messages.push({
+            id: `q-${q.QUERY_ID}`,
+            role: 'user',
+            content: q.query_text,
+            timestamp: new Date(q.created_at),
+          });
+          // AI response (Response is an array from the join)
+          const response = Array.isArray(q.Response) ? q.Response[0] : q.Response;
+          if (response) {
+            messages.push({
+              id: `r-${q.QUERY_ID}`,
+              role: 'assistant',
+              content: response.answer,
+              timestamp: new Date(response.created_at),
+            });
+          }
+        });
+        setChats((prev) =>
+          prev.map((c) => (c.id === activeChatId ? { ...c, messages } : c))
+        );
+      })
+      .catch((err) => console.error('[getMessages] Failed to load messages:', err));
+  }, [activeChatId, session?.access_token]);
 
   // Determine if we should show the upload modal
   useEffect(() => {
@@ -623,6 +703,12 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     if (pendingNewChat) {
       const newChatWithFile = { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() };
       setChats((prevChats) => [...prevChats, newChatWithFile]);
+      // Send the actual file bytes to the backend for storage in Supabase bucket.
+      // backendId must exist (set when addChatAPI resolved) or we skip — no orphaned file rows.
+      if (selectedFile && pendingNewChat.backendId !== undefined && session?.access_token) {
+        uploadFileAPI(session.access_token, selectedFile, pendingNewChat.backendId)
+          .catch((err) => console.error('[uploadFile] Backend upload failed:', err));
+      }
       setPendingNewChat(null);
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
     } else if (activeChat) {
@@ -631,6 +717,11 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           chat.id === activeChatId ? { ...chat, fileAttachment, lastUsedAt: new Date() } : chat
         )
       );
+      // Send file to backend for existing chat
+      if (selectedFile && activeChat.backendId !== undefined && session?.access_token) {
+        uploadFileAPI(session.access_token, selectedFile, activeChat.backendId)
+          .catch((err) => console.error('[uploadFile] Backend upload failed:', err));
+      }
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
     }
     setSelectedFile(null);
@@ -751,7 +842,35 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       fileAttachment: null,
       isPersisted: saveChatHistory, // Respect the current setting
     };
-    
+
+    // Save the new chat to the backend so it gets a real DB CHAT_ID.
+    // We store the returned ID in backendId so deleteChat/renameChat can reference it later.
+    // If the backend rejects (e.g. 3-chat limit), show a toast and abort.
+    if (session?.access_token) {
+      addChatAPI(session.access_token, newChat.title)
+        .then((backendId) => {
+          // The new chat is still in pendingNewChat (not in chats yet) until the file is uploaded.
+          // We must update pendingNewChat so the backendId carries over when the file is uploaded.
+          // We also update chats in case the file was uploaded before this promise resolved.
+          setPendingNewChat((prev) => prev?.id === newChatId ? { ...prev, backendId } : prev);
+          setChats((prev) =>
+            prev.map((c) => (c.id === newChatId ? { ...c, backendId } : c))
+          );
+        })
+        .catch((err) => {
+          // Parse the error and show it to the user as a toast
+          let message = 'Failed to create chat.';
+          try {
+            const parsed = JSON.parse(err.message);
+            if (parsed?.detail) message = parsed.detail;
+          } catch { message = err.message; }
+          setToastMessage(message);
+          // Remove the locally added pending chat since backend rejected it
+          setChats((prev) => prev.filter((c) => c.id !== newChatId));
+          setPendingNewChat(null);
+        });
+    }
+
     // Mark entry greeting as shown (if it was the first time)
     if (!entryGreetingShown) {
       setEntryGreetingShown(true);
@@ -800,13 +919,16 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setShouldStopTyping(false); // Reset stop flag for new message
 
     // Simulate AI processing and response
+    // TODO: replace this with the real LLM API call (TODO #15) once Reem builds it
     processingTimeoutRef.current = setTimeout(() => {
+      const aiContent = activeChat?.fileAttachment
+        ? `Increase chocolate cake production because it's selling the fastest and running out the most often.\n\nBased on Column A (showing high demand), Column B (showing low production cost), it's recommended to increase chocolate cake production.`
+        : 'I can help you with that. Please upload a CSV or Excel file first to analyze the data.';
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: activeChat?.fileAttachment
-          ? `Increase chocolate cake production because it's selling the fastest and running out the most often.\n\nBased on Column A (showing high demand), Column B (showing low production cost), it's recommended to increase chocolate cake production.`
-          : 'I can help you with that. Please upload a CSV or Excel file first to analyze the data.',
+        content: aiContent,
         timestamp: new Date(),
         feedback: null,
       };
@@ -817,6 +939,13 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             chat.id === activeChatId ? { ...chat, messages: [...chat.messages, aiMessage] } : chat
           )
         );
+
+        // Save the user message + AI response to the DB so they persist across sessions.
+        // We save after the AI responds (not before) so we always store a complete Q&A pair.
+        if (session?.access_token && activeChat.backendId !== undefined) {
+          saveMessageAPI(session.access_token, activeChat.backendId, userMessage.content, aiContent)
+            .catch((err) => console.error('[saveMessage] Failed to save to backend:', err));
+        }
       }
       setIsProcessing(false);
       processingTimeoutRef.current = null;
@@ -1033,11 +1162,17 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       setActiveChatId(null);
     }
 
-    // Set up the 8-second undo timer
+    // Set up the 8-second undo timer.
+    // We only call the backend AFTER the undo window closes — avoids deleting
+    // from DB and then having to re-insert if the user clicks undo.
     const timer = setTimeout(() => {
-      // Finalize deletion after 8 seconds
       setPendingDelete(null);
       setShowDeleteToast(false);
+      // Finalize deletion in the backend using the DB-assigned backendId
+      if (session?.access_token && chat.backendId !== undefined) {
+        deleteChatAPI(session.access_token, chat.backendId)
+          .catch((err) => console.error('[deleteChat] Backend delete failed:', err));
+      }
     }, 8000);
 
     // Store pending delete state
@@ -1277,23 +1412,19 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
   // Handle delete all chats
   const handleDeleteAllChats = () => {
+    // Clear all local state and localStorage
     setChats([]);
     setActiveChatId(null);
     setPendingNewChat(null);
     localStorage.removeItem('makeen_chats');
     localStorage.removeItem('makeen_active_chat_id');
-    // Create a new chat after deletion
-    const newChatId = Date.now().toString();
-    const newChat: Chat = {
-      id: newChatId,
-      title: 'Chat 1',
-      messages: [],
-      createdAt: new Date(),
-      lastUsedAt: new Date(),
-      fileAttachment: null,
-      isPersisted: saveChatHistory,
-    };
-    setPendingNewChat(newChat);
+    // Delete all chats from the backend DB as well
+    if (session?.access_token) {
+      deleteAllChatsAPI(session.access_token)
+        .catch((err) => console.error('[deleteAllChats] Backend delete failed:', err));
+    }
+    // Don't auto-create a new chat here — the sidebar will show "No chats found"
+    // and the user can click "New Chat" when they're ready to start fresh.
   };
 
   // On first load, ensure we always have a valid state (New Chat or active chat)
@@ -1651,13 +1782,20 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             </div>
           )}
 
-          {/* New Chat Button */}
-          <Tooltip text="New chat" position="right" disabled={!isSidebarCollapsed}>
+          {/* New Chat Button — disabled when user already has 3 chats */}
+          <Tooltip
+            text={chats.length >= MAX_CHATS ? 'Delete a chat to create a new one' : 'New chat'}
+            position="right"
+            disabled={!isSidebarCollapsed && chats.length < MAX_CHATS}
+          >
             <button
               onClick={handleNewChat}
-              className={`flex items-center rounded-[8px] cursor-pointer hover:bg-[#333] transition-colors ${
-                isSidebarCollapsed ? 'p-[12px] justify-center' : 'gap-[16px] p-[16px] w-full'
-              }`}
+              disabled={chats.length >= MAX_CHATS}
+              className={`flex items-center rounded-[8px] transition-colors ${
+                chats.length >= MAX_CHATS
+                  ? 'opacity-40 cursor-not-allowed'
+                  : 'cursor-pointer hover:bg-[#333]'
+              } ${isSidebarCollapsed ? 'p-[12px] justify-center' : 'gap-[16px] p-[16px] w-full'}`}
             >
               <PenSquare className="w-[20px] h-[20px] shrink-0 stroke-white" strokeWidth={2} />
               {!isSidebarCollapsed && (

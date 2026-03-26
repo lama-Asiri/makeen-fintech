@@ -41,7 +41,7 @@ CREATE TABLE public.Response (
   answer text NOT NULL,
   explanation text NOT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now() UNIQUE,
-  QUERY_ID integer GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
+  QUERY_ID integer NOT NULL UNIQUE,
   CONSTRAINT Response_pkey PRIMARY KEY (RESPONSE_ID),
   CONSTRAINT Response_QUERY_ID_fkey FOREIGN KEY (QUERY_ID) REFERENCES public.Query(QUERY_ID)
 );
@@ -52,5 +52,6 @@ CREATE TABLE public.User (
   username character varying NOT NULL UNIQUE,
   user_status character varying NOT NULL CHECK (user_status::text = ANY (ARRAY['Enabled'::character varying, 'Disabled'::character varying]::text[])),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
+  avatar_url text,
   CONSTRAINT User_pkey PRIMARY KEY (USER_ID)
 );
