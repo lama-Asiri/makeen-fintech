@@ -23,7 +23,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI } from '@/lib/chatApi';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -116,6 +116,7 @@ interface Chat {
   createdAt: Date;
   lastUsedAt: Date;
   fileAttachment: FileAttachment | null;
+  targetColumn?: string; // The column the user selected for AI analysis
   shareId?: string;
   isPersisted?: boolean; // Track if chat should be saved to localStorage
   backendId?: number;   // CHAT_ID returned by the backend DB — used for delete/rename API calls
@@ -291,6 +292,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [editMessageValue, setEditMessageValue] = useState('');
   const [pendingNewChat, setPendingNewChat] = useState<Chat | null>(null);
   const [showFilePreview, setShowFilePreview] = useState(false);
+  // Upload modal step: 'file' = drop zone, 'loading' = uploading, 'columns' = pick target column
+  const [uploadStep, setUploadStep] = useState<'file' | 'loading' | 'columns'>('file');
+  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
+  const [selectedColumn, setSelectedColumn] = useState<string>('');
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const [sendPulse, setSendPulse] = useState(false);
@@ -386,7 +391,9 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             messages: local?.messages ?? [],
             createdAt: new Date(bc.Created_at),
             lastUsedAt: local?.lastUsedAt ?? new Date(bc.Created_at),
-            fileAttachment: local?.fileAttachment ?? null,
+            // Restore file chip from localStorage if available, otherwise fall back to DB File join.
+            // The DB join is the source of truth after logout (localStorage is cleared on logout).
+            fileAttachment: local?.fileAttachment ?? (bc.File ? { name: bc.File.name, type: bc.File.filetype as 'csv' | 'xlsx' } : null),
             isPersisted: true,
           };
         });
@@ -454,8 +461,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       .catch((err) => console.error('[getMessages] Failed to load messages:', err));
   }, [activeChatId, session?.access_token]);
 
-  // Determine if we should show the upload modal
+  // Determine if we should show the upload modal.
+  // Skip if we're in the loading/columns step — the modal must stay open for the column picker.
   useEffect(() => {
+    if (uploadStep !== 'file') return;
     if (activeChat) {
       // Show upload modal if chat has no file and no messages
       setShowUploadModal(!activeChat.fileAttachment && activeChat.messages.length === 0);
@@ -463,7 +472,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       // If no active chat and not processing, show upload modal (New Chat state)
       setShowUploadModal(true);
     }
-  }, [activeChat, isProcessing]);
+  }, [activeChat, isProcessing, uploadStep]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -699,33 +708,61 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           size: 1024,
         };
 
-    // If there's a pending new chat, add it to history now with the file
+    const backendId = pendingNewChat?.backendId ?? activeChat?.backendId;
+
+    // Add file to local chat state immediately (optimistic update)
     if (pendingNewChat) {
-      const newChatWithFile = { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() };
-      setChats((prevChats) => [...prevChats, newChatWithFile]);
-      // Send the actual file bytes to the backend for storage in Supabase bucket.
-      // backendId must exist (set when addChatAPI resolved) or we skip — no orphaned file rows.
-      if (selectedFile && pendingNewChat.backendId !== undefined && session?.access_token) {
-        uploadFileAPI(session.access_token, selectedFile, pendingNewChat.backendId)
-          .catch((err) => console.error('[uploadFile] Backend upload failed:', err));
-      }
+      setChats((prevChats) => [...prevChats, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
       setPendingNewChat(null);
-      setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
     } else if (activeChat) {
       setChats((prevChats) =>
         prevChats.map((chat) =>
           chat.id === activeChatId ? { ...chat, fileAttachment, lastUsedAt: new Date() } : chat
         )
       );
-      // Send file to backend for existing chat
-      if (selectedFile && activeChat.backendId !== undefined && session?.access_token) {
-        uploadFileAPI(session.access_token, selectedFile, activeChat.backendId)
-          .catch((err) => console.error('[uploadFile] Backend upload failed:', err));
-      }
+    }
+
+    // Upload file to backend, then show column picker so user selects the target column.
+    // If no real file is selected (e.g. sample data fallback), skip to closing the modal.
+    if (selectedFile && backendId !== undefined && session?.access_token) {
+      setUploadStep('loading');
+      uploadFileAPI(session.access_token, selectedFile, backendId)
+        .then((columns) => {
+          setAvailableColumns(columns);
+          // Default selection: last column (most commonly the target in tabular datasets)
+          setSelectedColumn(columns.length > 0 ? columns[columns.length - 1] : '');
+          setUploadStep('columns');
+        })
+        .catch((err) => {
+          console.error('[uploadFile] Backend upload failed:', err);
+          // Upload failed — close modal anyway so user isn't stuck
+          setUploadStep('file');
+          setShowUploadModal(false);
+          setSelectedFile(null);
+          setToastMessage('File upload failed. Please try again.');
+        });
+    } else {
+      // No real file or no backendId — close modal immediately
+      setSelectedFile(null);
+      setShowUploadModal(false);
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
     }
+  };
+
+  // Called when user confirms their target column selection in step 2 of the upload modal.
+  // Saves the column to the active chat so the AI pipeline can use it.
+  const handleConfirmColumn = () => {
+    if (selectedColumn && activeChatId) {
+      setChats((prev) =>
+        prev.map((c) => (c.id === activeChatId ? { ...c, targetColumn: selectedColumn } : c))
+      );
+    }
+    setUploadStep('file');
+    setAvailableColumns([]);
+    setSelectedColumn('');
     setSelectedFile(null);
     setShowUploadModal(false);
+    setToastMessage('File uploaded successfully!');
   };
 
   const handleFileSelect = (file: File) => {
@@ -1222,12 +1259,19 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       return;
     }
 
-    // Update the chat title
+    // Update the chat title locally first so the UI feels instant
+    const targetChat = chats.find((c) => c.id === renamingChatId);
     setChats((prevChats) =>
       prevChats.map((chat) =>
         chat.id === renamingChatId ? { ...chat, title: trimmedValue } : chat
       )
     );
+
+    // Persist the new title to the DB if this chat has a backendId
+    if (targetChat?.backendId !== undefined && session?.access_token) {
+      renameChatAPI(session.access_token, targetChat.backendId, trimmedValue)
+        .catch((err) => console.error('[renameChat] Failed to save to backend:', err));
+    }
 
     setRenamingChatId(null);
     setRenameValue('');
@@ -1997,81 +2041,119 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               
               {/* Upload Card */}
               <div className="bg-[#2c2c2c] rounded-[8px] w-full shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col">
-                {/* Modal Header */}
+                {/* Modal Header — title changes per step */}
                 <div className="bg-[#2c2c2c] px-[20px] md:px-[24px] py-[14px] md:py-[16px] rounded-t-[8px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] md:text-[18px] text-white">File Upload</p>
-                </div>
-
-                {/* Modal Content */}
-                <div className="px-[20px] md:px-[24px] py-[20px] md:py-[26px] flex flex-col gap-[14px] md:gap-[16px]">
-                {/* Hidden File Input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-                  onChange={handleFileInputChange}
-                  className="hidden"
-                />
-
-                {/* Upload Drop Zone */}
-                <div
-                  onClick={handleDropZoneClick}
-                  className={`bg-[#262626] border-2 border-dashed rounded-[8px] px-[20px] md:px-[80px] py-[24px] md:py-[32px] flex flex-col gap-[10px] md:gap-[12px] items-center text-center cursor-pointer transition-all ${
-                    isDragging
-                      ? 'border-[#7760bd] bg-[#2a2a2a]'
-                      : 'border-[#bebebe] hover:border-[#7760bd] hover:bg-[#2a2a2a]'
-                  } ${selectedFile ? 'border-[#08B839] bg-[#08B839]/10' : ''}`}
-                  onDragEnter={(e) => {
-                    e.preventDefault();
-                    setIsDragging(true);
-                  }}
-                  onDragLeave={handleDragLeave}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24">
-                    <path d={svgPaths.p2fe12e80} stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M9 15L12 12L15 15" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    <path d="M12 12V21" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                  </svg>
-                  <p className={`font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
-                    {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or drag file to this area to upload'}
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] md:text-[18px] text-white">
+                    {uploadStep === 'columns' ? 'Select Target Column' : 'File Upload'}
                   </p>
                 </div>
 
-                {/* Format Info */}
-                <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
+                {/* ── Step 1: File drop zone ── */}
+                {uploadStep === 'file' && (
+                  <div className="px-[20px] md:px-[24px] py-[20px] md:py-[26px] flex flex-col gap-[14px] md:gap-[16px]">
+                    {/* Hidden File Input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      aria-label="Upload CSV or XLSX file"
+                      accept=".csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+                      onChange={handleFileInputChange}
+                      className="hidden"
+                    />
 
-                {/* Divider */}
-                <div className="h-[1px] bg-black opacity-20" />
+                    {/* Upload Drop Zone */}
+                    <div
+                      onClick={handleDropZoneClick}
+                      className={`bg-[#262626] border-2 border-dashed rounded-[8px] px-[20px] md:px-[80px] py-[24px] md:py-[32px] flex flex-col gap-[10px] md:gap-[12px] items-center text-center cursor-pointer transition-all ${
+                        isDragging ? 'border-[#7760bd] bg-[#2a2a2a]' : 'border-[#bebebe] hover:border-[#7760bd] hover:bg-[#2a2a2a]'
+                      } ${selectedFile ? 'border-[#08B839] bg-[#08B839]/10' : ''}`}
+                      onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
+                      onDragLeave={handleDragLeave}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                    >
+                      <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24">
+                        <path d={svgPaths.p2fe12e80} stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        <path d="M9 15L12 12L15 15" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        <path d="M12 12V21" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      <p className={`font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
+                        {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or drag file to this area to upload'}
+                      </p>
+                    </div>
 
-                {/* Sample Template */}
-                <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#f5f5f5]">If you do not have a file you can use the sample below:</p>
+                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
+                    <div className="h-[1px] bg-black opacity-20" />
+                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#f5f5f5]">If you do not have a file you can use the sample below:</p>
+                    <button
+                      onClick={() => setShowFilePreview(true)}
+                      className="bg-[#262626] border border-[#d0d0d0] rounded-[8px] px-[16px] md:px-[24px] h-[40px] md:h-[44px] flex gap-[8px] items-center justify-center cursor-pointer hover:bg-[#2a2a2a] hover:border-[#7760bd] transition-all"
+                    >
+                      <svg className="w-[20px] md:w-[24px] h-[20px] md:h-[24px]" fill="none" viewBox="0 0 24 24">
+                        <path d={svgPaths.p2c7f0600} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        <path d={svgPaths.p18d48b80} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        <path d="M8 11H16V18H8V11Z" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        <path d="M8 15H16" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                        <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+                      </svg>
+                      <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#e9e9e9] truncate">Download Sample Template</p>
+                    </button>
+                  </div>
+                )}
 
-                <button 
-                  onClick={() => setShowFilePreview(true)}
-                  className="bg-[#262626] border border-[#d0d0d0] rounded-[8px] px-[16px] md:px-[24px] h-[40px] md:h-[44px] flex gap-[8px] items-center justify-center cursor-pointer hover:bg-[#2a2a2a] hover:border-[#7760bd] transition-all">
-                  <svg className="w-[20px] md:w-[24px] h-[20px] md:h-[24px]" fill="none" viewBox="0 0 24 24">
-                    <path d={svgPaths.p2c7f0600} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    <path d={svgPaths.p18d48b80} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    <path d="M8 11H16V18H8V11Z" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    <path d="M8 15H16" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                    <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                  </svg>
-                  <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#e9e9e9] truncate">Download Sample Template</p>
-                </button>
-              </div>
+                {/* ── Step 2: Uploading / parsing spinner ── */}
+                {uploadStep === 'loading' && (
+                  <div className="px-[24px] py-[48px] flex flex-col items-center gap-[16px]">
+                    <div className="w-[40px] h-[40px] border-4 border-[#7760bd] border-t-transparent rounded-full animate-spin" />
+                    <p className="font-['Inter:Regular',sans-serif] text-[15px] text-[#ccc]">Uploading and parsing your file…</p>
+                  </div>
+                )}
 
-              {/* Modal Footer */}
+                {/* ── Step 3: Column picker ── */}
+                {uploadStep === 'columns' && (
+                  <div className="px-[20px] md:px-[24px] py-[20px] md:py-[26px] flex flex-col gap-[16px]">
+                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">
+                      Choose the column you want the AI to predict or analyze. This is usually the last column in your dataset.
+                    </p>
+                    <select
+                      title="Target column"
+                      value={selectedColumn}
+                      onChange={(e) => setSelectedColumn(e.target.value)}
+                      className="bg-[#262626] border border-[#bebebe] text-white rounded-[8px] px-[14px] h-[44px] text-[15px] focus:outline-none focus:border-[#7760bd] cursor-pointer"
+                    >
+                      {availableColumns.map((col) => (
+                        <option key={col} value={col} className="bg-[#262626]">{col}</option>
+                      ))}
+                    </select>
+                    <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#888]">
+                      {availableColumns.length} column{availableColumns.length !== 1 ? 's' : ''} detected in your file
+                    </p>
+                  </div>
+                )}
+
+              {/* Modal Footer — button changes per step */}
               <div className="bg-[#2c2c2c] border-t border-black px-[20px] md:px-[24px] py-[10px] md:py-[12px] rounded-b-[8px] flex justify-end">
-                <button
-                  onClick={handleFileUpload}
-                  className="bg-[#7760bd] rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
-                >
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] md:text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
-                    Send
-                  </p>
-                </button>
+                {uploadStep === 'columns' ? (
+                  <button
+                    onClick={handleConfirmColumn}
+                    disabled={!selectedColumn}
+                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
+                  >
+                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] md:text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+                      Confirm
+                    </p>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleFileUpload}
+                    disabled={uploadStep === 'loading'}
+                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
+                  >
+                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] md:text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+                      Send
+                    </p>
+                  </button>
+                )}
               </div>
             </div>
             </div>

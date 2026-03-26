@@ -18,6 +18,7 @@ export interface BackendChat {
   Title: string;
   USER_ID: string;
   Created_at: string;
+  File: { name: string; filetype: string } | null; // joined from File table — null if no file uploaded yet
 }
 
 // ─── API Functions ────────────────────────────────────────────────────────────
@@ -93,10 +94,20 @@ export async function getMessagesAPI(token: string, chatId: number): Promise<Bac
   return data.messages as BackendMessage[];
 }
 
+// Rename a chat in the DB — called when the user confirms a rename in the sidebar.
+export async function renameChatAPI(token: string, chatId: number, newTitle: string): Promise<void> {
+  const res = await fetch(`${BASE}/auth/renameChat`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ chat_id: chatId, new_title: newTitle }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+}
+
 // Upload a CSV/XLSX file to Supabase Storage via the backend.
+// Returns the list of column names parsed from the file — used for the target column picker.
 // Uses multipart/form-data — do NOT set Content-Type manually, the browser sets it with the boundary.
-// chat_id links the file row in the File table to the correct chat.
-export async function uploadFileAPI(token: string, file: File, chatId: number): Promise<void> {
+export async function uploadFileAPI(token: string, file: File, chatId: number): Promise<string[]> {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('chat_id', chatId.toString());
@@ -106,6 +117,8 @@ export async function uploadFileAPI(token: string, file: File, chatId: number): 
     body: formData,
   });
   if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.columns as string[];
 }
 
 export interface BackendMessage {

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
 import os
+import io
+import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 
 router = APIRouter(prefix="/auth")
@@ -168,7 +170,18 @@ async def upload_file(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Upload failed: {str(e)}")
 
-    # 7. Save metadata in the database.
+    # 7. Parse the file with pandas to extract column names for the frontend dropdown.
+    # We reuse the bytes already read — no second read needed.
+    try:
+        if file_type == "csv":
+            df = pd.read_csv(io.BytesIO(file_bytes))
+        else:
+            df = pd.read_excel(io.BytesIO(file_bytes))
+        columns = df.columns.tolist()
+    except Exception:
+        columns = []  # non-fatal — frontend falls back gracefully if empty
+
+    # 8. Save metadata in the database.
     # on_conflict="CHAT_ID" upserts so re-uploading a file for the same chat updates the row instead of failing.
     try:
         supabase.table("File").upsert({
@@ -182,6 +195,7 @@ async def upload_file(
 
     return {
         "message": "Uploaded",
+        "columns": columns,   # list of column names for the target column picker
     }
 
 class AddChatRequest(BaseModel):
@@ -236,11 +250,11 @@ async def view_history(authorization: str = Header(None)):
     user_id = _get_user_id(authorization)
 
     # Fetch all chats for this user, newest first.
-    # Frontend uses this on mount to load the sidebar and get the real CHAT_IDs
-    # (needed for delete/rename — localStorage doesn't persist CHAT_IDs across sessions)
+    # Include File join so the frontend can restore the file chip after logout/login
+    # without relying on localStorage (which is cleared on logout).
     try:
         result = supabase.table("Chat") \
-            .select("*") \
+            .select("*, File(name, filetype)") \
             .eq("USER_ID", user_id) \
             .order("Created_at", desc=True) \
             .execute()
@@ -252,6 +266,43 @@ async def view_history(authorization: str = Header(None)):
         "message": "User chat history",
         "chats": chats
     }
+
+
+class RenameChatRequest(BaseModel):
+    chat_id: int
+    new_title: str
+
+
+@router.patch("/renameChat")
+async def rename_chat(body: RenameChatRequest, authorization: str = Header(None)):
+    # Verify token and get user ID
+    user_id = _get_user_id(authorization)
+
+    # Confirm the chat belongs to this user before updating.
+    # Without this check any logged-in user could rename someone else's chat.
+    try:
+        check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", body.chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not check.data:
+            raise HTTPException(status_code=404, detail="Chat not found or does not belong to this user")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Ownership check failed: {str(e)}")
+
+    # Update the title
+    try:
+        supabase.table("Chat") \
+            .update({"Title": body.new_title}) \
+            .eq("CHAT_ID", body.chat_id) \
+            .eq("USER_ID", user_id) \
+            .execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to rename chat: {str(e)}")
+
+    return {"message": "Chat renamed", "CHAT_ID": body.chat_id, "Title": body.new_title}
 
 
 @router.delete("/deleteChat")

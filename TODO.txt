@@ -10,24 +10,22 @@
   SECTION 0 — DECISIONS & SETUP  (resolve these before coding the pipeline)
   Owner: whole team
 
-  [ ] A. Define API response contract — agree on the JSON shape the backend returns to frontend
-        Recommended shape: { "answer": string, "prediction": string, "shap_values": {}, "lime_values": {} }
-        Owner: Rahaf + Reem + Lama (10 min meeting, write it down)
+  [x] A. Define API response contract — AGREED:
+        { "answer": string, "prediction": string, "shap_values": {}, "lime_values": {} }
+        Owner: Rahaf + Reem + Lama
 
   [ ] B. Choose LLM API provider and add key to backend .env
         Recommended: OpenAI GPT-4o-mini — cheapest, fastest, best documented for grad project budget
         Owner: Reem
 
-  [x] C. Decide how target column is selected — auto (last column) vs user picks from dropdown after upload
-        Decision: user picks from dropdown — auto-detect breaks on real messy datasets
-        Owner: Rahaf (backend logic) + Lama (dropdown UI)
-        Note: build AFTER rename chat + load file on refresh are done (file parsing needed first)
+  [x] C. Decide how target column is selected — user picks from dropdown after upload
+        Note: build AFTER #13 (file parsing) is done
 
   [ ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
         Recommended: on-demand button ("Show LIME explanation") — keeps response time under 10s instead of 30s+
         Owner: Reem + Rahaf
 
-  [ ] E. Add test tasks for pipeline features once each piece is built (same as forgot-password and edit profile tests)
+  [ ] E. Add test tasks for pipeline features once each piece is built
         Owner: whole team — each person tests their own section
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -42,38 +40,39 @@
 
   SECTION 2 — DATABASE CONNECTIONS
   Owner: Reem (backend) + Lama (frontend) | Priority: HIGH
-  Note: independent — can run in parallel with pipeline work
 
-  [x] 3. Chat history — save/load from DB (max 3 chats), correct titles (Chat 1/2/3), persist on refresh
-  [x] 3a. Messages persist on refresh — save to Query/Response tables, load via getMessages on mount
-  [x] 3b. File upload to Supabase Storage — actual bytes sent to bucket, File table row created
-  [ ] 4. Feedback modal — onSubmit does nothing, save to Rating table (needs POST /feedback endpoint)
-  [ ] 5. Report bug modal — console.log only, save reports to DB or send via email
-  [ ] 6. Load file attachment on refresh — fileAttachment lost after refresh, reload from File table on mount
-        Note: needed before column selection UI can work
+  [x] 3.  Chat history — save/load from DB (max 3 chats), correct titles, persist on refresh
+  [x] 3a. Messages persist on refresh — saved to Query/Response tables, loaded via getMessages
+  [x] 3b. File upload to Supabase Storage — bytes sent to bucket, File table row created
+  [x] 6.  Load file attachment on refresh — already works via localStorage merge (no fix needed)
+  [ ] 4.  Feedback modal — save to Rating table (needs POST /feedback endpoint)          | Reem
+  [ ] 5.  Report bug modal — save to DB or send via email                                | Reem
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 3 — CHAT MANAGEMENT
   Owner: Reem (backend) + Lama (frontend) | Priority: MID
-  Note: independent — can run in parallel with pipeline work
 
-  [ ] 7.  Rename chat — allow user to rename a conversation from the sidebar
-  [x] 8.  Delete single chat — delete one conversation and all its messages from DB and sidebar (with 8s undo)
-  [x] 9.  Delete all chats — "Clear all conversations" button that wipes every chat for the user from DB
-  [x] 10. 3-chat limit — New Chat button disabled when limit reached, toast shown on attempt
+  [x] 7.  Rename chat — backend PATCH /renameChat + frontend wired up
+  [x] 8.  Delete single chat — with 8-second undo window
+  [x] 9.  Delete all chats — clears DB and sidebar
+  [x] 10. 3-chat limit — backend 400 + frontend disabled button + toast
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
- CRITICAL PATH   #13 → #16 → #17 → #15 → #19
+
   SECTION 4 — FILE PROCESSING
   Owner: Rahaf (backend) + Lama (frontend) | Priority: HIGH
-  Note: #11–12 are independent — #13 is the critical path start
+  CRITICAL PATH START ↓
 
-  [x] 11. Accept Excel/CSV uploads — validate file type (XLSX, CSV only), show error for unsupported formats   | Rahaf + Lama
-  [x] 12. File size validation — enforce max 10 MB limit before upload                                         | Rahaf
-  [ ] 13. Parse uploaded file server-side — read rows/columns into structured format for AI pipeline           | Rahaf        ← CRITICAL PATH START
-  [ ] 13a. Column selection UI — after file is parsed, show dropdown for user to pick target column            | Lama         [needs #13, needs #6]
-  [ ] 14. Show file processing status — loading indicator while file is being parsed/uploaded                  | Rahaf + Lama
+  [x] 11. Accept Excel/CSV uploads — validate file type, show error for unsupported formats
+  [x] 12. File size validation — enforce max 10 MB limit before upload
+  [ ] 13. Parse uploaded file server-side — read rows/columns into structured format     | Rahaf   ← CRITICAL PATH START
+  [x] 13a. Column selection UI — dropdown shown after upload, user picks target column   | Lama    [done — spinner + picker step in upload modal]
+  [ ] 13b. Change target column in chat — chip/badge near file chip showing active       | Lama    [needs pipeline #15+ to be testable]
+            target column with edit icon; clicking opens dropdown to switch column.
+            New messages use new column, old messages stay (Option A).
+            Build after pipeline is working so it can be tested end-to-end.
+  [ ] 14. Show file processing status — loading indicator while file is parsed           | Rahaf + Lama
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -81,26 +80,26 @@
   Priority: HIGH (core of the project)
   Flow: upload file → NL query → train model → predict → SHAP/LIME → LLM answer → display charts
 
-  ┌─ LINKED: CRITICAL PATH — must be done in this exact order ─┐
+  ┌─ CRITICAL PATH — must be done in this exact order ─────────┐
 
-  [ ] 16. ML Model — auto-train RandomForest at runtime, auto-detect target column   | Rahaf   [needs #13]
-  [ ] 17. SHAP integration — compute SHAP values per prediction                      | Rahaf   [needs #16]
-  [ ] 15. LLM API (xAI Grok / OpenAI / Claude) — send NLQ + data summary + SHAP     | Reem    [needs #17]
-  [ ] 19. Display XAI results — render feature importance charts in chat response     | Lama    [needs #15]
-
-  └────────────────────────────────────────────────────────────┘
-
-  ┌─ LINKED: depends on SHAP (#17) ────────────────────────────┐
-
-  [ ] 18. LIME integration — compute LIME explanation as fallback/complement to SHAP  | Reem    [needs #17]
+  [ ] 16. ML Model — auto-train RandomForest, user-selected target column               | Rahaf   [needs #13]
+  [ ] 17. SHAP integration — compute SHAP values per prediction                         | Rahaf   [needs #16]
+  [ ] 15. LLM API — send NLQ + data summary + SHAP values to LLM, get answer            | Reem    [needs #17]
+  [ ] 19. Display XAI results — render feature importance charts in chat response        | Lama    [needs #15]
 
   └────────────────────────────────────────────────────────────┘
 
-  ┌─ AFTER PIPELINE WORKS ─────────────────────────────────────┐
+  ┌─ depends on SHAP (#17) ─────────────────────────────────────┐
 
-  [ ] 20. Loading indicator — show progress while model + XAI runs (up to 30s)        | Lama
-  [ ] 21. Export results — download prediction + explanation as PDF, Excel, or HTML    | Reem (backend) + Lama (frontend)
-  [ ] 22. Rate explanation — user rates clarity/usefulness, saves rating to DB         | Reem (backend) + Lama (frontend)
+  [ ] 18. LIME integration — compute LIME explanation as fallback/complement to SHAP     | Reem    [needs #17]
+
+  └────────────────────────────────────────────────────────────┘
+
+  ┌─ AFTER PIPELINE WORKS ──────────────────────────────────────┐
+
+  [ ] 20. Loading indicator — show progress while model + XAI runs (up to 30s)           | Lama
+  [ ] 21. Export results — download prediction + explanation as PDF/Excel/HTML            | Reem + Lama
+  [ ] 22. Rate explanation — user rates clarity/usefulness, saves to Rating table         | Reem + Lama
 
   └────────────────────────────────────────────────────────────┘
 
@@ -111,24 +110,27 @@
   [x] Add forgot-password and reset-password endpoints to backend
   [x] Connect ForgotPassword and ResetPassword forms to backend
   [x] Test forgot password and reset password full flow end-to-end
-  [x] Edit Profile — display name + avatar saved to public."User" and Supabase Storage, loaded from DB on mount
-  [x] Test edit profile — change display name, change avatar, verify both persist after page refresh
+  [x] Edit Profile — display name + avatar saved to DB and Supabase Storage
+  [x] Test edit profile — change display name, change avatar, verify persist after refresh
   [x] Fix service role key in backend .env
   [x] Move backend URL to frontend env variable (VITE_API_URL)
-  [x] Auth context + session persistence across page refreshes (Supabase JWT, no extra cookie work needed)
+  [x] Auth context + session persistence across page refreshes
   [x] Loading spinner while checking session on startup
   [x] Backend restructured into routers/ and core/
   [x] Delete 27 unused files from frontend/src/imports/
   [x] Sign up stores user in public.user via DB trigger
   [x] Login blocks unverified users
   [x] Email confirmation required before sign in
-  [x] Chat history — viewHistory/addChat/deleteChat/deleteAllChats/saveMessage/getMessages connected to DB
+  [x] Chat history connected to DB — viewHistory/addChat/deleteChat/deleteAllChats/saveMessage/getMessages
   [x] Chat titles save correctly (Chat 1/2/3) — fixed Title sent as JSON body not query param
   [x] backendId assigned to pendingNewChat so saveMessageAPI works after file upload
-  [x] Messages persist on refresh — saved to Query/Response tables, loaded via getMessagesAPI
+  [x] Messages persist on refresh — Query/Response tables
   [x] File uploaded to Supabase Storage (user-files bucket) and File table row created
-  [x] 3-chat limit — enforced in backend (400 error) and frontend (disabled button + toast)
+  [x] 3-chat limit enforced in backend and frontend
   [x] Delete single chat with 8-second undo window
-  [x] Delete all chats — clears DB and sidebar, no auto-recreate
+  [x] Delete all chats
+  [x] Rename chat — PATCH /renameChat backend + frontend wired
+  [x] Column selection — upload modal step 2: spinner → dropdown to pick target column, stored in chat
+  [x] File chip restored after logout/login — viewHistory joins File table, no longer relies on localStorage
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
