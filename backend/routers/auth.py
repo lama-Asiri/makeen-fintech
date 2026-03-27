@@ -1,5 +1,10 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
+from sklearn.preprocessing import LabelEncoder
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
+import numpy as np
 import os
 import io
 import pandas as pd
@@ -7,6 +12,13 @@ from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 
 router = APIRouter(prefix="/auth")
 
+# holds cleaned data after /parse runs
+# lets /predict reuse it without re-downloading and re-cleaning the file on every request.
+cleaned_data_cache = {}
+
+# holds trained models after /train runs
+# lets /predict and /explain reuse the model without re-training.
+trained_models = {}
 
 class SignUpRequest(BaseModel):
     email: str
@@ -161,8 +173,11 @@ async def upload_file(
     path = f"{username}/{filename}"
 
     # 5. Read file bytes — Supabase storage requires bytes, not a SpooledTemporaryFile object.
+    # validate file size — reject anything over 10 MB before uploading.
     file_bytes = await file.read()
-
+    if len(file_bytes) > 10 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 10 MB limit")
+    
     # 6. Upload to Supabase storage.
     # upsert=True overwrites if the same path already exists (e.g. user re-uploads same filename).
     try:
@@ -487,3 +502,239 @@ async def get_messages(chat_id: int, authorization: str = Header(None)):
         raise HTTPException(status_code=400, detail=f"Failed to fetch messages: {str(e)}")
 
     return {"messages": queries.data}
+
+# /parse — download the user's file, clean it, and prepare it for the ML model 
+class ParseRequest(BaseModel):
+    chat_id: int
+    target_column: str
+ 
+ 
+@router.post("/parse")
+async def parse_file(body: ParseRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+    target_column = body.target_column
+ 
+    # 1. confirm this chat belongs to the requesting user
+    try:
+        chat_check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+ 
+    # 2. get the file path and type from the database
+    try:
+        file_result = supabase.table("File") \
+            .select("path, filetype") \
+            .eq("CHAT_ID", chat_id) \
+            .single() \
+            .execute()
+        if not file_result.data:
+            raise HTTPException(status_code=404, detail="No file found for this chat")
+        file_path = file_result.data["path"]
+        file_type = file_result.data["filetype"]
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"File lookup failed: {e}")
+ 
+    # 3. download from storage and load into a dataframe
+    try:
+        file_bytes = supabase.storage.from_("user-files").download(file_path)
+        if file_type == "csv":
+            df = pd.read_csv(io.BytesIO(file_bytes))
+        else:
+            df = pd.read_excel(io.BytesIO(file_bytes))
+ 
+        if df.empty:
+            raise HTTPException(status_code=400, detail="File is empty")
+        if target_column not in df.columns:
+            raise HTTPException(status_code=400, detail=f"Target column '{target_column}' not found in file")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
+ 
+    # 4. remove duplicate rows
+    df = df.drop_duplicates(keep='first')
+ 
+    # 5. drop columns where more than 60% of values are missing
+    df = df.dropna(axis=1, thresh=len(df) * 0.4)
+ 
+    # 6. fill remaining empty cells — numbers get the median, text gets the most common value
+    for col in df.columns:
+        if df[col].isnull().any():
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col].fillna(df[col].median(), inplace=True)
+            else:
+                mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
+                df[col].fillna(mode_val, inplace=True)
+ 
+    # 7. strip leading/trailing whitespace from text columns
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].astype(str).str.strip()
+ 
+    # 8. convert text columns that are actually numbers
+    #    only converts if 90%+ of the column's values are valid numbers.
+    for col in df.select_dtypes(include=['object']).columns:
+        try:
+            numeric_version = pd.to_numeric(df[col], errors='coerce')
+            if numeric_version.notna().sum() / len(numeric_version) > 0.9:
+                df[col] = numeric_version
+        except Exception:
+            pass
+ 
+    # 9. split into inputs (X) and the thing we want to predict (y)
+    X = df.drop(columns=[target_column])
+    y = df[target_column]
+ 
+    if y.nunique() < 2:
+        raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
+ 
+    # 10. cache cleaned raw data
+    cleaned_data_cache[chat_id] = {
+        "X": X,
+        "y": y,
+        "target_column": target_column,
+        "feature_names": X.columns.tolist()
+    }
+ 
+    # 11. return summary
+    return {
+        "message": "File parsed and ready",
+        "rows": len(df),
+        "features": len(X.columns),
+        "task": "classification" if y.dtype == 'object' or y.nunique() <= 10 else "regression",
+        "target_column": target_column,
+        "target_sample": y.value_counts().head(3).to_dict()
+    }
+
+class TrainRequest(BaseModel):
+    chat_id: int
+
+@router.post("/train")
+async def train_model(body: TrainRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+    
+    # 1. verify chat ownership
+    try:
+        chat_check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+    
+    # 2. check if /parse was run — data must be cached
+    if chat_id not in cleaned_data_cache:
+        raise HTTPException(status_code=400, detail="Must call /parse first to clean the file")
+    
+    # 3. get cleaned data from cache
+    cache = cleaned_data_cache[chat_id]
+    X = cache["X"].copy()
+    y = cache["y"].copy()
+    feature_names_original = cache["feature_names"]
+    target_column = cache["target_column"]
+    task_type = "classification" if (y.dtype == 'object' or y.nunique() <= 10) else "regression"
+    
+    # 4. encode categorical features in X — convert text to numbers
+    encoders = {}
+    for col in X.select_dtypes(include=['object']).columns:
+        unique_values = X[col].nunique()
+        if unique_values == 2:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col].astype(str))
+            encoders[col] = {"type": "label", "encoder": le}
+        elif unique_values <= 10:
+            X = pd.get_dummies(X, columns=[col], prefix=col, drop_first=True)
+            encoders[col] = {"type": "one_hot"}
+        else:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col].astype(str))
+            encoders[col] = {"type": "label", "encoder": le}
+    
+    # 5. convert boolean columns to integers
+    bool_cols = X.select_dtypes(include=['bool']).columns
+    X[bool_cols] = X[bool_cols].astype(int)
+    
+    # 6. update feature names after encoding (one-hot may add columns)
+    feature_names = X.columns.tolist()
+    
+    # 7. encode target (y) if categorical
+    le_target = None
+    class_labels = None
+    if task_type == "classification":
+        le_target = LabelEncoder()
+        y_encoded = le_target.fit_transform(y.astype(str))
+        class_labels = le_target.classes_.tolist()
+    else:
+        y_encoded = y.astype(float).values
+    
+    # 8. split into train/test (80/20)
+    try:
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y_encoded, test_size=0.2, random_state=42
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Data split failed: {e}")
+    
+    # 9. train the model
+    try:
+        if task_type == "classification":
+            model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            score = accuracy_score(y_test, y_pred)
+            metric_name = "accuracy"
+        else:
+            model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            score = r2_score(y_test, y_pred)
+            metric_name = "r2_score"
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Model training failed: {e}")
+    
+    # 10. get feature importances (top 5)
+    importances = model.feature_importances_
+    top_features = sorted(
+        zip(feature_names, importances),
+        key=lambda x: x[1],
+        reverse=True
+    )[:5]
+    
+    # 11. store model in memory for /predict and /explain
+    trained_models[chat_id] = {
+        "model": model,
+        "X_train": X_train,
+        "feature_names": feature_names,
+        "feature_names_original": feature_names_original,
+        "target_column": target_column,
+        "task_type": task_type,
+        "class_labels": class_labels,
+        "le_target": le_target,
+        "encoders": encoders
+    }
+    
+    # 12. return training summary
+    if task_type == "classification":
+        return {
+            "message": "Model trained successfully",
+            "task_type": task_type,
+            "accuracy": round(score, 4),
+            "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
+        }
+    else:
+        return {
+            "message": "Model trained successfully",
+            "task_type": task_type,
+            "r2_score": round(score, 4),
+            "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
+        }
