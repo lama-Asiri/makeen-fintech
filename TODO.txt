@@ -112,15 +112,10 @@
   SECTION 6 — DISCUSSION POINTS  (team decisions needed)
   Owner: whole team
 
-  [ ] F. Google/Apple sign-in buttons — currently decorative, not wired up.
+  [x] F. Google/Apple sign-in buttons — currently decorative, not wired up.
         Decide: remove them entirely OR wire up real OAuth via Supabase.
         Leaving fake buttons erodes trust with users.
-        Owner: Reem
-
-  [ ] G. Feedback modal (#4) & Report Bug modal (#5) — submitting currently does nothing.
-        Decide: wire to backend now (POST /feedback, POST /bug) OR show a
-        "Thanks, we'll be in touch" toast as a placeholder until backend is built.
-        Owner: Reem
+        Owner: Lama
 
   [ ] H. Settings → Personalization tab — check if it has any working features yet.
         If empty/placeholder, hide the tab until it's built to avoid confusing users.
