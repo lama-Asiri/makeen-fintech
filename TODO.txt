@@ -14,8 +14,10 @@
         { "answer": string, "prediction": string, "shap_values": {}, "lime_values": {} }
         Owner: Rahaf + Reem + Lama
 
-  [ ] B. Choose LLM API provider and add key to backend .env
-        Recommended: OpenAI GPT-4o-mini — cheapest, fastest, best documented for grad project budget
+  [x] B. Choose LLM API provider — DECIDED: OpenAI GPT-4o-mini
+        Reasons: easiest to learn, most documentation/examples online, most reliable, best community support
+        OpenAI connection tested and confirmed working (POST /test-llm returns real GPT response)
+        Next: Reem wires real pipeline data (data summary + SHAP values) into the prompt in #15
         Owner: Reem
 
   [x] C. Decide how target column is selected — user picks from dropdown after upload
