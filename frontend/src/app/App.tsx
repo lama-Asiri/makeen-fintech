@@ -136,8 +136,6 @@ function MainApp() {
                 onSuccess={handleLoginSuccess}
                 onForgotPassword={handleForgotPassword}
                 onSignUp={handleSignUp}
-                onGoogleLogin={handleLoginSuccess}
-                onAppleLogin={handleLoginSuccess}
               />
             </AuthLayout>
           </motion.div>

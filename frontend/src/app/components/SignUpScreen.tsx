@@ -7,14 +7,11 @@ interface SignUpScreenProps {
   onClose: () => void;
 }
 
-export function SignUpScreen({ onBack, onSuccess, onClose }: SignUpScreenProps) {
+export function SignUpScreen({ onBack, onClose }: SignUpScreenProps) {
   return (
     <AuthLayout onClose={onClose}>
       <SignUpForm
-        onSuccess={onSuccess}
         onLogin={onBack}
-        onGoogleSignUp={onSuccess}
-        onAppleSignUp={onSuccess}
       />
     </AuthLayout>
   );

@@ -4,6 +4,7 @@ import { LoginInput } from './LoginInput';
 import { LoginButton } from './LoginButton';
 import { LoginCheckbox } from './LoginCheckbox';
 import { Toast } from './Toast';
+import { supabase } from '../../lib/supabase';
 
 interface SignUpFormData {
   fullName: string;
@@ -14,17 +15,11 @@ interface SignUpFormData {
 }
 
 interface SignUpFormProps {
-  onSuccess: () => void;
   onLogin: () => void;
-  onGoogleSignUp: () => void;
-  onAppleSignUp: () => void;
 }
 
 export function SignUpForm({
-  onSuccess,
   onLogin,
-  onGoogleSignUp,
-  onAppleSignUp,
 }: SignUpFormProps) {
   const {
     register,
@@ -42,7 +37,7 @@ export function SignUpForm({
   });
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading, setIsAppleLoading] = useState(false);
+  const [isAppleLoading] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
@@ -72,13 +67,14 @@ export function SignUpForm({
 
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
     setIsGoogleLoading(false);
-    onGoogleSignUp();
   };
 
   const handleAppleSignUp = () => {
-    // Show Coming Soon feedback as a toast
     setShowComingSoon(true);
   };
 

@@ -4,7 +4,7 @@ import { LoginInput } from './LoginInput';
 import { LoginButton } from './LoginButton';
 import { LoginCheckbox } from './LoginCheckbox';
 import { Toast } from './Toast';
-import { supabase } from '../../lib/supabase';  // used to set session after login
+import { supabase } from '../../lib/supabase';
 
 interface LoginFormData {
   email: string;
@@ -16,16 +16,12 @@ interface LoginFormProps {
   onSuccess: () => void;
   onForgotPassword: () => void;
   onSignUp: () => void;
-  onGoogleLogin: () => void;
-  onAppleLogin: () => void;
 }
 
 export function LoginForm({
   onSuccess,
   onForgotPassword,
   onSignUp,
-  onGoogleLogin,
-  onAppleLogin,
 }: LoginFormProps) {
   const {
     register,
@@ -41,7 +37,6 @@ export function LoginForm({
   });
 
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isAppleLoading] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -68,13 +63,14 @@ export function LoginForm({
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
     setIsGoogleLoading(false);
-    onGoogleLogin();
   };
 
   const handleAppleLogin = () => {
-    // Show Coming Soon feedback as a toast
     setShowComingSoon(true);
   };
 
@@ -167,7 +163,7 @@ export function LoginForm({
           variant="apple"
           type="button"
           onClick={handleAppleLogin}
-          isLoading={isAppleLoading}
+          isLoading={false}
         >
           Apple
         </LoginButton>
