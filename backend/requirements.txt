@@ -6,3 +6,6 @@ python-multipart
 pandas
 openpyxl
 openai
+scikit-learn
+shap
+lime
