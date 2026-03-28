@@ -813,3 +813,174 @@ async def add_rating(response_type: str, response_id: int, category: str = None,
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /predict — make a prediction for a given query using the trained model
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# RAHAF — this is your next task (#17 part 1)
+#
+# What this endpoint should do:
+#   1. Check that /train was already called for this chat (trained_models[chat_id] must exist)
+#   2. Extract a row of feature values to predict on.
+#      The simplest approach for now: use the LAST row of the original training data
+#      as a stand-in for "the row the user is asking about". note in frontend we allowed user to pick so attempt to use the col user picked and give feedback to LAMA
+#      Later this can be replaced with parsing the user's NL query to extract values.
+#   3. Run model.predict() on that row → get a predicted class/value
+#   4. Run model.predict_proba() if classification → get confidence %
+#   5. Return the prediction and confidence so the frontend can show the badge
+#
+# Input:  { chat_id: int }
+# Output: { prediction: str, confidence: float, task_type: str }
+#
+# Example output:
+#   { "prediction": "Churn", "confidence": 0.87, "task_type": "classification" }
+#
+
+class PredictRequest(BaseModel):
+    chat_id: int
+
+
+@router.post("/predict")
+async def predict(body: PredictRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+
+    # verify chat belongs to this user
+    try:
+        chat_check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+
+    # check /train was called first
+    if chat_id not in trained_models:
+        raise HTTPException(status_code=400, detail="Must call /train first before predicting")
+
+    cache = trained_models[chat_id]
+    model = cache["model"]
+    task_type = cache["task_type"]
+    class_labels = cache["class_labels"]  # list of class names (classification only)
+    le_target = cache["le_target"]        # LabelEncoder for target (classification only)
+
+    # TODO Rahaf: get the row to predict on
+    # For now, use the last row of training data as a placeholder.
+    # Later: parse the user's NL query to extract the feature values they are asking about.
+    X_train = cache["X_train"]
+    row_to_predict = X_train[-1].reshape(1, -1)  # shape: (1, n_features)
+
+    # TODO Rahaf: run the model prediction
+    # prediction = model.predict(row_to_predict)  # returns array like [1] or ["Churn"]
+    # if classification: decode back to label using le_target
+    # if regression: just return the float value as a string
+
+    # TODO Rahaf: get confidence for classification
+    # probabilities = model.predict_proba(row_to_predict)  # returns array like [[0.13, 0.87]]
+    # confidence = float(max(probabilities[0]))
+
+    # TODO Rahaf: return the result
+    # Replace this placeholder with real values once the above is filled in
+    raise HTTPException(status_code=501, detail="Not implemented yet — Rahaf fill this in")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# /explain — run SHAP on the trained model and return feature importance values
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# RAHAF — this is your next task (#17 part 2)
+#
+# What this endpoint should do:
+#   1. Check that /train was already called (trained_models[chat_id] must exist)
+#   2. Create a SHAP explainer using the trained RandomForest model
+#      Use shap.TreeExplainer — it works directly with RandomForest, no background data needed
+#   3. Run the explainer on the SAME row used in /predict (last row of training data for now)
+#   4. Get the SHAP values for each feature
+#   5. Map them back to feature names
+#   6. Return the top features with their SHAP values
+#      Positive value = pushed prediction UP, negative = pushed prediction DOWN
+#
+# Input:  { chat_id: int }
+# Output: { shap_values: { "feature_name": float, ... }, prediction: str }
+#
+# Example output:
+#   {
+#     "shap_values": {
+#       "Age": 0.38,
+#       "Balance": -0.27,
+#       "NumProducts": 0.18,
+#       "IsActiveMember": 0.11,
+#       "Geography_Germany": 0.06
+#     },
+#     "prediction": "Churn"
+#   }
+#
+# Install hint: shap is already in requirements.txt — just `import shap` at the top of this file
+#
+
+class ExplainRequest(BaseModel):
+    chat_id: int
+
+
+@router.post("/explain")
+async def explain(body: ExplainRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+
+    # verify chat belongs to this user
+    try:
+        chat_check = supabase.table("Chat") \
+            .select("CHAT_ID") \
+            .eq("CHAT_ID", chat_id) \
+            .eq("USER_ID", user_id) \
+            .single() \
+            .execute()
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+
+    # check /train was called first
+    if chat_id not in trained_models:
+        raise HTTPException(status_code=400, detail="Must call /train first before explaining")
+
+    cache = trained_models[chat_id]
+    model = cache["model"]
+    feature_names = cache["feature_names"]
+    X_train = cache["X_train"]
+
+    # TODO Rahaf: create the SHAP explainer
+    # import shap at the top of this file first
+    # explainer = shap.TreeExplainer(model)
+
+    # TODO Rahaf: get the row to explain (same row as /predict)
+    # row_to_explain = X_train[-1].reshape(1, -1)
+
+    # TODO Rahaf: compute SHAP values
+    # shap_values = explainer.shap_values(row_to_explain)
+    #
+    # For classification: shap_values is a list of arrays, one per class.
+    # Use the SHAP values for the predicted class index.
+    # For regression: shap_values is a single array.
+    #
+    # shap_for_row = shap_values[predicted_class_index][0]  # shape: (n_features,)
+
+    # TODO Rahaf: map feature names to SHAP values and return top 8
+    # feature_shap = dict(zip(feature_names, shap_for_row))
+    # top_shap = dict(sorted(feature_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:8])
+
+    # TODO Rahaf: return the result
+    # return {
+    #     "shap_values": top_shap,
+    #     "prediction": predicted_label   # same as /predict output
+    # }
+
+    # Replace this placeholder with real values once the above is filled in
+    raise HTTPException(status_code=501, detail="Not implemented yet — Rahaf fill this in")
+
