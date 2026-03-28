@@ -761,3 +761,5 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
             "r2_score": round(score, 4),
             "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
         }
+
+# Rating

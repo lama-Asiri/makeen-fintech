@@ -33,10 +33,10 @@ CREATE TABLE public.Rating (
   Created_at timestamp with time zone NOT NULL DEFAULT now(),
   Score character varying NOT NULL CHECK ("Score"::text = ANY (ARRAY['Good'::character varying::text, 'Bad'::character varying::text])),
   Comment text,
-  RESPONSE_ID integer GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
   category character varying CHECK (category::text = ANY (ARRAY['Incorrect or incomplete'::character varying::text, 'Not what I asked for'::character varying::text, 'Slow or buggy'::character varying::text, 'Style or tone'::character varying::text, 'Safety or legal concern'::character varying::text, 'Other'::character varying::text])),
+  RESPONSE_ID_new integer NOT NULL,
   CONSTRAINT Rating_pkey PRIMARY KEY (RATING_ID),
-  CONSTRAINT Rating_RESPONSE_ID_fkey FOREIGN KEY (RESPONSE_ID) REFERENCES public.Response(RESPONSE_ID)
+  CONSTRAINT Rating_RESPONSE_ID_new_fkey FOREIGN KEY (RESPONSE_ID_new) REFERENCES public.Response(RESPONSE_ID)
 );
 CREATE TABLE public.Response (
   RESPONSE_ID integer GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
