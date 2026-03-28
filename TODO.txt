@@ -2,8 +2,8 @@
 ║                     MAKEEN - TODO LIST                       ║
 ╚══════════════════════════════════════════════════════════════╝
 
-  CRITICAL PATH   #13 → #16 → #17 → #15 → #19
-  Full pipeline is blocked until these are done in order.
+  CRITICAL PATH   #13 ✓ → #16 ✓ → #17 → #15 → #23 → #19b
+  #13 and #16 are DONE. Next: Rahaf builds #17 (SHAP/predict), then Reem wires #15 (LLM), then Lama wires frontend #23.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -69,7 +69,7 @@
 
   [x] 11. Accept Excel/CSV uploads — validate file type, show error for unsupported formats
   [x] 12. File size validation — enforce max 10 MB limit before upload
-  [ ] 13. Parse uploaded file server-side — read rows/columns into structured format     | Rahaf   ← CRITICAL PATH START
+  [x] 13. Parse uploaded file server-side — /auth/parse endpoint fully built            | Rahaf   ← CRITICAL PATH START
   [x] 13a. Column selection UI — dropdown shown after upload, user picks target column   | Lama    [done — spinner + picker step in upload modal]
   [ ] 13b. Change target column in chat — chip/badge near file chip showing active       | Lama    [needs pipeline #15+ to be testable]
             target column with edit icon; clicking opens dropdown to switch column.
@@ -85,11 +85,13 @@
 
   ┌─ CRITICAL PATH — must be done in this exact order ─────────┐
 
-  [ ] 16. ML Model — auto-train RandomForest, user-selected target column               | Rahaf   [needs #13]
-  [ ] 17. SHAP integration — compute SHAP values per prediction                         | Rahaf   [needs #16]
-  [ ] 15. LLM API — send NLQ + data summary + SHAP values to LLM, get answer            | Reem    [needs #17]
+  [x] 16. ML Model — /auth/train endpoint fully built (RandomForest classifier+regressor, 80/20 split, feature importance) | Rahaf
+  [ ] 17. SHAP integration — add /auth/predict + /auth/explain endpoints returning shap_values per prediction | Rahaf   [needs #16 ✓]
+  [ ] 15. LLM API — wire NLQ + data summary + SHAP values into /test-llm prompt, return full answer | Reem    [needs #17]
+  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout + mock response with real calls to /parse → /train → /explain → /test-llm | Lama    [needs #15]
   [x] 19. Display XAI results — XAI card with prediction badge + animated SHAP bar chart in chat bubble | Lama
-  [ ] 19b. Wire real pipeline data into XAI card — replace mockXaiData with actual { prediction, shap_values } from API response | Lama  [needs #15]
+  [ ] 19b. Wire real pipeline data into XAI card — replace mockXaiData with actual { prediction, shap_values } from API response | Lama  [needs #23]
+  [ ] 24. Test /auth/parse and /auth/train endpoints end-to-end with a real CSV file    | Lama
 
   └────────────────────────────────────────────────────────────┘
 
