@@ -762,7 +762,7 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
             "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
         }
 
-# Rating
+# Rating allowed categories
 ALLOWED_CATEGORIES = [
     'Incorrect or incomplete',
     'Not what I asked for',
@@ -773,13 +773,23 @@ ALLOWED_CATEGORIES = [
 ]
 
 @router.post("/addRating")
-async def add_rating(response_type: str, response_id: int, category: str = None, comment: str = None):
+async def add_rating(
+    response_type: str,
+    response_id: int,
+    category: str = None,
+    comment: str = None,
+    authorization: str = Header(None)  # keep this in signature but ignore it
+):
     try:
+        # TEMPORARILY ignore JWT for testing
+        # supabase.auth.set_session({"access_token": token})  <-- remove or comment out
+
+        # Normalize response_type
         response_type = response_type.capitalize()
         if response_type not in ['Good', 'Bad']:
             raise HTTPException(status_code=400, detail="response_type must be 'Good' or 'Bad'")
 
-        # Logic for fields
+        # Logic for Good / Bad
         if response_type == 'Good':
             score_to_insert = 'Good'
             category_to_insert = None
@@ -793,7 +803,7 @@ async def add_rating(response_type: str, response_id: int, category: str = None,
             category_to_insert = category
             if category == 'Other' and not comment:
                 raise HTTPException(status_code=400, detail="comment is required for 'Other' category")
-            comment_to_insert = comment  # optional for other Bad categories
+            comment_to_insert = comment
 
         # Insert into Supabase
         response = supabase.table("Rating").insert({
@@ -803,12 +813,60 @@ async def add_rating(response_type: str, response_id: int, category: str = None,
             "RESPONSE_ID": response_id
         }).execute()
 
+        return {
+            "message": "Rating added successfully",
+            "rating": response.data[0]
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+ALLOWED_BUG_CATEGORIES = [
+    "Bug / Crash",
+    "UI issue",
+    "Performance",
+    "Feature request",
+    "Wrong answer",
+    "Other"
+]
+
+@router.post("/reportBug")
+async def report_bug(
+    category: str,
+    comment: str,
+    authorization: str = Header(None)
+):
+    try:
+        # Get user ID from token (you already have this helper)
+        user_id = _get_user_id(authorization)
+
+        # Validate category
+        if category not in ALLOWED_BUG_CATEGORIES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"category must be one of {ALLOWED_BUG_CATEGORIES}"
+            )
+
+        # Comment is REQUIRED for all cases
+        if not comment or comment.strip() == "":
+            raise HTTPException(
+                status_code=400,
+                detail="comment is required for all bug reports"
+            )
+
+        # Insert into Supabase
+        response = supabase.table("Bug").insert({
+            "categoty": category,   # keep as your DB column name
+            "comment": comment,
+            "USER_ID": user_id
+        }).execute()
+
         if response.status_code != 201:
             raise HTTPException(status_code=400, detail=response.data)
 
         return {
-            "message": "Rating added successfully",
-            "rating": response.data[0]  # Supabase returns list of inserted rows,, remove this line later
+            "message": "Bug reported successfully",
+            "bug": response.data[0]
         }
 
     except Exception as e:
