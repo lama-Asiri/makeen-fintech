@@ -29,7 +29,8 @@
 
   [ ] E. Add test tasks for pipeline features once each piece is built
         Owner: whole team — each person tests their own section
-
+**note scafolld build 
+**manual testing
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 1 — BACKEND CLEANUP
