@@ -584,20 +584,11 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
     # 7. drop columns where more than 60% of values are missing
     df = df.dropna(axis=1, thresh=len(df) * 0.4)
  
-    # 8. fill remaining empty cells: numbers get the median, text gets the most common value
-    for col in df.columns:
-        if df[col].isnull().any():
-            if pd.api.types.is_numeric_dtype(df[col]):
-                df[col].fillna(df[col].median(), inplace=True)
-            else:
-                mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
-                df[col].fillna(mode_val, inplace=True)
- 
-    # 9. strip leading/trailing whitespace from text columns
+    # 8. strip leading/trailing whitespace from text columns
     for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].astype(str).str.strip()
  
-    # 10. convert text columns that are actually numbers
+    # 9. convert text columns that are actually numbers
     #     only converts if 90%+ of the column's values are valid numbers.
     for col in df.select_dtypes(include=['object']).columns:
         try:
@@ -607,14 +598,23 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         except Exception:
             pass
  
-    # 12. split into inputs (X) and the thing we want to predict (y)
+    # 10. fill remaining empty cells: numbers get the median, text gets the most common value
+    for col in df.columns:
+        if df[col].isnull().any():
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col].fillna(df[col].median(), inplace=True)
+            else:
+                mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
+                df[col].fillna(mode_val, inplace=True)
+
+    # 11. split into inputs (X) and the thing we want to predict (y)
     X = df.drop(columns=[target_column])
     y = df[target_column]
  
     if y.nunique() < 2:
         raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
  
-    # 13. cache cleaned raw data
+    # 12. cache cleaned raw data
     cleaned_data_cache[chat_id] = {
         "X": X,
         "y": y,
@@ -622,7 +622,7 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         "feature_names": X.columns.tolist()
     }
  
-    # 14. return summary with cleaning details
+    # 13. return summary with cleaning details
     return {
         "message": "File parsed and ready",
         "rows": len(df),
