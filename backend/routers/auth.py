@@ -557,13 +557,34 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
  
-    # 4. remove duplicate rows
+    # 4. standardize column names
+    def clean_column_name(col):
+        col = str(col).strip()
+        col = col.replace(" ", "_")
+        col = col.replace("-", "_")
+        col = "".join(c if c.isalnum() or c == "_" else "" for c in col)
+        while "__" in col:
+            col = col.replace("__", "_")
+        return col
+    
+    df.columns = [clean_column_name(col) for col in df.columns]
+    # update target_column to match cleaned name
+    target_column = clean_column_name(target_column)
+ 
+    # 5. drop ID columns
+    id_patterns = ['id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk']
+    cols_to_drop = [col for col in df.columns 
+                    if col.lower() in id_patterns or col.lower().endswith('_id')]
+    if cols_to_drop:
+        df = df.drop(columns=cols_to_drop)
+ 
+    # 6. remove duplicate rows
     df = df.drop_duplicates(keep='first')
  
-    # 5. drop columns where more than 60% of values are missing
+    # 7. drop columns where more than 60% of values are missing
     df = df.dropna(axis=1, thresh=len(df) * 0.4)
  
-    # 6. fill remaining empty cells — numbers get the median, text gets the most common value
+    # 8. fill remaining empty cells: numbers get the median, text gets the most common value
     for col in df.columns:
         if df[col].isnull().any():
             if pd.api.types.is_numeric_dtype(df[col]):
@@ -572,12 +593,12 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
                 mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
                 df[col].fillna(mode_val, inplace=True)
  
-    # 7. strip leading/trailing whitespace from text columns
+    # 9. strip leading/trailing whitespace from text columns
     for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].astype(str).str.strip()
  
-    # 8. convert text columns that are actually numbers
-    #    only converts if 90%+ of the column's values are valid numbers.
+    # 10. convert text columns that are actually numbers
+    #     only converts if 90%+ of the column's values are valid numbers.
     for col in df.select_dtypes(include=['object']).columns:
         try:
             numeric_version = pd.to_numeric(df[col], errors='coerce')
@@ -586,14 +607,14 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         except Exception:
             pass
  
-    # 9. split into inputs (X) and the thing we want to predict (y)
+    # 12. split into inputs (X) and the thing we want to predict (y)
     X = df.drop(columns=[target_column])
     y = df[target_column]
  
     if y.nunique() < 2:
         raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
  
-    # 10. cache cleaned raw data
+    # 13. cache cleaned raw data
     cleaned_data_cache[chat_id] = {
         "X": X,
         "y": y,
@@ -601,14 +622,16 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         "feature_names": X.columns.tolist()
     }
  
-    # 11. return summary
+    # 14. return summary with cleaning details
     return {
         "message": "File parsed and ready",
         "rows": len(df),
         "features": len(X.columns),
         "task": "classification" if y.dtype == 'object' or y.nunique() <= 10 else "regression",
         "target_column": target_column,
-        "target_sample": y.value_counts().head(3).to_dict()
+        "target_sample": y.value_counts().head(3).to_dict(),
+        "columns_dropped": cols_to_drop if cols_to_drop else [],
+        "note": "ID columns and columns with >60% missing data removed"
     }
 
 class TrainRequest(BaseModel):
@@ -632,7 +655,7 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
     
-    # 2. check if /parse was run — data must be cached
+    # 2. check if /parse was run
     if chat_id not in cleaned_data_cache:
         raise HTTPException(status_code=400, detail="Must call /parse first to clean the file")
     
