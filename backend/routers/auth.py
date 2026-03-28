@@ -763,3 +763,53 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
         }
 
 # Rating
+ALLOWED_CATEGORIES = [
+    'Incorrect or incomplete',
+    'Not what I asked for',
+    'Slow or buggy',
+    'Style or tone',
+    'Safety or legal concern',
+    'Other'
+]
+
+@router.post("/addRating")
+async def add_rating(response_type: str, response_id: int, category: str = None, comment: str = None):
+    try:
+        response_type = response_type.capitalize()
+        if response_type not in ['Good', 'Bad']:
+            raise HTTPException(status_code=400, detail="response_type must be 'Good' or 'Bad'")
+
+        # Logic for fields
+        if response_type == 'Good':
+            score_to_insert = 'Good'
+            category_to_insert = None
+            comment_to_insert = None
+        else:  # Bad
+            score_to_insert = 'Bad'
+            if not category:
+                raise HTTPException(status_code=400, detail="category is required for Bad responses")
+            if category not in ALLOWED_CATEGORIES:
+                raise HTTPException(status_code=400, detail=f"category must be one of {ALLOWED_CATEGORIES}")
+            category_to_insert = category
+            if category == 'Other' and not comment:
+                raise HTTPException(status_code=400, detail="comment is required for 'Other' category")
+            comment_to_insert = comment  # optional for other Bad categories
+
+        # Insert into Supabase
+        response = supabase.table("Rating").insert({
+            "Score": score_to_insert,
+            "Comment": comment_to_insert,
+            "category": category_to_insert,
+            "RESPONSE_ID": response_id
+        }).execute()
+
+        if response.status_code != 201:
+            raise HTTPException(status_code=400, detail=response.data)
+
+        return {
+            "message": "Rating added successfully",
+            "rating": response.data[0]  # Supabase returns list of inserted rows,, remove this line later
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
