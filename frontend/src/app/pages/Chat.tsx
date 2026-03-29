@@ -107,6 +107,7 @@ interface Message {
   feedback?: 'up' | 'down' | null;
   edited?: boolean;
   xaiData?: XaiData; // populated by real pipeline; mock data used until #15 is wired
+  backendResponseId?: number; // RESPONSE_ID from DB — stored after saveMessageAPI so /auth/addRating can reference it
 }
 
 interface FileAttachment {
@@ -1058,8 +1059,24 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
         // Save the user message + AI response to the DB so they persist across sessions.
         // We save after the AI responds (not before) so we always store a complete Q&A pair.
+        // Changed: now reads the returned responseId and stores it on the assistant message
+        // so the thumbs up/down rating buttons can pass it to /auth/addRating.
         if (session?.access_token && activeChat.backendId !== undefined) {
           saveMessageAPI(session.access_token, activeChat.backendId, userMessage.content, aiContent)
+            .then(({ responseId }) => {
+              setChats((prev) =>
+                prev.map((chat) =>
+                  chat.id === activeChatId
+                    ? {
+                        ...chat,
+                        messages: chat.messages.map((msg) =>
+                          msg.id === aiMessage.id ? { ...msg, backendResponseId: responseId } : msg
+                        ),
+                      }
+                    : chat
+                )
+              );
+            })
             .catch((err) => console.error('[saveMessage] Failed to save to backend:', err));
         }
       }
@@ -1159,6 +1176,19 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
     // Show toast feedback
     setToastMessage('Thanks for your feedback!');
+
+    // Wire thumbs-up to /auth/addRating with response_type=Good.
+    // Only called when toggling ON (newFeedback === 'up'), not when toggling off.
+    if (feedbackType === 'up') {
+      const message = activeChat?.messages.find((m) => m.id === messageId);
+      const responseId = message?.backendResponseId;
+      if (responseId !== undefined && session?.access_token) {
+        fetch(
+          `${import.meta.env.VITE_API_URL}/auth/addRating?response_type=Good&response_id=${responseId}`,
+          { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } }
+        ).catch((err) => console.error('[addRating] Failed:', err));
+      }
+    }
   };
 
   const handleFeedbackSubmit = (feedback: { reason: string; details: string }) => {
@@ -1184,7 +1214,23 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
     // Show toast
     setToastMessage('Thanks for your feedback!');
-    
+
+    // Wire thumbs-down modal submit to /auth/addRating with response_type=Bad + category + comment.
+    const message = activeChat?.messages.find((m) => m.id === feedbackModalMessageId);
+    const responseId = message?.backendResponseId;
+    if (responseId !== undefined && session?.access_token) {
+      const params = new URLSearchParams({
+        response_type: 'Bad',
+        response_id: String(responseId),
+        category: feedback.reason,
+        ...(feedback.details ? { comment: feedback.details } : {}),
+      });
+      fetch(`${import.meta.env.VITE_API_URL}/auth/addRating?${params.toString()}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      }).catch((err) => console.error('[addRating] Failed:', err));
+    }
+
     // Close modal
     setFeedbackModalMessageId(null);
   };
@@ -3103,7 +3149,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               </button>
 
               {/* System Share - Only show if supported */}
-              {navigator.share && (
+              {typeof navigator.share === 'function' && (
                 <button
                   onClick={handleSystemShare}
                   className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"

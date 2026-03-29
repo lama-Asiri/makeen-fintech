@@ -464,15 +464,20 @@ async def save_message(body: SaveMessageRequest, authorization: str = Header(Non
     # QUERY_ID must reference a real Query row — requires the schema fix:
     # ALTER TABLE public."Response" ALTER COLUMN "QUERY_ID" DROP IDENTITY;
     try:
-        supabase.table("Response").insert({
+        # Changed: capture the insert result so we can return RESPONSE_ID.
+        # RESPONSE_ID is needed by /addRating so the frontend can link a rating to a specific response.
+        response_result = supabase.table("Response").insert({
             "answer": body.answer,
             "explanation": body.explanation,
             "QUERY_ID": query_id,
         }).execute()
+        response_id = response_result.data[0]["RESPONSE_ID"]
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to save response: {str(e)}")
 
-    return {"message": "Message saved", "QUERY_ID": query_id}
+    # Changed: added RESPONSE_ID to the return value.
+    # The frontend stores this on the message so the thumbs up/down buttons can send it to /addRating.
+    return {"message": "Message saved", "QUERY_ID": query_id, "RESPONSE_ID": response_id}
 
 
 @router.get("/getMessages/{chat_id}")

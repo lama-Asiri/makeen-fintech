@@ -68,19 +68,24 @@ export async function deleteAllChatsAPI(token: string): Promise<void> {
 
 // Save a user message + AI response pair to the DB after each exchange.
 // Called right after the AI response is added to the chat state.
+// Changed: now returns responseId (number) instead of void.
+// The backend was updated to return RESPONSE_ID alongside QUERY_ID so the frontend
+// can store it on the message and pass it to /auth/addRating when the user rates a response.
 export async function saveMessageAPI(
   token: string,
   chatId: number,
   queryText: string,
   answer: string,
   explanation = ''
-): Promise<void> {
+): Promise<{ responseId: number }> {
   const res = await fetch(`${BASE}/auth/saveMessage`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify({ chat_id: chatId, query_text: queryText, answer, explanation }),
   });
   if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return { responseId: data.RESPONSE_ID };
 }
 
 // Load all messages for a chat from the DB.

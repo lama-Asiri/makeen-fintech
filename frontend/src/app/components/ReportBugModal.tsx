@@ -1,6 +1,7 @@
 import { X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { trackEvent } from '@/utils/analytics';
+import { supabase } from '@/lib/supabase';
 
 interface ReportBugModalProps {
   isOpen: boolean;
@@ -44,17 +45,29 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
       return;
     }
 
-    // Success - submit and close
-    console.log('Bug report submitted:', { issueType: selectedIssueType, description });
-    
     // Track event
     trackEvent('report_bug_submitted', { issueType: selectedIssueType });
-    
+
+    // Wire to /auth/reportBug — sends the bug report to the DB.
+    // Gets the session token from Supabase so the backend can identify the user.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      const params = new URLSearchParams({
+        category: selectedIssueType!,
+        comment: description,
+      });
+      fetch(`${import.meta.env.VITE_API_URL}/auth/reportBug?${params.toString()}`, {
+        method: 'POST',
+        headers: session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {},
+      }).catch((err) => console.error('[reportBug] Failed:', err));
+    });
+
     // Reset form
     setSelectedIssueType(null);
     setDescription('');
     setErrors({ issueType: '', description: '' });
-    
+
     // Close modal
     onClose();
     if (onSuccess) {
