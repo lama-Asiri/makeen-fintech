@@ -7,30 +7,25 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 0 — DECISIONS & SETUP  (resolve these before coding the pipeline)
+  SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 
   [x] A. Define API response contract — AGREED:
         { "answer": string, "prediction": string, "shap_values": {}, "lime_values": {} }
-        Owner: Rahaf + Reem + Lama
 
   [x] B. Choose LLM API provider — DECIDED: OpenAI GPT-4o-mini
-        Reasons: easiest to learn, most documentation/examples online, most reliable, best community support
-        OpenAI connection tested and confirmed working (POST /test-llm returns real GPT response)
-        Next: Reem wires real pipeline data (data summary + SHAP values) into the prompt in #15
-        Owner: Reem
+        Connection tested and confirmed working (POST /test-llm returns real GPT response)
+        Next: Reem wires real pipeline data into /ask endpoint (#15)
 
   [x] C. Decide how target column is selected — user picks from dropdown after upload
-        Note: build AFTER #13 (file parsing) is done
 
   [ ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
-        Recommended: on-demand button ("Show LIME explanation") — keeps response time under 10s instead of 30s+
+        Recommended: on-demand ("Show LIME explanation") — keeps response time under 10s
         Owner: Reem + Rahaf
 
-  [ ] E. Add test tasks for pipeline features once each piece is built
-        Owner: whole team — each person tests their own section
-**note scafolld build 
-**manual testing
+  [ ] E. Manual testing — each person tests their own section once built
+        Owner: whole team
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 1 — BACKEND CLEANUP
@@ -40,102 +35,75 @@
   [ ] 2. Decide on database/connection.py — keep SQLAlchemy or remove in favour of Supabase client
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  SECTION 2 — DATABASE CONNECTIONS
+  SECTION 2 — DATABASE CONNECTIONS - CLOSED
   Owner: Reem (backend) + Lama (frontend) | Priority: HIGH
-
-  [x] 3.  Chat history — save/load from DB (max 3 chats), correct titles, persist on refresh
-  [x] 3a. Messages persist on refresh — saved to Query/Response tables, loaded via getMessages
-  [x] 3b. File upload to Supabase Storage — bytes sent to bucket, File table row created
-  [x] 6.  Load file attachment on refresh — already works via localStorage merge (no fix needed)
-  [ ] 4.  Feedback modal — save to Rating table (needs POST /feedback endpoint)          | Reem
-  [ ] 5.  Report bug modal — save to DB or send via email                                | Reem
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-  SECTION 3 — CHAT MANAGEMENT
+  SECTION 3 — CHAT MANAGEMENT - CLOSED
   Owner: Reem (backend) + Lama (frontend) | Priority: MID
-
-  [x] 7.  Rename chat — backend PATCH /renameChat + frontend wired up
-  [x] 8.  Delete single chat — with 8-second undo window
-  [x] 9.  Delete all chats — clears DB and sidebar
-  [x] 10. 3-chat limit — backend 400 + frontend disabled button + toast
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 4 — FILE PROCESSING
   Owner: Rahaf (backend) + Lama (frontend) | Priority: HIGH
-  CRITICAL PATH START ↓
 
-  [x] 11. Accept Excel/CSV uploads — validate file type, show error for unsupported formats
+  [x] 11. Accept Excel/CSV uploads — validate file type, error for unsupported formats
   [x] 12. File size validation — enforce max 10 MB limit before upload
-  [x] 13. Parse uploaded file server-side — /auth/parse endpoint fully built            | Rahaf   ← CRITICAL PATH START
-  [x] 13a. Column selection UI — dropdown shown after upload, user picks target column   | Lama    [done — spinner + picker step in upload modal]
-  [ ] 13b. Change target column in chat — chip/badge near file chip showing active       | Lama    [needs pipeline #15+ to be testable]
-            target column with edit icon; clicking opens dropdown to switch column.
-            New messages use new column, old messages stay (Option A).
-            Build after pipeline is working so it can be tested end-to-end.
+  [x] 13. Parse uploaded file server-side — /auth/parse fully built                     | Rahaf
+  [x] 13a. Column selection UI — upload modal step 2: spinner → dropdown to pick column | Lama
+  [ ] 13b. Change target column mid-chat — needs pipeline to be testable                | Lama
   [ ] 14. Show file processing status — loading indicator while file is parsed           | Rahaf + Lama
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 5 — AI / XAI PIPELINE
   Priority: HIGH (core of the project)
-  Flow: upload file → NL query → train model → predict → SHAP/LIME → LLM answer → display charts
+  Flow: upload → NL query → /parse → /train → /predict → /explain → /ask → display
 
-  ┌─ CRITICAL PATH — must be done in this exact order ─────────┐
+  ┌─ CRITICAL PATH ────────────────────────────────────────────┐
 
-  [x] 16. ML Model — /auth/train endpoint fully built (RandomForest classifier+regressor, 80/20 split, feature importance) | Rahaf
-  [ ] 17. SHAP integration — add /auth/predict + /auth/explain endpoints returning shap_values per prediction | Rahaf   [needs #16 ✓]
-  [ ] 15. LLM API — wire NLQ + data summary + SHAP values into /test-llm prompt, return full answer | Reem    [needs #17]
-  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout + mock response with real calls to /parse → /train → /explain → /test-llm | Lama    [needs #15]
-  [x] 19. Display XAI results — XAI card with prediction badge + animated SHAP bar chart in chat bubble | Lama
-  [ ] 19b. Wire real pipeline data into XAI card — replace mockXaiData with actual { prediction, shap_values } from API response | Lama  [needs #23]
-  [ ] 24. Test /auth/parse and /auth/train endpoints end-to-end with a real CSV file    | Lama
-
-  └────────────────────────────────────────────────────────────┘
-
-  ┌─ depends on SHAP (#17) ─────────────────────────────────────┐
-
-  [ ] 18. LIME integration — compute LIME explanation as fallback/complement to SHAP     | Reem    [needs #17]
+  [x] 16. ML Model — /auth/train fully built (RandomForest, 80/20 split)                | Rahaf
+  [ ] 17. SHAP — build /auth/predict + /auth/explain endpoints                          | Rahaf  [scaffold ready]
+           Scaffolds written in auth.py with full instructions — just fill in TODOs
+  [ ] 15. LLM — wire NLQ + data summary + SHAP into /ask prompt, return plain answer    | Reem   [scaffold ready in llm.py]
+  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout with real API calls  | Lama   [needs #15]
+           /parse → /train → /explain → /ask → display real answer + XAI card
+  [x] 19. XAI results card — prediction badge + animated SHAP bar chart                | Lama
+  [ ] 19b. Wire real SHAP data into XAI card — replace mockXaiData with API response   | Lama   [needs #23]
+  [ ] 24. Test /auth/parse and /auth/train with a real CSV file end-to-end              | Lama
 
   └────────────────────────────────────────────────────────────┘
 
-  ┌─ AFTER PIPELINE WORKS ──────────────────────────────────────┐
+  ┌─ depends on SHAP (#17) ────────────────────────────────────┐
 
-  [x] 20. Loading indicator — 4-step pipeline progress (Parsing → Training → SHAP → Explanation) with progress bar | Lama
-  [ ] 20b. Update loading indicator timings — swap demo delays [2s,2s,2s] to real [5s,10s,10s] and remove fake setTimeout once pipeline (#15) is wired | Lama
-  [ ] 21. Export results — download prediction + explanation as PDF/Excel/HTML            | Reem + Lama
-  [ ] 22. Rate explanation — user rates clarity/usefulness, saves to Rating table         | Reem + Lama
+  [ ] 18. LIME integration — on-demand explanation alongside SHAP                       | Reem   [needs #17]
+
+  └────────────────────────────────────────────────────────────┘
+
+  ┌─ AFTER PIPELINE WORKS ─────────────────────────────────────┐
+
+  [x] 20. Loading indicator — 4-step progress card with animated progress bar           | Lama
+  [ ] 20b. Swap loading timings to real values once pipeline is wired                   | Lama
+  [ ] 21. Export results — download prediction + explanation as PDF/Excel/HTML          | Reem + Lama
+  [ ] 22. Rate explanation — already wired to Rating table via thumbs up/down           | done ✓
 
   └────────────────────────────────────────────────────────────┘
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 6 — DISCUSSION POINTS  (team decisions needed)
+  SECTION 6 — DISCUSSION POINTS
   Owner: whole team
 
-  [x] F. Google/Apple sign-in buttons — currently decorative, not wired up.
-        Decide: remove them entirely OR wire up real OAuth via Supabase.
-        Leaving fake buttons erodes trust with users.
-        Owner: Lama
-
-  [ ] H. Settings → Personalization tab — check if it has any working features yet.
-        If empty/placeholder, hide the tab until it's built to avoid confusing users.
-        Owner: Lama (frontend hide) + Shahad (if content exists)
-
-  [ ] I. AuthLayout stat boxes — the numbers shown on the left sidebar during login/signup.
-        Confirm they are realistic/accurate, not placeholder values.
-        Owner: whole team
+  [x] F. Google OAuth — wired via Supabase. Apple stays "Coming Soon"                  | Lama
+  [x] G. Rating table — UNIQUE constraint on RESPONSE_ID added in Supabase             | Lama
+  [ ] H. Settings Personalization tab — all options locked, decide what to activate    | Lama
+  [ ] I. AuthLayout stat boxes — confirm numbers are realistic, not placeholders        | whole team
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 7 - Reem
+  SECTION 7 — DOCUMENTATION
+  Owner: Reem
 
-  [] J. update ERD
-  [] K. update realtional table
-
+  [ ] J. Update ERD
+  [ ] K. Update relational table
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -145,7 +113,6 @@
   [x] Connect ForgotPassword and ResetPassword forms to backend
   [x] Test forgot password and reset password full flow end-to-end
   [x] Edit Profile — display name + avatar saved to DB and Supabase Storage
-  [x] Test edit profile — change display name, change avatar, verify persist after refresh
   [x] Fix service role key in backend .env
   [x] Move backend URL to frontend env variable (VITE_API_URL)
   [x] Auth context + session persistence across page refreshes
@@ -153,22 +120,37 @@
   [x] Backend restructured into routers/ and core/
   [x] Delete 27 unused files from frontend/src/imports/
   [x] Sign up stores user in public.user via DB trigger
-  [x] Login blocks unverified users
-  [x] Email confirmation required before sign in
-  [x] Chat history connected to DB — viewHistory/addChat/deleteChat/deleteAllChats/saveMessage/getMessages
-  [x] Chat titles save correctly (Chat 1/2/3) — fixed Title sent as JSON body not query param
-  [x] backendId assigned to pendingNewChat so saveMessageAPI works after file upload
+  [x] Login blocks unverified users + email confirmation required
+  [x] Chat history connected to DB
   [x] Messages persist on refresh — Query/Response tables
-  [x] File uploaded to Supabase Storage (user-files bucket) and File table row created
+  [x] File uploaded to Supabase Storage + File table row created
   [x] 3-chat limit enforced in backend and frontend
   [x] Delete single chat with 8-second undo window
   [x] Delete all chats
-  [x] Rename chat — PATCH /renameChat backend + frontend wired
-  [x] Column selection — upload modal step 2: spinner → dropdown to pick target column, stored in chat
-  [x] Target column saved to DB — File.target_column column, PATCH /updateFileColumn endpoint, restored on login
-  [x] File chip restored after logout/login — viewHistory joins File table, no longer relies on localStorage
-  [x] Target column indicator in file bar — shows active column with chevron, right-aligned, dynamically sized
-  [x] Loading indicator (#20) — 4-step progress card (Parsing → Training → SHAP → Explanation) with animated progress bar; stages swap to real timings when pipeline is wired
-  [x] XAI results card (#19) — prediction badge + animated SHAP feature importance bars; mock data until pipeline is wired
-
+  [x] Rename chat
+  [x] Column selection — upload modal step 2 dropdown, stored in chat + DB
+  [x] File chip + target column restored after logout/login
+  [x] Loading indicator — 4-step pipeline progress card
+  [x] XAI results card — prediction badge + animated SHAP bars (mock data)
+  [x] Google OAuth wired via Supabase (Apple stays Coming Soon)
+  [x] OpenAI GPT-4o-mini integrated + /test-llm confirmed working
+  [x] scikit-learn, shap, lime added to requirements.txt
+  [x] /auth/parse + /auth/train fully built by Rahaf
+  [x] Scaffolds written for /auth/predict, /auth/explain, /auth/bug, /ask
+  [x] /auth/addRating wired to thumbs up/down in Chat.tsx (upsert — one rating per response)
+  [x] /auth/reportBug wired to Report Bug modal
+  [x] saveMessageAPI now returns RESPONSE_ID for rating linkage
+  [x] Thumbs-down: closing modal without submitting reverts button highlight
+ [x] 3.  Chat history — save/load from DB (max 3 chats), titles correct, persist on refresh
+  [x] 3a. Messages persist on refresh — saved to Query/Response tables, loaded via getMessages
+  [x] 3b. File upload to Supabase Storage — bytes sent to bucket, File table row created
+  [x] 6.  Load file attachment on refresh — works via localStorage merge
+  [x] 4.  Feedback modal — wired to /auth/addRating (thumbs up/down → Rating table)
+           Upsert logic: one rating per response, updates instead of inserting new row
+           Requires UNIQUE constraint on RESPONSE_ID in Rating table (add in Supabase)  | Lama
+  [x] 5.  Report bug modal — wired to /auth/reportBug → Bug table                       | Lama + Reem
+   [x] 7.  Rename chat — backend PATCH /renameChat + frontend wired
+  [x] 8.  Delete single chat — with 8-second undo window
+  [x] 9.  Delete all chats — clears DB and sidebar
+  [x] 10. 3-chat limit — backend 400 + frontend disabled button + toast
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
