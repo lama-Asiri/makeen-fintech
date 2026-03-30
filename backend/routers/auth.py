@@ -498,8 +498,10 @@ async def get_messages(chat_id: int, authorization: str = Header(None)):
 
     # Fetch all queries for this chat, oldest first so messages appear in order
     try:
+        # Added RESPONSE_ID to the join so the frontend can restore backendResponseId
+        # on each message after login — needed for thumbs up/down ratings to work after refresh
         queries = supabase.table("Query") \
-            .select("*, Response(answer, explanation, created_at)") \
+            .select("*, Response(RESPONSE_ID, answer, explanation, created_at)") \
             .eq("CHAT_ID", chat_id) \
             .order("created_at", desc=False) \
             .execute()

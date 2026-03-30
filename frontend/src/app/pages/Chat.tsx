@@ -459,11 +459,21 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           // AI response (Response is an array from the join)
           const response = Array.isArray(q.Response) ? q.Response[0] : q.Response;
           if (response) {
+            // Restore xaiData from the explanation field (saved as JSON string when the message was first created)
+            // Restore backendResponseId so thumbs up/down ratings work after login
+            let xaiData: XaiData | undefined;
+            try {
+              if (response.explanation) xaiData = JSON.parse(response.explanation);
+            } catch {
+              xaiData = undefined;
+            }
             messages.push({
               id: `r-${q.QUERY_ID}`,
               role: 'assistant',
               content: response.answer,
               timestamp: new Date(response.created_at),
+              xaiData,
+              backendResponseId: response.RESPONSE_ID,
             });
           }
         });
@@ -1063,7 +1073,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         // Changed: now reads the returned responseId and stores it on the assistant message
         // so the thumbs up/down rating buttons can pass it to /auth/addRating.
         if (session?.access_token && activeChat.backendId !== undefined) {
-          saveMessageAPI(session.access_token, activeChat.backendId, userMessage.content, aiContent)
+          // Pass xaiData so it's saved as JSON in the explanation column and restored after login
+          saveMessageAPI(session.access_token, activeChat.backendId, userMessage.content, aiContent, aiMessage.xaiData)
             .then(({ responseId }) => {
               setChats((prev) =>
                 prev.map((chat) =>
