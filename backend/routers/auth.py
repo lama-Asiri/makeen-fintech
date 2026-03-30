@@ -783,11 +783,11 @@ async def add_rating(
     response_id: int,
     category: str = None,
     comment: str = None,
-    authorization: str = Header(None)  # keep this in signature but ignore it
+    authorization: str = Header(None)
 ):
     try:
-        # TEMPORARILY ignore JWT for testing
-        # supabase.auth.set_session({"access_token": token})  <-- remove or comment out
+        # Verify the user is logged in — rejects unauthenticated requests
+        _get_user_id(authorization)
 
         # Normalize response_type
         response_type = response_type.capitalize()
@@ -810,13 +810,16 @@ async def add_rating(
                 raise HTTPException(status_code=400, detail="comment is required for 'Other' category")
             comment_to_insert = comment
 
-        # Insert into Supabase
-        response = supabase.table("Rating").insert({
+        # Upsert instead of insert — if a rating already exists for this response,
+        # update it. This ensures one rating per response (user's latest opinion),
+        # not a new row every time they change their mind.
+        # Requires a UNIQUE constraint on RESPONSE_ID in the Rating table.
+        response = supabase.table("Rating").upsert({
             "Score": score_to_insert,
             "Comment": comment_to_insert,
             "category": category_to_insert,
             "RESPONSE_ID": response_id
-        }).execute()
+        }, on_conflict="RESPONSE_ID").execute()
 
         return {
             "message": "Rating added successfully",
@@ -866,8 +869,9 @@ async def report_bug(
             "USER_ID": user_id
         }).execute()
 
-        if response.status_code != 201:
-            raise HTTPException(status_code=400, detail=response.data)
+        # Fixed: Supabase Python client doesn't expose .status_code — check .data instead
+        if not response.data:
+            raise HTTPException(status_code=400, detail="Failed to insert bug report")
 
         return {
             "message": "Bug reported successfully",

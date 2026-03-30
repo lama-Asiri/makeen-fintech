@@ -310,6 +310,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [isDictating, setIsDictating] = useState(false);
   const [sendPulse, setSendPulse] = useState(false);
   const [feedbackModalMessageId, setFeedbackModalMessageId] = useState<string | null>(null);
+  const feedbackWasSubmittedRef = useRef(false); // true when modal closed via Submit, false when closed via X
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState<'general' | 'security' | 'data' | 'personalization'>('general');
@@ -1231,7 +1232,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       }).catch((err) => console.error('[addRating] Failed:', err));
     }
 
-    // Close modal
+    // Mark as submitted so onClose knows not to revert the thumbs-down highlight
+    feedbackWasSubmittedRef.current = true;
     setFeedbackModalMessageId(null);
   };
 
@@ -3414,7 +3416,26 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       {/* Feedback Modal */}
       <FeedbackModal
         isOpen={feedbackModalMessageId !== null}
-        onClose={() => setFeedbackModalMessageId(null)}
+        onClose={() => {
+          // Only revert the thumbs-down highlight if the modal was dismissed (X or overlay click).
+          // If the user submitted, feedbackWasSubmittedRef is true — keep the highlight.
+          if (feedbackModalMessageId && !feedbackWasSubmittedRef.current) {
+            setChats((prev) =>
+              prev.map((chat) =>
+                chat.id === activeChatId
+                  ? {
+                      ...chat,
+                      messages: chat.messages.map((msg) =>
+                        msg.id === feedbackModalMessageId ? { ...msg, feedback: null } : msg
+                      ),
+                    }
+                  : chat
+              )
+            );
+          }
+          feedbackWasSubmittedRef.current = false;
+          setFeedbackModalMessageId(null);
+        }}
         onSubmit={handleFeedbackSubmit}
       />
 

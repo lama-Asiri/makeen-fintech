@@ -1,6 +1,15 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.Bug (
+  BUG_ID integer GENERATED ALWAYS AS IDENTITY NOT NULL,
+  categoty text NOT NULL CHECK (categoty = ANY (ARRAY['Bug / Crash'::character varying::text, 'UI issue'::character varying::text, 'Performance'::character varying::text, 'Feature request'::character varying::text, 'Wrong answer'::character varying::text, 'Other'::character varying::text])),
+  comment text NOT NULL,
+  created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+  USER_ID uuid NOT NULL,
+  CONSTRAINT Bug_pkey PRIMARY KEY (BUG_ID),
+  CONSTRAINT fk_bug_user FOREIGN KEY (USER_ID) REFERENCES public.User(USER_ID)
+);
 CREATE TABLE public.Chat (
   CHAT_ID integer GENERATED ALWAYS AS IDENTITY NOT NULL UNIQUE,
   Title text NOT NULL,
