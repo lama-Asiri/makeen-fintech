@@ -28,7 +28,7 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 1 — BACKEND CLEANUP
+  SECTION 1 —  CLEANUP
   Owner: Reem | Priority: LOW
 
   [ ] 1. Clean up PythonClasses/ folder — move models into routers as Pydantic models
@@ -63,7 +63,10 @@
   [x] 16. ML Model — /auth/train fully built (RandomForest, 80/20 split)                | Rahaf
   [ ] 17. SHAP — build /auth/predict + /auth/explain endpoints                          | Rahaf  [scaffold ready]
            Scaffolds written in auth.py with full instructions — just fill in TODOs
-  [ ] 15. LLM — wire NLQ + data summary + SHAP into /ask prompt, return plain answer    | Reem   [scaffold ready in llm.py]
+  [ ] 15. LLM — split into two stages:                                                   | Reem   [scaffold ready in llm.py]
+           Stage 1: POST /ask/query — receive user NL question, extract intent + relevant data summary
+           Stage 2: POST /ask/response — receive SHAP values + prediction, generate plain-English explanation
+           Reem's preference: keep stages separate for easier debugging and testing
   [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout with real API calls  | Lama   [needs #15]
            /parse → /train → /explain → /ask → display real answer + XAI card
   [x] 19. XAI results card — prediction badge + animated SHAP bar chart                | Lama
@@ -102,8 +105,19 @@
   SECTION 7 — DOCUMENTATION
   Owner: Reem
 
-  [ ] J. Update ERD
-  [ ] K. Update relational table
+  [x] J. Update ERD
+  [x] K. Update relational table
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  SECTION 8 — DEPLOYMENT & LAUNCH
+  Owner: whole team
+
+  [ ] L. Test app on mobile — check all screens are responsive, no broken layouts        | whole team
+  [ ] M. Launch site — deploy frontend + backend to a live URL accessible to public      | whole team
+        Frontend: Vercel (recommended — free, auto-deploys from GitHub)
+        Backend: Railway or Render (recommended — free tier, supports Python/FastAPI)
+        Update VITE_API_URL in frontend .env to point to deployed backend URL
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
