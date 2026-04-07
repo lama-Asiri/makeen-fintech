@@ -269,7 +269,7 @@ async def view_history(authorization: str = Header(None)):
     # without relying on localStorage (which is cleared on logout).
     try:
         result = supabase.table("Chat") \
-            .select("*, File(name, filetype)") \
+            .select("*, File(name, filetype, target_column)") \
             .eq("USER_ID", user_id) \
             .order("Created_at", desc=True) \
             .execute()

@@ -410,6 +410,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             isPersisted: true,
           };
         });
+        console.log('[DEBUG targetColumn] merged chats:', merged.map(c => ({ id: c.id, targetColumn: c.targetColumn, fileAttachment: c.fileAttachment })));
         setChats(merged);
       })
       .catch((err) => console.error('[viewHistory] Failed to load from backend:', err));
