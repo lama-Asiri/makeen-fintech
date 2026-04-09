@@ -430,7 +430,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                 return (
                   <div
                     key={section.id}
-                    ref={(el) => (sectionRefs.current[section.id] = el)}
+                    ref={(el) => { sectionRefs.current[section.id] = el; }}
                     className="bg-[#1a1a1a] border border-[rgba(255,252,254,0.1)] rounded-[12px] shadow-[0_2px_8px_rgba(0,0,0,0.3)] overflow-hidden transition-all duration-300 ease-in-out"
                   >
                     {/* Section Header */}

@@ -288,7 +288,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [isChatHistoryExpanded, setIsChatHistoryExpanded] = useState(true);
   const [chatMenuOpenId, setChatMenuOpenId] = useState<string | null>(null);
   const [hoveredChatId, setHoveredChatId] = useState<string | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<{ chat: Chat; index: number; timer: NodeJS.Timeout } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ chat: Chat; index: number; timer: ReturnType<typeof setTimeout> } | null>(null);
   const [showDeleteToast, setShowDeleteToast] = useState(false);
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -340,12 +340,15 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const regeneratingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const regeneratingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const columnPickerRef = useRef<HTMLDivElement>(null);
+  // Set to true when handleFileUpload is called but addChatAPI hasn't resolved yet.
+  // The useEffect below watches chats for backendId and auto-triggers upload when it arrives.
+  const waitingForBackendIdRef = useRef(false);
 
   // Handle entry greeting mode (shown once per session)
   useEffect(() => {
@@ -410,7 +413,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             isPersisted: true,
           };
         });
-        console.log('[DEBUG targetColumn] merged chats:', merged.map(c => ({ id: c.id, targetColumn: c.targetColumn, fileAttachment: c.fileAttachment })));
         setChats(merged);
       })
       .catch((err) => console.error('[viewHistory] Failed to load from backend:', err));
@@ -490,6 +492,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   useEffect(() => {
     if (uploadStep !== 'file') return;
     if (activeChat) {
+      // If logged in, wait until backendId is ready before opening modal.
+      // addChatAPI is async — if we open the modal before it resolves, backendId will be
+      // undefined when the user clicks Send, causing the column picker to be skipped.
+      if (session?.access_token && activeChat.backendId === undefined) return;
       // Show upload modal if chat has no file and no messages
       setShowUploadModal(!activeChat.fileAttachment && activeChat.messages.length === 0);
     } else if (!isProcessing) {
@@ -497,6 +503,30 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       setShowUploadModal(true);
     }
   }, [activeChat, isProcessing, uploadStep]);
+
+  // When handleFileUpload was called while addChatAPI was still in-flight (backendId not ready),
+  // it sets waitingForBackendIdRef and returns early showing a loading spinner.
+  // This effect watches chats — when the active chat's backendId finally arrives, it auto-proceeds.
+  useEffect(() => {
+    if (!waitingForBackendIdRef.current) return;
+    const chat = chats.find((c) => c.id === activeChatId);
+    if (!chat?.backendId || !selectedFile || !session?.access_token) return;
+    waitingForBackendIdRef.current = false;
+    uploadFileAPI(session.access_token, selectedFile, chat.backendId)
+      .then((columns) => {
+        setAvailableColumns(columns);
+        setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, columns } : c));
+        setSelectedColumn(columns.length > 0 ? columns[columns.length - 1] : '');
+        setUploadStep('columns');
+      })
+      .catch((err) => {
+        console.error('[uploadFile] Backend upload failed (delayed):', err);
+        setUploadStep('file');
+        setShowUploadModal(false);
+        setSelectedFile(null);
+        setToastMessage('File upload failed. Please try again.');
+      });
+  }, [chats]);
 
   // Close column picker dropdown when clicking outside
   useEffect(() => {
@@ -519,7 +549,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     // Stage durations (ms): advances every 2s for demo — swap to [5000,10000,10000] when real pipeline is wired
     const delays = [2000, 2000, 2000];
     let stage = 0;
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     delays.forEach((delay, i) => {
       const accumulated = delays.slice(0, i + 1).reduce((a, b) => a + b, 0);
       timers.push(setTimeout(() => {
@@ -749,7 +779,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     showReportBugModal,
   ]);
 
-  const handleFileUpload = () => {
+  const handleFileUpload = async () => {
     if (!selectedFile && !activeChat && !pendingNewChat) return;
 
     const fileAttachment: FileAttachment = selectedFile
@@ -764,18 +794,78 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           size: 1024,
         };
 
-    const backendId = pendingNewChat?.backendId ?? activeChat?.backendId;
+    let backendId = pendingNewChat?.backendId ?? activeChat?.backendId;
 
-    // Add file to local chat state immediately (optimistic update)
-    if (pendingNewChat) {
-      setChats((prevChats) => [...prevChats, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
+    // CASE: pendingNewChat exists but no backendId.
+    // This happens when handleNewChat ran before session was ready (addChatAPI was never called),
+    // OR when addChatAPI is still in-flight. Either way, call addChatAPI now and wait for the ID.
+    if (selectedFile && session?.access_token && pendingNewChat && pendingNewChat.backendId === undefined) {
+      setUploadStep('loading');
+      const capturedTitle = pendingNewChat.title;
+      const capturedChatId = pendingNewChat.id;
+      // Move to chats so the .then() below can update it with backendId
+      setChats((prev) => [...prev, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
       setPendingNewChat(null);
-    } else if (activeChat) {
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === activeChatId ? { ...chat, fileAttachment, lastUsedAt: new Date() } : chat
-        )
-      );
+      waitingForBackendIdRef.current = true;
+      addChatAPI(session.access_token, capturedTitle)
+        .then((backendId) => {
+          setChats((prev) => prev.map((c) => c.id === capturedChatId ? { ...c, backendId } : c));
+          // useEffect watching chats will fire and trigger uploadFileAPI
+        })
+        .catch((err) => {
+          let message = 'Failed to create chat.';
+          try { const p = JSON.parse(err.message); if (p?.detail) message = p.detail; } catch { message = err.message; }
+          setToastMessage(message);
+          setChats((prev) => prev.filter((c) => c.id !== capturedChatId));
+          waitingForBackendIdRef.current = false;
+          setUploadStep('file');
+        });
+      return;
+    }
+
+    // CASE: No chat exists yet (first-page state — no pendingNewChat, no activeChat).
+    // Create a chat now, await backendId, then proceed with upload.
+    if (selectedFile && session?.access_token && backendId === undefined && !pendingNewChat && !activeChat) {
+      console.log('[DEBUG upload] → taking first-page path (no chat exists yet)');
+      setUploadStep('loading');
+      const newChatId = Date.now().toString();
+      const chatNumbers = chats
+        .filter((c) => c.isPersisted !== false && c.title.match(/^Chat \d+$/))
+        .map((c) => parseInt(c.title.replace('Chat ', ''), 10));
+      const nextNumber = chatNumbers.length > 0 ? Math.max(...chatNumbers) + 1 : 1;
+      const newChat: Chat = {
+        id: newChatId,
+        title: `Chat ${nextNumber}`,
+        messages: [],
+        createdAt: new Date(),
+        lastUsedAt: new Date(),
+        fileAttachment: null,
+        isPersisted: saveChatHistory,
+      };
+      try {
+        backendId = await addChatAPI(session.access_token, newChat.title);
+        const chatWithFile = { ...newChat, backendId, fileAttachment, lastUsedAt: new Date() };
+        setChats((prev) => [...prev, chatWithFile]);
+        setActiveChatId(newChatId);
+      } catch (err: unknown) {
+        let message = 'Failed to create chat.';
+        try { const parsed = JSON.parse((err as Error).message); if (parsed?.detail) message = parsed.detail; } catch { message = (err as Error).message; }
+        setToastMessage(message);
+        setUploadStep('file');
+        return;
+      }
+    } else {
+      // Add file to local chat state immediately (optimistic update)
+      if (pendingNewChat) {
+        setChats((prevChats) => [...prevChats, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
+        setPendingNewChat(null);
+      } else if (activeChat) {
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.id === activeChatId ? { ...chat, fileAttachment, lastUsedAt: new Date() } : chat
+          )
+        );
+      }
     }
 
     // Upload file to backend, then show column picker so user selects the target column.
@@ -800,7 +890,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           setToastMessage('File upload failed. Please try again.');
         });
     } else {
-      // No real file or no backendId — close modal immediately
+      // No real file — close modal immediately (sample data fallback)
       setSelectedFile(null);
       setShowUploadModal(false);
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
@@ -962,51 +1052,53 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     // Save the new chat to the backend so it gets a real DB CHAT_ID.
     // We store the returned ID in backendId so deleteChat/renameChat can reference it later.
     // If the backend rejects (e.g. 3-chat limit), show a toast and abort.
+    // Mark entry greeting as shown (if it was the first time)
+    if (!entryGreetingShown) {
+      setEntryGreetingShown(true);
+    }
+
+    // Increment welcome message index for rotation
+    setWelcomeMessageIndex((prev) => prev + 1);
+
+    // Switch to rotating mode
+    setWelcomeMode('rotating');
+
+    // Show banner if save chat history is OFF
+    if (!saveChatHistory) {
+      setShowChatHistoryBanner(true);
+    }
+
+    // Set as pending immediately so the UI switches to the new chat
+    setPendingNewChat(newChat);
+    setActiveChatId(newChatId);
+
     if (session?.access_token) {
+      // Get the backendId BEFORE opening the upload modal.
+      // If the modal opened immediately, the user could click Send before backendId arrived
+      // and the column picker would be skipped (backendId check in handleFileUpload would fail).
       addChatAPI(session.access_token, newChat.title)
         .then((backendId) => {
-          // The new chat is still in pendingNewChat (not in chats yet) until the file is uploaded.
-          // We must update pendingNewChat so the backendId carries over when the file is uploaded.
-          // We also update chats in case the file was uploaded before this promise resolved.
           setPendingNewChat((prev) => prev?.id === newChatId ? { ...prev, backendId } : prev);
-          setChats((prev) =>
-            prev.map((c) => (c.id === newChatId ? { ...c, backendId } : c))
-          );
+          setChats((prev) => prev.map((c) => (c.id === newChatId ? { ...c, backendId } : c)));
+          setShowUploadModal(true); // ← open AFTER backendId is ready
         })
         .catch((err) => {
-          // Parse the error and show it to the user as a toast
           let message = 'Failed to create chat.';
           try {
             const parsed = JSON.parse(err.message);
             if (parsed?.detail) message = parsed.detail;
           } catch { message = err.message; }
           setToastMessage(message);
-          // Remove the locally added pending chat since backend rejected it
           setChats((prev) => prev.filter((c) => c.id !== newChatId));
           setPendingNewChat(null);
+          // Reset upload state so user isn't stuck on loading spinner
+          waitingForBackendIdRef.current = false;
+          setUploadStep('file');
         });
+    } else {
+      // Not logged in — open modal immediately (no backend call needed)
+      setShowUploadModal(true);
     }
-
-    // Mark entry greeting as shown (if it was the first time)
-    if (!entryGreetingShown) {
-      setEntryGreetingShown(true);
-    }
-    
-    // Increment welcome message index for rotation
-    setWelcomeMessageIndex((prev) => prev + 1);
-    
-    // Switch to rotating mode
-    setWelcomeMode('rotating');
-    
-    // Show banner if save chat history is OFF
-    if (!saveChatHistory) {
-      setShowChatHistoryBanner(true);
-    }
-    
-    // Set as pending - won't be added to history until file is uploaded
-    setPendingNewChat(newChat);
-    setActiveChatId(newChatId);
-    setShowUploadModal(true);
   };
 
   const toggleSidebar = () => {

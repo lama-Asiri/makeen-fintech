@@ -42,7 +42,7 @@ export function AccountDropdown({
   const [showHelpSubmenu, setShowHelpSubmenu] = useState(false);
   const [helpSubmenuPosition, setHelpSubmenuPosition] = useState({ top: 0, left: 0 });
   const [isProfileRowActive, setIsProfileRowActive] = useState(false);
-  const helpCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const helpCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;

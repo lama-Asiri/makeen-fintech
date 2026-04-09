@@ -456,7 +456,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                 <section
                   key={section.id}
                   id={section.id}
-                  ref={(el) => (sectionRefs.current[section.id] = el)}
+                  ref={(el) => { sectionRefs.current[section.id] = el; }}
                   className={index !== 0 ? 'mt-[48px]' : ''}
                 >
                   <h2 className="font-['Roboto:SemiBold',sans-serif] text-[24px] text-[#fffcfe] mb-[16px]">

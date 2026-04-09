@@ -101,11 +101,14 @@ def _get_user_id(authorization: str | None) -> str:
 async def get_profile(authorization: str = Header(None)):
     user_id = _get_user_id(authorization)
     try:
-        result = supabase.table("User").select("username, avatar_url").eq("USER_ID", user_id).single().execute()
+        result = supabase.table("User").select("username, avatar_url").eq("USER_ID", user_id).execute()
     except Exception as e:
         print(f"[PROFILE GET ERROR] user_id={user_id} error={str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
-    return result.data
+    # Return empty profile if no row exists yet (e.g. new Google OAuth user)
+    if not result.data:
+        return {"username": None, "avatar_url": None}
+    return result.data[0]
 
 
 @router.put("/user/profile")
