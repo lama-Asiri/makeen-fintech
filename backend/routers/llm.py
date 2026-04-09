@@ -1,28 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel
+import pandas as pd
+from io import BytesIO, StringIO
+import json
+import textwrap
 from core.openai_client import openai_client
 
 router = APIRouter()
 
 # ─────────────────────────────────────────────────────────────
-# Request/Response models
+# Models
 # ─────────────────────────────────────────────────────────────
-class LLMRequest(BaseModel):
-    question: str
-    data_summary: str = ""
-    shap_values: dict = {}
-
-
 class LLMResponse(BaseModel):
     answer: str
-
-
-class AskRequest(BaseModel):
-    question: str
-    prediction: str = ""
-    confidence: float = 0.0
-    data_summary: str = ""
-    shap_values: dict = {}
 
 
 # ─────────────────────────────────────────────────────────────
@@ -51,61 +41,31 @@ Style:
 - Natural and easy to read
 - Confident and direct
 
-Structure (always follow this order):
-1. Start with the final outcome clearly (e.g. "This customer is likely to churn.")
-2. Immediately explain the main reasons (focus on the 2-4 strongest factors only)
-3. Translate each factor into a real-world meaning (not data terms)
-4. End with a short summary reinforcing the conclusion
-
 How to interpret factors:
 - Positive impact → increases likelihood of the outcome
 - Negative impact → decreases likelihood of the outcome
 - Stronger values → more influence
 
+Adapt your answer based on the question:
+- If user asks for one item → explain it
+- If user asks to compare → compare
+- If user asks to choose → choose and justify
+
+Always:
+- Start with the conclusion
+- Then explain the strongest reasons
+- Translate everything into real-world meaning
+- End with a short summary reinforcing the conclusion
+
 Example of good output:
-"This customer is likely to leave. Their age places them in a group that tends to switch services more often, and having multiple products increases that risk. A higher balance slightly reduces the chance of leaving, but not enough to outweigh the other factors. Overall, the stronger signals point toward leaving."
+"This employee is likely to leave the company. They have not been active recently and their workload has been consistently high, which can lead to burnout. Their relatively low salary compared to others in similar roles also makes staying less attractive. While their experience adds some stability, it is not enough to offset these pressures. Overall, the combination of high workload, low engagement, and weaker compensation makes leaving the more likely outcome."
 
 Output only the final explanation. No extra text.
 """
 
-
 # ─────────────────────────────────────────────────────────────
-# Helpers
+# LLM call
 # ─────────────────────────────────────────────────────────────
-def format_shap_values(shap_values: dict, prediction: str) -> str:
-    if not shap_values:
-        return "No strong factors available."
-
-    top_factors = sorted(
-        shap_values.items(),
-        key=lambda x: abs(x[1]),
-        reverse=True
-    )[:4]
-
-    return "\n".join([
-        f"{feature}: {'increases' if value > 0 else 'reduces'} the likelihood of {prediction} (impact {abs(value):.2f})"
-        for feature, value in top_factors
-    ])
-
-
-def build_user_message(body: AskRequest, shap_explanation: str) -> str:
-    return f"""
-User question:
-{body.question}
-
-Prediction:
-{body.prediction} with {body.confidence * 100:.0f}% confidence
-
-Dataset:
-{body.data_summary}
-
-Key factors influencing this result:
-{shap_explanation}
-
-Explain the result in simple, non-technical language.
-"""
-
-
 def get_llm_response(system_prompt: str, user_message: str) -> str:
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
@@ -117,36 +77,67 @@ def get_llm_response(system_prompt: str, user_message: str) -> str:
     )
     return response.choices[0].message.content.strip()
 
-
 # ─────────────────────────────────────────────────────────────
-# /test-llm — simple test endpoint
+# Endpoint
 # ─────────────────────────────────────────────────────────────
-@router.post("/test-llm", response_model=LLMResponse)
-async def test_llm(body: LLMRequest):
+@router.post("/ask-with-file", response_model=LLMResponse)
+async def ask_with_file(
+    file: UploadFile = File(...),
+    question: str = Form(...),
+    prediction: str = Form(default=""),
+    confidence: float = Form(default=0.0),
+    shap_values: str = Form(default="{}")
+):
     try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are an AI explainability assistant. Answer questions about data predictions clearly and simply, without technical jargon."},
-                {"role": "user", "content": body.question},
-            ],
-            max_tokens=500,
+        # Read file
+        contents = await file.read()
+
+        if file.filename.endswith(".csv"):
+            df = pd.read_csv(StringIO(contents.decode()))
+        else:
+            df = pd.read_excel(BytesIO(contents))
+
+        # Dataset summary (how data is actually read)
+        data_summary = (
+            f"Dataset '{file.filename}' with {df.shape[0]} rows and {df.shape[1]} columns. "
+            f"Columns: {', '.join(df.columns)}"
         )
-        answer = response.choices[0].message.content.strip()
-        return LLMResponse(answer=answer)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
+        # Better sample formatting
+        sample_rows = df.head(5).to_dict(orient="records")
+        sample_text = "\n".join(
+            [", ".join(f"{k}: {v}" for k, v in row.items()) for row in sample_rows]
+        )
 
-# ─────────────────────────────────────────────────────────────
-# /ask — main endpoint for explanations
-# ─────────────────────────────────────────────────────────────
-@router.post("/ask", response_model=LLMResponse)
-async def ask(body: AskRequest):
-    try:
-        shap_explanation = format_shap_values(body.shap_values, body.prediction)
-        user_message = build_user_message(body, shap_explanation)
+        # Safe JSON parsing
+        try:
+            shap_data = json.loads(shap_values)
+        except:
+            raise HTTPException(status_code=400, detail="Invalid SHAP JSON format")
+
+        shap_text = json.dumps(shap_data, indent=2)
+
+        # Build prompt (clean)
+        user_message = textwrap.dedent(f"""
+        User question:
+        {question}
+
+        Prediction:
+        {prediction} with {confidence * 100:.0f}% confidence
+
+        Dataset summary:
+        {data_summary}
+
+        Sample data:
+        {sample_text}
+
+        Factors influencing results:
+        {shap_text}
+        """)
+
         answer = get_llm_response(SYSTEM_PROMPT, user_message)
+
         return LLMResponse(answer=answer)
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
