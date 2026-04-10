@@ -19,7 +19,7 @@
 
   [x] C. Decide how target column is selected — user picks from dropdown after upload
 
-  [ ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
+  [x ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
         Recommended: on-demand ("Show LIME explanation") — keeps response time under 10s
         Owner: Reem + Rahaf
 
@@ -61,16 +61,23 @@
   ┌─ CRITICAL PATH ────────────────────────────────────────────┐
 
   [x] 16. ML Model — /auth/train fully built (RandomForest, 80/20 split)                | Rahaf
-  [ ] 17. SHAP — build /auth/predict + /auth/explain endpoints                          | Rahaf  [scaffold ready]
-           Scaffolds written in auth.py with full instructions — just fill in TODOs
+  [ ] 17. Question pipeline — Rahaf proposed unified /processQuestion endpoint           | Rahaf
+           Replaces separate /predict + /explain scaffolds
+           Classifier routes to: DATA_QUERY / PREDICTION / ANALYSIS / UNCLEAR
+           See Question_Processing_Problem.md for full design
   [ ] 15. LLM — split into two stages:                                                   | Reem   [scaffold ready in llm.py]
            Stage 1: POST /ask/query — receive user NL question, extract intent + relevant data summary
            Stage 2: POST /ask/response — receive SHAP values + prediction, generate plain-English explanation
            Reem's preference: keep stages separate for easier debugging and testing
-  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout with real API calls  | Lama   [needs #15]
-           /parse → /train → /explain → /ask → display real answer + XAI card
+  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout with real API calls  | Lama   [needs #17 + #15]
+           In sendMessage(): remove mock setTimeout, call /processQuestion with chat_id + question + target_column
+           On response: set message.content = answer, message.xaiData = shap_values, message.suggestions = suggestions
+           For UNCLEAR type: set message.suggestions[] — buttons already render, just populate the field
+           For PREDICTION/ANALYSIS: set message.xaiData — XAI card already renders, just populate the field
+           Also remove the mock test message added to seed data (4-msg-5) after confirming pipeline works
   [x] 19. XAI results card — prediction badge + animated SHAP bar chart                | Lama
   [ ] 19b. Wire real SHAP data into XAI card — replace mockXaiData with API response   | Lama   [needs #23]
+  [ ] 20b. Swap loading step labels/timings to match real pipeline stages               | Lama   [needs #23]
   [ ] 24. Test /auth/parse and /auth/train with a real CSV file end-to-end              | Lama
 
   └────────────────────────────────────────────────────────────┘

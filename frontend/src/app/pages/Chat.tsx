@@ -108,6 +108,7 @@ interface Message {
   edited?: boolean;
   xaiData?: XaiData; // populated by real pipeline; mock data used until #15 is wired
   backendResponseId?: number; // RESPONSE_ID from DB — stored after saveMessageAPI so /auth/addRating can reference it
+  suggestions?: string[]; // populated when backend returns UNCLEAR — shown as clickable buttons
 }
 
 interface FileAttachment {
@@ -162,6 +163,18 @@ const getInitialChats = (): Chat[] => [
         role: 'assistant',
         content: 'Excellent question. Looking at the historical patterns:\n\nSummer months (June-August) typically show:\n- 15% increase in Product A sales\n- 8% decrease in Product B sales\n- Product C remains stable\n\nRecommendation: Adjust your Q2 strategy to front-load Product A inventory in May, and reduce Product B stock levels starting mid-June to optimize warehouse costs.',
         timestamp: new Date(2025, 0, 21, 10, 36),
+      },
+      // TEST ONLY — remove before go-live
+      {
+        id: '4-msg-5',
+        role: 'assistant',
+        content: "I'm not sure what you mean. Did you mean one of these?",
+        timestamp: new Date(2025, 0, 21, 10, 37),
+        suggestions: [
+          'How many customers churned last month?',
+          'What factors drive customer churn?',
+          'Will this customer churn?',
+        ],
       },
     ],
     createdAt: new Date(2025, 0, 21),
@@ -1105,13 +1118,14 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const sendMessage = () => {
-    if (inputValue.trim() === '' || isProcessing) return;
+  const sendMessage = (overrideContent?: string) => {
+    const content = overrideContent ?? inputValue;
+    if (content.trim() === '' || isProcessing) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue,
+      content: content,
       timestamp: new Date(),
     };
 
@@ -1122,7 +1136,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         )
       );
     }
-    setInputValue('');
+    if (!overrideContent) setInputValue('');
     setIsProcessing(true);
     setShouldStopTyping(false); // Reset stop flag for new message
 
@@ -2624,6 +2638,24 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                         </p>
                       </div>
 
+                      {/* UNCLEAR suggestions — shown when backend couldn't classify the question */}
+                      {message.suggestions && message.suggestions.length > 0 && (
+                        <div className="mt-[12px] flex flex-col gap-[8px] max-w-[700px]">
+                          {message.suggestions.map((suggestion, i) => (
+                            <button
+                              key={i}
+                              onClick={() => {
+                                setInputValue('');
+                                sendMessage(suggestion);
+                              }}
+                              className="text-left px-[16px] py-[10px] rounded-[10px] border border-[#7760bd]/40 text-[14px] text-[#ccc] hover:bg-[#7760bd]/15 hover:border-[#7760bd]/70 hover:text-white transition-all"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
                       {/* XAI Results Card — shown when pipeline data is available */}
                       {message.xaiData && (
                         <motion.div
@@ -3056,7 +3088,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                             ? 'hover:bg-[#8870cd]'
                             : 'hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105'
                         }`}
-                        onClick={(isProcessing || isRegenerating || isTyping) ? stopGeneration : sendMessage}
+                        onClick={(isProcessing || isRegenerating || isTyping) ? stopGeneration : () => sendMessage()}
                       >
                         {(isProcessing || isRegenerating || isTyping) ? (
                           /* Stop Icon - White Square */
