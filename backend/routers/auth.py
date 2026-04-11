@@ -59,6 +59,8 @@ async def signup(body: SignUpRequest):
         raise HTTPException(status_code=400, detail=str(e))
     if result.user is None:
         raise HTTPException(status_code=400, detail="Signup failed.")
+    if result.user.identities is not None and len(result.user.identities) == 0:
+        raise HTTPException(status_code=400, detail="An account with this email already exists.")
     return {"message": "Account created! Check your email to verify before signing in."}
 
 

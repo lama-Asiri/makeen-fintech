@@ -1537,22 +1537,17 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     }
   };
 
-  // Generate or get shareId for a chat
-  const getShareId = (chatId: string): string => {
-    const chat = chats.find((c) => c.id === chatId);
-    if (chat?.shareId) {
-      return chat.shareId;
+  const buildChatTranscript = (chat: Chat): string => {
+    let transcript = `${chat.title}\n\n`;
+    if (chat.fileAttachment) {
+      transcript += `Attached file: ${chat.fileAttachment.name}\n\n`;
     }
-
-    // Generate new shareId
-    const newShareId = 'share-' + Math.random().toString(36).substring(2, 15);
-    
-    // Update chat with shareId
-    setChats((prevChats) =>
-      prevChats.map((c) => (c.id === chatId ? { ...c, shareId: newShareId } : c))
-    );
-
-    return newShareId;
+    transcript += '---\n\n';
+    chat.messages.forEach((msg) => {
+      const role = msg.role === 'user' ? 'User' : 'AI';
+      transcript += `${role}: ${msg.content}\n\n`;
+    });
+    return transcript;
   };
 
   const handleOpenShareModal = (chat: Chat) => {
@@ -1564,89 +1559,102 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setShareModalChat(null);
   };
 
-  const handleShareLink = () => {
-    if (!shareModalChat) return;
+  const buildExportHTML = (chat: Chat): string => {
+    const lastXai = [...chat.messages].reverse().find((m) => m.xaiData)?.xaiData;
+    const shapRows = lastXai
+      ? Object.entries(lastXai.shapValues)
+          .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+          .map(
+            ([feature, value]) =>
+              `<tr><td>${feature}</td><td style="color:${value >= 0 ? '#4ade80' : '#f87171'}">${value >= 0 ? '+' : ''}${value.toFixed(4)}</td></tr>`
+          )
+          .join('')
+      : '';
 
-    const shareId = getShareId(shareModalChat.id);
-    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
+    const messagesHTML = chat.messages
+      .map(
+        (m) =>
+          `<div class="${m.role}"><strong>${m.role === 'user' ? 'User' : 'Makeen AI'}:</strong><p>${m.content}</p></div>`
+      )
+      .join('');
 
-    copyToClipboard(shareUrl).then(() => {
-      setToastMessage('Link copied');
-      handleCloseShareModal();
-    }).catch(() => {
-      setToastMessage('Failed to copy link');
-    });
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Makeen Export — ${chat.title}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #111; }
+  h1 { color: #7760bd; } h2 { color: #444; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+  .user { background: #f3f4f6; border-radius: 8px; padding: 12px; margin: 8px 0; }
+  .assistant { background: #ede9fe; border-radius: 8px; padding: 12px; margin: 8px 0; }
+  table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+  th { background: #7760bd; color: white; } .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<h1>Makeen — ${chat.title}</h1>
+<p class="meta">Exported on ${new Date().toLocaleString()}${chat.fileAttachment ? ` &nbsp;|&nbsp; File: ${chat.fileAttachment.name}` : ''}${chat.targetColumn ? ` &nbsp;|&nbsp; Target column: ${chat.targetColumn}` : ''}</p>
+${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai.prediction}</p><h2>Feature Importance (SHAP Values)</h2><table><thead><tr><th>Feature</th><th>SHAP Value</th></tr></thead><tbody>${shapRows}</tbody></table>` : ''}
+<h2>Conversation</h2>${messagesHTML}
+</body></html>`;
   };
 
-  const buildChatTranscript = (chat: Chat): string => {
-    let transcript = `${chat.title}\n\n`;
-    
-    if (chat.fileAttachment) {
-      transcript += `Attached file: ${chat.fileAttachment.name}\n\n`;
-    }
-
-    transcript += '---\n\n';
-
-    chat.messages.forEach((msg) => {
-      const role = msg.role === 'user' ? 'User' : 'AI';
-      transcript += `${role}: ${msg.content}\n\n`;
-    });
-
-    return transcript;
-  };
-
-  const handleCopyText = () => {
+  const handleExportHTML = () => {
     if (!shareModalChat) return;
-
-    const transcript = buildChatTranscript(shareModalChat);
-    copyToClipboard(transcript).then(() => {
-      setToastMessage('Chat copied');
-      handleCloseShareModal();
-    }).catch(() => {
-      setToastMessage('Failed to copy');
-    });
-  };
-
-  const handleDownload = () => {
-    if (!shareModalChat) return;
-
-    const transcript = buildChatTranscript(shareModalChat);
-    const blob = new Blob([transcript], { type: 'text/plain' });
+    const html = buildExportHTML(shareModalChat);
+    const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `makeen-chat-${shareModalChat.title.replace(/[^a-zA-Z0-9]/g, '-')}.txt`;
+    a.download = `makeen-${shareModalChat.title.replace(/[^a-zA-Z0-9]/g, '-')}.html`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-
-    setToastMessage('Download started');
+    setToastMessage('HTML downloaded');
     handleCloseShareModal();
   };
 
-  const handleSystemShare = async () => {
-    if (!shareModalChat || !navigator.share) return;
-
-    const shareId = getShareId(shareModalChat.id);
-    const shareUrl = `${window.location.origin}${window.location.pathname}?share=${shareId}`;
-
-    try {
-      await navigator.share({
-        title: shareModalChat.title,
-        text: `Check out this chat: ${shareModalChat.title}`,
-        url: shareUrl,
-      });
-      handleCloseShareModal();
-    } catch (err) {
-      // User cancelled or error
-      console.error('Share failed:', err);
-    }
+  const handleExportPDF = () => {
+    if (!shareModalChat) return;
+    const html = buildExportHTML(shareModalChat);
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    setTimeout(() => { win.print(); }, 500);
+    setToastMessage('Print dialog opened — save as PDF');
+    handleCloseShareModal();
   };
 
-  const handleShareEmail = () => {
-    // Demo mode - show coming soon toast
-    setToastMessage('Coming soon');
+  const handleExportCSV = () => {
+    if (!shareModalChat) return;
+    const lastXai = [...shareModalChat.messages].reverse().find((m) => m.xaiData)?.xaiData;
+    let csv = 'Section,Field,Value\n';
+    if (lastXai) {
+      csv += `Prediction,Result,"${lastXai.prediction}"\n`;
+      Object.entries(lastXai.shapValues)
+        .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+        .forEach(([feature, value]) => {
+          csv += `SHAP,${feature},${value}\n`;
+        });
+    }
+    csv += '\nConversation,Role,Message\n';
+    shareModalChat.messages.forEach((m) => {
+      csv += `,${m.role === 'user' ? 'User' : 'Makeen AI'},"${m.content.replace(/"/g, '""')}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `makeen-${shareModalChat.title.replace(/[^a-zA-Z0-9]/g, '-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToastMessage('CSV downloaded');
     handleCloseShareModal();
   };
 
@@ -3187,7 +3195,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         </div>
       )}
 
-      {/* Share Modal */}
+      {/* Export Modal */}
       {shareModalChat && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
@@ -3199,114 +3207,75 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           >
             {/* Header */}
             <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white mb-[8px]">
-                Share chat
+              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white mb-[4px]">
+                Export Results
               </h2>
+              <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
+                Download the prediction, SHAP explanation, and conversation
+              </p>
             </div>
 
-            {/* Share Options */}
+            {/* Export Options */}
             <div className="px-[32px] py-[24px] flex flex-col gap-[12px]">
-              {/* Share Link */}
+              {/* PDF */}
               <button
-                onClick={handleShareLink}
+                onClick={handleExportPDF}
                 className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Share Link
+                    Export as PDF
                   </p>
                   <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Copy shareable link to clipboard
+                    Opens print dialog — save as PDF
                   </p>
                 </div>
               </button>
 
-              {/* Copy Chat Text */}
+              {/* HTML */}
               <button
-                onClick={handleCopyText}
+                onClick={handleExportHTML}
                 className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Copy Chat Text
+                    Export as HTML
                   </p>
                   <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Copy full transcript to clipboard
+                    Download a self-contained HTML report
                   </p>
                 </div>
               </button>
 
-              {/* Download */}
+              {/* CSV */}
               <button
-                onClick={handleDownload}
+                onClick={handleExportCSV}
                 className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
                   <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Download (.txt)
+                    Export as CSV
                   </p>
                   <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Download chat as text file
+                    Download prediction and SHAP values as spreadsheet
                   </p>
                 </div>
               </button>
-
-              {/* Share via Email */}
-              <button
-                onClick={handleShareEmail}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
-              >
-                <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
-                  <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Share via Email (demo)
-                  </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Opens email compose / demo action
-                  </p>
-                </div>
-              </button>
-
-              {/* System Share - Only show if supported */}
-              {typeof navigator.share === 'function' && (
-                <button
-                  onClick={handleSystemShare}
-                  className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
-                >
-                  <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
-                    <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                      More... (System Share)
-                    </p>
-                    <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                      Share using system menu
-                    </p>
-                  </div>
-                </button>
-              )}
             </div>
 
             {/* Footer */}
@@ -3388,26 +3357,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
             {/* Share Options */}
             <div className="px-[32px] py-[24px] flex flex-col gap-[12px]">
-              {/* Share Link */}
-              <button
-                onClick={handleCopyMessageLink}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
-              >
-                <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
-                  <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Share Link
-                  </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Copy shareable link to clipboard
-                  </p>
-                </div>
-              </button>
-
               {/* Copy Chat Text */}
               <button
                 onClick={handleCopyConversationText}
@@ -3419,12 +3368,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Copy Chat Text
-                  </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Copy full transcript to clipboard
-                  </p>
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">Copy Chat Text</p>
+                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">Copy full transcript to clipboard</p>
                 </div>
               </button>
 
@@ -3439,32 +3384,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Download (.txt)
-                  </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Download chat as text file
-                  </p>
-                </div>
-              </button>
-
-              {/* Share via Email */}
-              <button
-                onClick={handleShareMessageEmail}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
-              >
-                <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
-                  <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
-                    Share via Email (demo)
-                  </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
-                    Opens email compose / demo action
-                  </p>
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">Download (.txt)</p>
+                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">Download chat as text file</p>
                 </div>
               </button>
             </div>

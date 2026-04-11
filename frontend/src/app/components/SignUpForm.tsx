@@ -11,6 +11,7 @@ interface SignUpFormData {
   username: string;
   email: string;
   password: string;
+  confirmPassword: string;
   agreeToTerms: boolean;
 }
 
@@ -24,6 +25,7 @@ export function SignUpForm({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<SignUpFormData>({
     mode: 'onBlur',
@@ -32,6 +34,7 @@ export function SignUpForm({
       username: '',
       email: '',
       password: '',
+      confirmPassword: '',
       agreeToTerms: false,
     },
   });
@@ -151,6 +154,19 @@ export function SignUpForm({
               }
               return true;
             },
+          })}
+        />
+
+        <LoginInput
+          label="Confirm Password"
+          type="password"
+          placeholder="••••••••"
+          showPasswordToggle
+          error={errors.confirmPassword?.message}
+          {...register('confirmPassword', {
+            required: 'Please confirm your password.',
+            validate: (value) =>
+              value === watch('password') || 'Passwords do not match.',
           })}
         />
 
