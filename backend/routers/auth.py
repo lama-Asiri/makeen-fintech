@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
+import numpy as np
 from pydantic import BaseModel
 import os
 import io
@@ -764,7 +765,8 @@ async def report_bug(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-
+class ExplainRequest(BaseModel):
+    chat_id: int
 
 @router.post("/lime-explainer")
 async def limeExplainer(body: ExplainRequest, authorization: str = Header(None)):
