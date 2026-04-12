@@ -9,6 +9,7 @@ import os
 import io
 import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
+from lime.lime_tabular import LimeTabularExplainer
 
 router = APIRouter(prefix="/auth")
 
@@ -1058,3 +1059,65 @@ async def explain(body: ExplainRequest, authorization: str = Header(None)):
     # Replace this placeholder with real values once the above is filled in
     raise HTTPException(status_code=501, detail="Not implemented yet — Rahaf fill this in")
 
+@router.post("/lime-explainer")
+async def limeExplainer(body: ExplainRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+
+    # 1. Check model exists
+    if chat_id not in trained_models:
+        raise HTTPException(status_code=400, detail="Model not trained")
+
+    model_data = trained_models[chat_id]
+
+    model = model_data["model"]
+    X_train = model_data["X_train"]
+    feature_names = model_data["feature_names"]
+    task_type = model_data["task_type"]
+    class_labels = model_data["class_labels"]
+    encoders = model_data["encoders"]
+
+    # 2. Convert input (dict → dataframe)
+    instance_df = pd.DataFrame([body.instance])
+
+    # 3. Apply SAME encoding used in training
+    for col, enc in encoders.items():
+        if col in instance_df.columns:
+            if enc["type"] == "label":
+                le = enc["encoder"]
+                instance_df[col] = le.transform(instance_df[col].astype(str))
+
+            elif enc["type"] == "one_hot":
+                dummies = pd.get_dummies(instance_df[col], prefix=col)
+                instance_df = pd.concat(
+                    [instance_df.drop(columns=[col]), dummies],
+                    axis=1
+                )
+
+    # 4. Match training columns exactly
+    instance_df = instance_df.reindex(columns=feature_names, fill_value=0)
+
+    # 5. Create LIME explainer
+    explainer = LimeTabularExplainer(
+        training_data=np.array(X_train),
+        feature_names=feature_names,
+        class_names=class_labels if task_type == "classification" else None,
+        mode=task_type
+    )
+
+    # 6. Generate explanation
+    exp = explainer.explain_instance(
+        instance_df.iloc[0].values,
+        model.predict_proba if task_type == "classification" else model.predict
+    )
+
+    # 7. Format result
+    explanation = [
+        {"feature": feature, "impact": float(weight)}
+        for feature, weight in exp.as_list()
+    ]
+
+    return {
+        "message": "Explanation generated",
+        "explanation": explanation
+    }
