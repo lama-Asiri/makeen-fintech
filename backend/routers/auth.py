@@ -1,10 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
-from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, r2_score, mean_squared_error
-import numpy as np
 import os
 import io
 import pandas as pd
@@ -583,12 +578,10 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
     # update target_column to match cleaned name
     target_column = clean_column_name(target_column)
  
-    # 5. drop ID columns
-    id_patterns = ['id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk']
-    cols_to_drop = [col for col in df.columns 
-                    if col.lower() in id_patterns or col.lower().endswith('_id')]
-    if cols_to_drop:
-        df = df.drop(columns=cols_to_drop)
+    # 5. detect ID columns — keep them in df, only strip when feeding the ML model
+    id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
+    id_columns = [col for col in df.columns
+                  if col.lower() in id_patterns or col.lower().endswith('_id')]
  
     # 6. remove duplicate rows
     df = df.drop_duplicates(keep='first')
@@ -602,7 +595,10 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
  
     # 9. convert text columns that are actually numbers
     #     only converts if 90%+ of the column's values are valid numbers.
+    #     skip ID columns — their values should never be coerced to floats.
     for col in df.select_dtypes(include=['object']).columns:
+        if col in id_columns:
+            continue
         try:
             numeric_version = pd.to_numeric(df[col], errors='coerce')
             if numeric_version.notna().sum() / len(numeric_version) > 0.9:
@@ -611,7 +607,10 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
             pass
  
     # 10. fill remaining empty cells: numbers get the median, text gets the most common value
+    #     skip ID columns — missing IDs stay missing (they're used for row lookup, not imputed).
     for col in df.columns:
+        if col in id_columns:
+            continue
         if df[col].isnull().any():
             if pd.api.types.is_numeric_dtype(df[col]):
                 df[col].fillna(df[col].median(), inplace=True)
@@ -619,160 +618,36 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
                 mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
                 df[col].fillna(mode_val, inplace=True)
 
-    # 11. split into inputs (X) and the thing we want to predict (y)
-    X = df.drop(columns=[target_column])
+    # 11. build X (features) and y (target)
+    #     X excludes both ID columns and the target — IDs are not useful to the ML model.
+    cols_to_exclude = list(set(id_columns + [target_column]))
+    X = df.drop(columns=cols_to_exclude)
     y = df[target_column]
  
     if y.nunique() < 2:
         raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
  
-    # 12. cache cleaned raw data
+    # 12. cache cleaned data
     cleaned_data_cache[chat_id] = {
-        "X": X,
-        "y": y,
+        "df":            df,                      # full df, IDs intact — for lookups and DATA_QUERY
+        "id_columns":    id_columns,              # which columns are IDs
+        "X":             X,                       # ML features only (no IDs, no target)
+        "y":             y,
         "target_column": target_column,
-        "feature_names": X.columns.tolist()
+        "feature_names": X.columns.tolist(),
     }
  
     # 13. return summary with cleaning details
     return {
-        "message": "File parsed and ready",
-        "rows": len(df),
-        "features": len(X.columns),
-        "task": "classification" if y.dtype == 'object' or y.nunique() <= 10 else "regression",
-        "target_column": target_column,
-        "target_sample": y.value_counts().head(3).to_dict(),
-        "columns_dropped": cols_to_drop if cols_to_drop else [],
-        "note": "ID columns and columns with >60% missing data removed"
+        "message":        "File parsed and ready",
+        "rows":           len(df),
+        "features":       len(X.columns),
+        "task":           "classification" if y.dtype == 'object' or y.nunique() <= 10 else "regression",
+        "target_column":  target_column,
+        "target_sample":  y.value_counts().head(3).to_dict(),
+        "id_columns":     id_columns,
+        "note":           "ID columns kept for row lookups; columns with >60% missing data removed",
     }
-
-class TrainRequest(BaseModel):
-    chat_id: int
-
-@router.post("/train")
-async def train_model(body: TrainRequest, authorization: str = Header(None)):
-    user_id = _get_user_id(authorization)
-    chat_id = body.chat_id
-    
-    # 1. verify chat ownership
-    try:
-        chat_check = supabase.table("Chat") \
-            .select("CHAT_ID") \
-            .eq("CHAT_ID", chat_id) \
-            .eq("USER_ID", user_id) \
-            .single() \
-            .execute()
-        if not chat_check.data:
-            raise HTTPException(status_code=404, detail="Chat not found")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
-    
-    # 2. check if /parse was run
-    if chat_id not in cleaned_data_cache:
-        raise HTTPException(status_code=400, detail="Must call /parse first to clean the file")
-    
-    # 3. get cleaned data from cache
-    cache = cleaned_data_cache[chat_id]
-    X = cache["X"].copy()
-    y = cache["y"].copy()
-    feature_names_original = cache["feature_names"]
-    target_column = cache["target_column"]
-    task_type = "classification" if (y.dtype == 'object' or y.nunique() <= 10) else "regression"
-    
-    # 4. encode categorical features in X — convert text to numbers
-    encoders = {}
-    for col in X.select_dtypes(include=['object']).columns:
-        unique_values = X[col].nunique()
-        if unique_values == 2:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col].astype(str))
-            encoders[col] = {"type": "label", "encoder": le}
-        elif unique_values <= 10:
-            X = pd.get_dummies(X, columns=[col], prefix=col, drop_first=True)
-            encoders[col] = {"type": "one_hot"}
-        else:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col].astype(str))
-            encoders[col] = {"type": "label", "encoder": le}
-    
-    # 5. convert boolean columns to integers
-    bool_cols = X.select_dtypes(include=['bool']).columns
-    X[bool_cols] = X[bool_cols].astype(int)
-    
-    # 6. update feature names after encoding (one-hot may add columns)
-    feature_names = X.columns.tolist()
-    
-    # 7. encode target (y) if categorical
-    le_target = None
-    class_labels = None
-    if task_type == "classification":
-        le_target = LabelEncoder()
-        y_encoded = le_target.fit_transform(y.astype(str))
-        class_labels = le_target.classes_.tolist()
-    else:
-        y_encoded = y.astype(float).values
-    
-    # 8. split into train/test (80/20)
-    try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y_encoded, test_size=0.2, random_state=42
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Data split failed: {e}")
-    
-    # 9. train the model
-    try:
-        if task_type == "classification":
-            model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            score = accuracy_score(y_test, y_pred)
-            metric_name = "accuracy"
-        else:
-            model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
-            model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            score = r2_score(y_test, y_pred)
-            metric_name = "r2_score"
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Model training failed: {e}")
-    
-    # 10. get feature importances (top 5)
-    importances = model.feature_importances_
-    top_features = sorted(
-        zip(feature_names, importances),
-        key=lambda x: x[1],
-        reverse=True
-    )[:5]
-    
-    # 11. store model in memory for /predict and /explain
-    trained_models[chat_id] = {
-        "model": model,
-        "X_train": X_train,
-        "feature_names": feature_names,
-        "feature_names_original": feature_names_original,
-        "target_column": target_column,
-        "task_type": task_type,
-        "class_labels": class_labels,
-        "le_target": le_target,
-        "encoders": encoders
-    }
-    
-    # 12. return training summary
-    if task_type == "classification":
-        return {
-            "message": "Model trained successfully",
-            "task_type": task_type,
-            "accuracy": round(score, 4),
-            "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
-        }
-    else:
-        return {
-            "message": "Model trained successfully",
-            "task_type": task_type,
-            "r2_score": round(score, 4),
-            "top_features": [{"name": name, "importance": round(imp, 4)} for name, imp in top_features]
-        }
 
 # Rating allowed categories
 ALLOWED_CATEGORIES = [
@@ -889,172 +764,4 @@ async def report_bug(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# /predict — make a prediction for a given query using the trained model
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# RAHAF — this is your next task (#17 part 1)
-#
-# What this endpoint should do:
-#   1. Check that /train was already called for this chat (trained_models[chat_id] must exist)
-#   2. Extract a row of feature values to predict on.
-#      The simplest approach for now: use the LAST row of the original training data
-#      as a stand-in for "the row the user is asking about". note in frontend we allowed user to pick so attempt to use the col user picked and give feedback to LAMA
-#      Later this can be replaced with parsing the user's NL query to extract values.
-#   3. Run model.predict() on that row → get a predicted class/value
-#   4. Run model.predict_proba() if classification → get confidence %
-#   5. Return the prediction and confidence so the frontend can show the badge
-#
-# Input:  { chat_id: int }
-# Output: { prediction: str, confidence: float, task_type: str }
-#
-# Example output:
-#   { "prediction": "Churn", "confidence": 0.87, "task_type": "classification" }
-#
-
-class PredictRequest(BaseModel):
-    chat_id: int
-
-
-@router.post("/predict")
-async def predict(body: PredictRequest, authorization: str = Header(None)):
-    user_id = _get_user_id(authorization)
-    chat_id = body.chat_id
-
-    # verify chat belongs to this user
-    try:
-        chat_check = supabase.table("Chat") \
-            .select("CHAT_ID") \
-            .eq("CHAT_ID", chat_id) \
-            .eq("USER_ID", user_id) \
-            .single() \
-            .execute()
-        if not chat_check.data:
-            raise HTTPException(status_code=404, detail="Chat not found")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
-
-    # check /train was called first
-    if chat_id not in trained_models:
-        raise HTTPException(status_code=400, detail="Must call /train first before predicting")
-
-    cache = trained_models[chat_id]
-    model = cache["model"]
-    task_type = cache["task_type"]
-    class_labels = cache["class_labels"]  # list of class names (classification only)
-    le_target = cache["le_target"]        # LabelEncoder for target (classification only)
-
-    # TODO Rahaf: get the row to predict on
-    # For now, use the last row of training data as a placeholder.
-    # Later: parse the user's NL query to extract the feature values they are asking about.
-    X_train = cache["X_train"]
-    row_to_predict = X_train[-1].reshape(1, -1)  # shape: (1, n_features)
-
-    # TODO Rahaf: run the model prediction
-    # prediction = model.predict(row_to_predict)  # returns array like [1] or ["Churn"]
-    # if classification: decode back to label using le_target
-    # if regression: just return the float value as a string
-
-    # TODO Rahaf: get confidence for classification
-    # probabilities = model.predict_proba(row_to_predict)  # returns array like [[0.13, 0.87]]
-    # confidence = float(max(probabilities[0]))
-
-    # TODO Rahaf: return the result
-    # Replace this placeholder with real values once the above is filled in
-    raise HTTPException(status_code=501, detail="Not implemented yet — Rahaf fill this in")
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-# /explain — run SHAP on the trained model and return feature importance values
-# ─────────────────────────────────────────────────────────────────────────────
-#
-# RAHAF — this is your next task (#17 part 2)
-#
-# What this endpoint should do:
-#   1. Check that /train was already called (trained_models[chat_id] must exist)
-#   2. Create a SHAP explainer using the trained RandomForest model
-#      Use shap.TreeExplainer — it works directly with RandomForest, no background data needed
-#   3. Run the explainer on the SAME row used in /predict (last row of training data for now)
-#   4. Get the SHAP values for each feature
-#   5. Map them back to feature names
-#   6. Return the top features with their SHAP values
-#      Positive value = pushed prediction UP, negative = pushed prediction DOWN
-#
-# Input:  { chat_id: int }
-# Output: { shap_values: { "feature_name": float, ... }, prediction: str }
-#
-# Example output:
-#   {
-#     "shap_values": {
-#       "Age": 0.38,
-#       "Balance": -0.27,
-#       "NumProducts": 0.18,
-#       "IsActiveMember": 0.11,
-#       "Geography_Germany": 0.06
-#     },
-#     "prediction": "Churn"
-#   }
-#
-# Install hint: shap is already in requirements.txt — just `import shap` at the top of this file
-#
-
-class ExplainRequest(BaseModel):
-    chat_id: int
-
-
-@router.post("/explain")
-async def explain(body: ExplainRequest, authorization: str = Header(None)):
-    user_id = _get_user_id(authorization)
-    chat_id = body.chat_id
-
-    # verify chat belongs to this user
-    try:
-        chat_check = supabase.table("Chat") \
-            .select("CHAT_ID") \
-            .eq("CHAT_ID", chat_id) \
-            .eq("USER_ID", user_id) \
-            .single() \
-            .execute()
-        if not chat_check.data:
-            raise HTTPException(status_code=404, detail="Chat not found")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
-
-    # check /train was called first
-    if chat_id not in trained_models:
-        raise HTTPException(status_code=400, detail="Must call /train first before explaining")
-
-    cache = trained_models[chat_id]
-    model = cache["model"]
-    feature_names = cache["feature_names"]
-    X_train = cache["X_train"]
-
-    # TODO Rahaf: create the SHAP explainer
-    # import shap at the top of this file first
-    # explainer = shap.TreeExplainer(model)
-
-    # TODO Rahaf: get the row to explain (same row as /predict)
-    # row_to_explain = X_train[-1].reshape(1, -1)
-
-    # TODO Rahaf: compute SHAP values
-    # shap_values = explainer.shap_values(row_to_explain)
-    #
-    # For classification: shap_values is a list of arrays, one per class.
-    # Use the SHAP values for the predicted class index.
-    # For regression: shap_values is a single array.
-    #
-    # shap_for_row = shap_values[predicted_class_index][0]  # shape: (n_features,)
-
-    # TODO Rahaf: map feature names to SHAP values and return top 8
-    # feature_shap = dict(zip(feature_names, shap_for_row))
-    # top_shap = dict(sorted(feature_shap.items(), key=lambda x: abs(x[1]), reverse=True)[:8])
-
-    # TODO Rahaf: return the result
-    # return {
-    #     "shap_values": top_shap,
-    #     "prediction": predicted_label   # same as /predict output
-    # }
-
-    # Replace this placeholder with real values once the above is filled in
-    raise HTTPException(status_code=501, detail="Not implemented yet — Rahaf fill this in")
 
