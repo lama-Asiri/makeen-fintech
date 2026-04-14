@@ -16,8 +16,6 @@ from routers.auth import cleaned_data_cache, trained_models, _get_user_id
 
 router = APIRouter()
 
-# prediction_cache[chat_id] — written by predict_local_single, read by /explain/lime (Reem)
-# { mode, row_df, id_column, id_value, prediction, confidence, predicted_class_index, task_type }
 prediction_cache: dict = {}
 
 # ─────────────────────────────────────────────────────────────────────────────
