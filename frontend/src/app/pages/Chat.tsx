@@ -89,6 +89,76 @@ function TypewriterText({
   return <>{displayedText}</>;
 }
 
+// ── Sample datasets available in the upload modal ──
+const SAMPLE_DATASETS = [
+  {
+    id: 'stroke',
+    name: 'Healthcare Stroke Data',
+    filename: 'healthcare-dataset-stroke-data.csv',
+    description: 'Predict stroke risk based on patient health indicators',
+    url: 'https://qekzvieqlzhlzrjwrdcc.supabase.co/storage/v1/object/public/sample-datasets/healthcare-dataset-stroke-data.csv',
+    columns: ['id', 'gender', 'age', 'hypertension', 'heart_disease', 'ever_married', 'work_type', 'Residence_type', 'avg_glucose_level', 'bmi', 'smoking_status', 'stroke'],
+    previewRows: [
+      ['9046', 'Male', '67', '0', '1', 'Yes', 'Private', 'Urban', '228.69', '36.6', 'formerly smoked', '1'],
+      ['51676', 'Female', '61', '0', '0', 'Yes', 'Self-employed', 'Rural', '202.21', 'N/A', 'never smoked', '1'],
+      ['31112', 'Male', '80', '0', '1', 'Yes', 'Private', 'Rural', '105.92', '32.5', 'never smoked', '1'],
+      ['60182', 'Female', '49', '0', '0', 'Yes', 'Private', 'Urban', '171.23', '34.4', 'smokes', '1'],
+      ['1665', 'Female', '79', '1', '0', 'Yes', 'Self-employed', 'Rural', '174.12', '24.0', 'never smoked', '1'],
+    ],
+    suggestedQuestions: [
+      'Who is most at risk for a stroke?',
+      'What factors most influence stroke prediction?',
+      'Compare stroke risk between smokers and non-smokers',
+      'How does age relate to stroke risk?',
+      'Which work type has the highest stroke rate?',
+    ],
+  },
+  {
+    id: 'mall',
+    name: 'Mall Customers',
+    filename: 'Mall_Customers.csv',
+    description: 'Customer segmentation by income and spending behaviour',
+    url: 'https://qekzvieqlzhlzrjwrdcc.supabase.co/storage/v1/object/public/sample-datasets/Mall_Customers.csv',
+    columns: ['CustomerID', 'Genre', 'Age', 'Annual Income (k$)', 'Spending Score (1-100)'],
+    previewRows: [
+      ['1', 'Male', '19', '15', '39'],
+      ['2', 'Male', '21', '15', '81'],
+      ['3', 'Female', '20', '16', '6'],
+      ['4', 'Female', '23', '16', '77'],
+      ['5', 'Female', '31', '17', '40'],
+    ],
+    suggestedQuestions: [
+      'Which customer segment has the highest spending score?',
+      'What is the relationship between income and spending?',
+      'Who are the high-value customers?',
+      'How does age affect spending behaviour?',
+      'What are the distinct customer clusters?',
+    ],
+  },
+  {
+    id: 'insurance',
+    name: 'Medical Insurance',
+    filename: 'insurance.csv',
+    description: 'Predict medical insurance charges based on patient attributes',
+    url: 'https://qekzvieqlzhlzrjwrdcc.supabase.co/storage/v1/object/public/sample-datasets/insurance.csv',
+    columns: ['age', 'sex', 'bmi', 'children', 'smoker', 'region', 'charges'],
+    previewRows: [
+      ['19', 'female', '27.9', '0', 'yes', 'southwest', '16884.924'],
+      ['18', 'male', '33.77', '1', 'no', 'southeast', '1725.552'],
+      ['28', 'male', '33.0', '3', 'no', 'southeast', '4449.462'],
+      ['33', 'male', '22.705', '0', 'no', 'northwest', '21984.471'],
+      ['32', 'male', '28.88', '0', 'no', 'northwest', '3866.855'],
+    ],
+    suggestedQuestions: [
+      'What factors most affect insurance charges?',
+      'Do smokers pay significantly more than non-smokers?',
+      'How does BMI impact insurance costs?',
+      'Which region has the highest average charges?',
+      'Does number of children affect insurance charges?',
+    ],
+  },
+];
+
 interface ChatPageProps {
   onLogout?: () => void;
   entryMode?: 'login' | 'signup' | null; // Indicates if user just logged in or signed up
@@ -313,6 +383,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [editMessageValue, setEditMessageValue] = useState('');
   const [pendingNewChat, setPendingNewChat] = useState<Chat | null>(null);
   const [showFilePreview, setShowFilePreview] = useState(false);
+  const [selectedSampleDataset, setSelectedSampleDataset] = useState<string | null>(null);
+  const [sampleSuggestedQuestions, setSampleSuggestedQuestions] = useState<string[]>([]);
   // Upload modal step: 'file' = drop zone, 'loading' = uploading, 'columns' = pick target column
   const [uploadStep, setUploadStep] = useState<'file' | 'loading' | 'columns'>('file');
   const [availableColumns, setAvailableColumns] = useState<string[]>([]);
@@ -2337,20 +2409,22 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                     <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
                     <div className="h-[1px] bg-black opacity-20" />
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#f5f5f5]">If you do not have a file you can use the sample below:</p>
-                    <button
-                      onClick={() => setShowFilePreview(true)}
-                      className="bg-[#262626] border border-[#d0d0d0] rounded-[8px] px-[16px] md:px-[24px] h-[40px] md:h-[44px] flex gap-[8px] items-center justify-center cursor-pointer hover:bg-[#2a2a2a] hover:border-[#7760bd] transition-all"
-                    >
-                      <svg className="w-[20px] md:w-[24px] h-[20px] md:h-[24px]" fill="none" viewBox="0 0 24 24">
-                        <path d={svgPaths.p2c7f0600} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                        <path d={svgPaths.p18d48b80} stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                        <path d="M8 11H16V18H8V11Z" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                        <path d="M8 15H16" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                        <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
-                      </svg>
-                      <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#e9e9e9] truncate">Download Sample Template</p>
-                    </button>
+                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
+
+                    {/* Sample dataset cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
+                      {SAMPLE_DATASETS.map((ds) => (
+                        <button
+                          key={ds.id}
+                          type="button"
+                          onClick={() => setSelectedSampleDataset(ds.id)}
+                          className="bg-[#262626] border border-[#444] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all hover:border-[#7760bd] hover:bg-[#2a2a2a]"
+                        >
+                          <p className="font-semibold text-[13px] text-white leading-tight">{ds.name}</p>
+                          <p className="text-[11px] text-[#999] leading-tight">{ds.description}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
 
@@ -2962,6 +3036,37 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               </div>
             </div>
 
+            {/* Suggested questions chip bar — shown after loading a sample dataset */}
+            {sampleSuggestedQuestions.length > 0 && (
+              <div className="flex items-center gap-[8px] pb-[10px] px-[2px]">
+                <div className="flex gap-[8px] overflow-x-auto scrollbar-hide pb-[2px] flex-1">
+                  {sampleSuggestedQuestions.map((q) => (
+                    <button
+                      key={q}
+                      type="button"
+                      onClick={() => {
+                        setInputValue(q);
+                        textareaRef.current?.focus();
+                      }}
+                      className="flex-shrink-0 bg-[#2c2c2c] border border-[#444] hover:border-[#7760bd] hover:bg-[#2a2635] text-[#ccc] hover:text-white text-[12px] rounded-full px-[14px] py-[7px] transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSampleSuggestedQuestions([])}
+                  className="flex-shrink-0 text-[#555] hover:text-[#999] transition-colors"
+                  title="Dismiss suggestions"
+                >
+                  <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
             {/* Chat Input Bar */}
             <div className="mt-auto pb-[16px]">
               {/* ChatInputGlowShell - Premium multi-layer glow container */}
@@ -3470,6 +3575,105 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         </div>
       )}
 
+      {/* Sample Dataset Preview Modal */}
+      {selectedSampleDataset && (() => {
+        const ds = SAMPLE_DATASETS.find((d) => d.id === selectedSampleDataset)!;
+        return (
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+            onClick={() => setSelectedSampleDataset(null)}
+          >
+            <div
+              className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[700px] max-w-[92vw] max-h-[90vh] overflow-y-auto border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333] flex items-start justify-between gap-[16px]">
+                <div>
+                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[22px] text-white">{ds.name}</h2>
+                  <p className="text-[14px] text-[#999] mt-[4px]">{ds.description}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedSampleDataset(null)}
+                  className="text-[#666] hover:text-white transition-colors mt-[2px] flex-shrink-0"
+                >
+                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                    <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="px-[32px] py-[24px] flex flex-col gap-[24px]">
+                {/* Table preview */}
+                <div>
+                  <p className="text-[12px] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Preview (first 5 rows)</p>
+                  <div className="overflow-x-auto rounded-[8px] border border-[#333]">
+                    <table className="text-[12px] text-[#ccc] w-full border-collapse">
+                      <thead>
+                        <tr className="bg-[#252525]">
+                          {ds.columns.map((col) => (
+                            <th key={col} className="px-[12px] py-[8px] text-left font-semibold text-white border-b border-[#333] whitespace-nowrap">{col}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ds.previewRows.map((row, i) => (
+                          <tr key={i} className={i % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#222]'}>
+                            {row.map((cell, j) => (
+                              <td key={j} className="px-[12px] py-[7px] border-b border-[#2a2a2a] whitespace-nowrap">{cell}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Suggested questions */}
+                <div>
+                  <p className="text-[12px] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Suggested questions</p>
+                  <div className="flex flex-col gap-[8px]">
+                    {ds.suggestedQuestions.map((q) => (
+                      <div key={q} className="flex items-start gap-[10px] bg-[#252525] rounded-[8px] px-[14px] py-[10px]">
+                        <span className="text-[#7760bd] text-[14px] font-bold mt-[1px] flex-shrink-0">›</span>
+                        <p className="text-[13px] text-[#ddd]">{q}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-[32px] pb-[32px] flex items-center justify-between gap-[12px]">
+                <button
+                  onClick={() => setSelectedSampleDataset(null)}
+                  className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[20px] py-[10px] transition-colors cursor-pointer"
+                >
+                  <p className="font-semibold text-[14px] text-white">Cancel</p>
+                </button>
+                <button
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(ds.url);
+                      const blob = await response.blob();
+                      const file = new File([blob], ds.filename, { type: 'text/csv' });
+                      handleFileSelect(file);
+                      setSampleSuggestedQuestions([...ds.suggestedQuestions]);
+                      setSelectedSampleDataset(null);
+                    } catch {
+                      setToastMessage('Failed to load sample dataset. Please try again.');
+                    }
+                  }}
+                  className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer hover:shadow-[0_0_20px_rgba(119,96,189,0.4)]"
+                >
+                  <p className="font-semibold text-[14px] text-white">Use this dataset</p>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Feedback Modal */}
       <FeedbackModal
         isOpen={feedbackModalMessageId !== null}
@@ -3494,6 +3698,26 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           setFeedbackModalMessageId(null);
         }}
         onSubmit={handleFeedbackSubmit}
+        onLearnMore={() => {
+          // Revert thumbs-down highlight since user hasn't submitted
+          if (feedbackModalMessageId && !feedbackWasSubmittedRef.current) {
+            setChats((prev) =>
+              prev.map((chat) =>
+                chat.id === activeChatId
+                  ? {
+                      ...chat,
+                      messages: chat.messages.map((msg) =>
+                        msg.id === feedbackModalMessageId ? { ...msg, feedback: null } : msg
+                      ),
+                    }
+                  : chat
+              )
+            );
+          }
+          feedbackWasSubmittedRef.current = false;
+          setFeedbackModalMessageId(null);
+          setShowTermsAndPolicies(true);
+        }}
       />
 
       {/* Settings Modal */}

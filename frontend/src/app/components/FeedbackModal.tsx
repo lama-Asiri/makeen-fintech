@@ -5,6 +5,7 @@ interface FeedbackModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (feedback: { reason: string; details: string }) => void;
+  onLearnMore?: () => void;
 }
 
 const FEEDBACK_OPTIONS = [
@@ -16,7 +17,7 @@ const FEEDBACK_OPTIONS = [
   'Other',
 ];
 
-export function FeedbackModal({ isOpen, onClose, onSubmit }: FeedbackModalProps) {
+export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: FeedbackModalProps) {
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [details, setDetails] = useState('');
 
@@ -130,7 +131,7 @@ export function FeedbackModal({ isOpen, onClose, onSubmit }: FeedbackModalProps)
               <a
                 href="#"
                 className="text-[#7760bd] hover:text-[#9580d4] underline transition-colors"
-                onClick={(e) => e.preventDefault()}
+                onClick={(e) => { e.preventDefault(); onLearnMore?.(); }}
               >
                 Learn more
               </a>
