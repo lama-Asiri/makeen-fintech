@@ -14,12 +14,13 @@ from sklearn.preprocessing import LabelEncoder
 router = APIRouter(prefix="/auth")
 
 # holds cleaned data after /parse runs
-# lets /predict reuse it without re-downloading and re-cleaning the file on every request.
 cleaned_data_cache = {}
 
 # holds trained models after /train runs
-# lets /predict and /explain reuse the model without re-training.
 trained_models = {}
+
+# holds the last prediction result per chat — used by LIME and SHAP to explain without re-predicting.
+prediction_cache: dict = {}
 
 class SignUpRequest(BaseModel):
     email: str
@@ -516,18 +517,15 @@ async def get_messages(chat_id: int, authorization: str = Header(None)):
 
     return {"messages": queries.data}
 
-# /parse — download the user's file, clean it, and prepare it for the ML model 
+# /parse — download the user's file, clean it, and cache it for the ML pipeline
 class ParseRequest(BaseModel):
     chat_id: int
-    target_column: str
- 
- 
+
 @router.post("/parse")
 async def parse_file(body: ParseRequest, authorization: str = Header(None)):
     user_id = _get_user_id(authorization)
     chat_id = body.chat_id
-    target_column = body.target_column
- 
+
     # 1. confirm this chat belongs to the requesting user
     try:
         chat_check = supabase.table("Chat") \
@@ -565,8 +563,6 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
  
         if df.empty:
             raise HTTPException(status_code=400, detail="File is empty")
-        if target_column not in df.columns:
-            raise HTTPException(status_code=400, detail=f"Target column '{target_column}' not found in file")
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
  
@@ -581,9 +577,7 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         return col
     
     df.columns = [clean_column_name(col) for col in df.columns]
-    # update target_column to match cleaned name
-    target_column = clean_column_name(target_column)
- 
+
     # 5. detect ID columns — keep them in df, only strip when feeding the ML model
     id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
     id_columns = [col for col in df.columns
@@ -624,35 +618,19 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
                 mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
                 df[col].fillna(mode_val, inplace=True)
 
-    # 11. build X (features) and y (target)
-    #     X excludes both ID columns and the target — IDs are not useful to the ML model.
-    cols_to_exclude = list(set(id_columns + [target_column]))
-    X = df.drop(columns=cols_to_exclude)
-    y = df[target_column]
- 
-    if y.nunique() < 2:
-        raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
- 
-    # 12. cache cleaned data
+    # 11. cache cleaned data — target column and X/y are built later in /train
     cleaned_data_cache[chat_id] = {
-        "df":            df,                      # full df, IDs intact — for lookups and DATA_QUERY
-        "id_columns":    id_columns,              # which columns are IDs
-        "X":             X,                       # ML features only (no IDs, no target)
-        "y":             y,
-        "target_column": target_column,
-        "feature_names": X.columns.tolist(),
+        "df":         df,          # full df, IDs intact — for lookups and DATA_QUERY
+        "id_columns": id_columns,  # which columns are IDs
     }
- 
-    # 13. return summary with cleaning details
+
+    # 12. return summary
     return {
-        "message":        "File parsed and ready",
-        "rows":           len(df),
-        "features":       len(X.columns),
-        "task":           "classification" if y.dtype == 'object' or y.nunique() <= 10 else "regression",
-        "target_column":  target_column,
-        "target_sample":  y.value_counts().head(3).to_dict(),
-        "id_columns":     id_columns,
-        "note":           "ID columns kept for row lookups; columns with >60% missing data removed",
+        "message":    "File parsed and ready",
+        "rows":       len(df),
+        "columns":    df.columns.tolist(),
+        "id_columns": id_columns,
+        "note":       "ID columns kept for row lookups; columns with >60% missing data removed",
     }
 
 # Rating allowed categories

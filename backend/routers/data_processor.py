@@ -12,18 +12,119 @@ from sklearn.metrics import accuracy_score, r2_score
 
 from core.openai_client import openai_client
 from core.supabase_client import supabase
-from routers.auth import cleaned_data_cache, trained_models, _get_user_id
+from routers.auth import cleaned_data_cache, trained_models, prediction_cache, _get_user_id
 
 router = APIRouter()
 
-prediction_cache: dict = {}
-
 # ─────────────────────────────────────────────────────────────────────────────
-# /train
+# Training logic
 # ─────────────────────────────────────────────────────────────────────────────
 
 class TrainRequest(BaseModel):
     chat_id: int
+    target_column: str  # inferred by classifier or sent explicitly by frontend
+
+
+def _run_train(chat_id: int, target_column: str) -> dict:
+    """
+    Called by /train endpoint and by /processQuestion when the target changes.
+    """
+    cache   = cleaned_data_cache[chat_id]
+    df      = cache["df"].copy()
+    id_cols = cache["id_columns"]
+
+    # validate target column exists
+    if target_column not in df.columns:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Column '{target_column}' not found. Available: {', '.join(df.columns)}"
+        )
+
+    # 1. build X and y
+    cols_to_exclude    = list(set(id_cols + [target_column]))
+    X                  = df.drop(columns=[c for c in cols_to_exclude if c in df.columns])
+    y                  = df[target_column]
+    feature_names_orig = X.columns.tolist()
+
+    if y.nunique() < 2:
+        raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
+
+    task_type = "classification" if (y.dtype == "object" or y.nunique() <= 10) else "regression"
+
+    # 2. encode categorical features in X
+    encoders = {}
+    for col in X.select_dtypes(include=["object"]).columns:
+        n_unique = X[col].nunique()
+        if n_unique == 2:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col].astype(str))
+            encoders[col] = {"type": "label", "encoder": le}
+        elif n_unique <= 10:
+            X = pd.get_dummies(X, columns=[col], prefix=col, drop_first=True)
+            encoders[col] = {"type": "one_hot"}
+        else:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col].astype(str))
+            encoders[col] = {"type": "label", "encoder": le}
+
+    # 3. boolean → int
+    bool_cols = X.select_dtypes(include=["bool"]).columns
+    X[bool_cols] = X[bool_cols].astype(int)
+
+    feature_names = X.columns.tolist()
+
+    # 4. encode target y
+    le_target    = None
+    class_labels = None
+    if task_type == "classification":
+        le_target    = LabelEncoder()
+        y_encoded    = le_target.fit_transform(y.astype(str))
+        class_labels = le_target.classes_.tolist()
+    else:
+        y_encoded = y.astype(float).values
+
+    # 5. 80/20 split
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y_encoded, test_size=0.2, random_state=42
+    )
+
+    # 6. train RandomForest
+    if task_type == "classification":
+        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
+        model.fit(X_train, y_train)
+        score = accuracy_score(y_test, model.predict(X_test))
+    else:
+        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
+        model.fit(X_train, y_train)
+        score = r2_score(y_test, model.predict(X_test))
+
+    # 7. top 5 features by importance
+    top_features = sorted(
+        zip(feature_names, model.feature_importances_),
+        key=lambda x: x[1],
+        reverse=True,
+    )[:5]
+
+    # 8. store in trained_models
+    trained_models[chat_id] = {
+        "model":                  model,
+        "X":                      X,        # all rows encoded — for SHAP batch/analysis
+        "X_train":                X_train,  # training split 
+        "feature_names":          feature_names,
+        "feature_names_original": feature_names_orig,
+        "target_column":          target_column,
+        "task_type":              task_type,
+        "class_labels":           class_labels,
+        "le_target":              le_target,
+        "encoders":               encoders,
+    }
+
+    metric_key = "accuracy" if task_type == "classification" else "r2_score"
+    return {
+        "task_type":    task_type,
+        "top_features": top_features,
+        metric_key:     round(score, 4),
+    }
 
 
 @router.post("/train")
@@ -52,98 +153,20 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
     if chat_id not in cleaned_data_cache:
         raise HTTPException(status_code=400, detail="Must call /parse first to clean the file")
 
-    # 3. get cleaned data from cache
-    cache               = cleaned_data_cache[chat_id]
-    X                   = cache["X"].copy()
-    y                   = cache["y"].copy()
-    feature_names_orig  = cache["feature_names"]
-    target_column       = cache["target_column"]
-    task_type           = "classification" if (y.dtype == "object" or y.nunique() <= 10) else "regression"
-
-    # 4. encode categorical features in X
-    encoders = {}
-    for col in X.select_dtypes(include=["object"]).columns:
-        n_unique = X[col].nunique()
-        if n_unique == 2:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col].astype(str))
-            encoders[col] = {"type": "label", "encoder": le}
-        elif n_unique <= 10:
-            X = pd.get_dummies(X, columns=[col], prefix=col, drop_first=True)
-            encoders[col] = {"type": "one_hot"}
-        else:
-            le = LabelEncoder()
-            X[col] = le.fit_transform(X[col].astype(str))
-            encoders[col] = {"type": "label", "encoder": le}
-
-    # 5. boolean → int
-    bool_cols = X.select_dtypes(include=["bool"]).columns
-    X[bool_cols] = X[bool_cols].astype(int)
-
-    # 6. final feature names (one-hot may have added columns)
-    feature_names = X.columns.tolist()
-
-    # 7. encode target y
-    le_target    = None
-    class_labels = None
-    if task_type == "classification":
-        le_target    = LabelEncoder()
-        y_encoded    = le_target.fit_transform(y.astype(str))
-        class_labels = le_target.classes_.tolist()
-    else:
-        y_encoded = y.astype(float).values
-
-    # 8. 80/20 split
+    # 3. train
     try:
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y_encoded, test_size=0.2, random_state=42
-        )
+        result = _run_train(chat_id, body.target_column)
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Data split failed: {e}")
+        raise HTTPException(status_code=400, detail=f"Training failed: {e}")
 
-    # 9. train RandomForest
-    try:
-        if task_type == "classification":
-            model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
-            model.fit(X_train, y_train)
-            score = accuracy_score(y_test, model.predict(X_test))
-        else:
-            model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
-            model.fit(X_train, y_train)
-            score = r2_score(y_test, model.predict(X_test))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Model training failed: {e}")
-
-    # 10. top 5 features by importance
-    top_features = sorted(
-        zip(feature_names, model.feature_importances_),
-        key=lambda x: x[1],
-        reverse=True,
-    )[:5]
-
-    # 11. store in cache
-    #     X (full encoded, all rows) is stored so SHAP can later run on the whole dataset,
-    #     not just the training split.
-    trained_models[chat_id] = {
-        "model":                  model,
-        "X":                      X,          # all rows, fully encoded — for SHAP batch/analysis
-        "X_train":                X_train,    # training split — kept for LIME background data
-        "feature_names":          feature_names,
-        "feature_names_original": feature_names_orig,
-        "target_column":          target_column,
-        "task_type":              task_type,
-        "class_labels":           class_labels,
-        "le_target":              le_target,
-        "encoders":               encoders,
-    }
-
-    # 12. return summary
-    metric_key = "accuracy" if task_type == "classification" else "r2_score"
+    metric_key = "accuracy" if result["task_type"] == "classification" else "r2_score"
     return {
         "message":      "Model trained successfully",
-        "task_type":    task_type,
-        metric_key:     round(score, 4),
-        "top_features": [{"name": n, "importance": round(i, 4)} for n, i in top_features],
+        "task_type":    result["task_type"],
+        metric_key:     result[metric_key],
+        "top_features": [{"name": n, "importance": round(i, 4)} for n, i in result["top_features"]],
     }
 
 
@@ -206,7 +229,7 @@ def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
     else:
         pred_label = round(float(pred_encoded), 4)
 
-    # 7. write to prediction_cache so LIME (/explain/lime) can read it on-demand
+    # 7. write to prediction_cache so LIME can read it 
     prediction_cache[chat_id] = {
         "mode":                  "local_single",
         "row_df":                row_df,
@@ -327,11 +350,11 @@ def explain_shap_local_batch(chat_id: int, batch_result: dict) -> dict:
     explainer   = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X)   # computed once for all rows
 
-    # per-row: top 5 factors
+    # per-row: top 3 factors
     per_row = []
     for i, row_result in enumerate(results):
         vals  = _shap_vals_for_row(shap_values, row_idx=i, class_idx=class_indices[i], task_type=task_type)
-        pairs = sorted(zip(feature_names, vals), key=lambda x: abs(x[1]), reverse=True)[:5]
+        pairs = sorted(zip(feature_names, vals), key=lambda x: abs(x[1]), reverse=True)[:3]
         per_row.append({
             **{k: v for k, v in row_result.items() if k != "predicted_class_index"},
             "shap_values": [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs],
@@ -352,6 +375,108 @@ def explain_shap_local_batch(chat_id: int, batch_result: dict) -> dict:
     aggregate = [{"feature": f, "importance": round(float(v), 4)} for f, v in agg_pairs]
 
     return {"per_row": per_row, "aggregate": aggregate}
+
+
+def explain_shap_global(chat_id: int) -> list:
+    """mean(abs(SHAP)) across all rows — which features matter most overall."""
+    model_data    = trained_models[chat_id]
+    X             = model_data["X"]
+    model         = model_data["model"]
+    feature_names = model_data["feature_names"]
+    task_type     = model_data["task_type"]
+
+    sample      = X.sample(min(500, len(X)), random_state=42)
+    explainer   = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(sample)
+
+    if task_type == "classification":
+        if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+            # (n_samples, n_features, n_classes) → average abs across classes
+            abs_vals = np.abs(shap_values).mean(axis=2)
+        else:
+            abs_vals = np.mean([np.abs(sv) for sv in shap_values], axis=0)
+    else:
+        sv       = shap_values if not isinstance(shap_values, list) else shap_values[0]
+        abs_vals = np.abs(sv)
+
+    mean_importance = abs_vals.mean(axis=0)
+    pairs = sorted(zip(feature_names, mean_importance), key=lambda x: x[1], reverse=True)[:8]
+    return [{"feature": f, "importance": round(float(v), 4)} for f, v in pairs]
+
+
+def explain_shap_directional(chat_id: int, direction: str) -> list:
+    """
+    Signed mean SHAP — which features push the prediction up (increase) or down (decrease).
+    For classification uses class index 1 (the positive/higher-sorted class).
+    For regression uses raw SHAP values.
+    """
+    model_data   = trained_models[chat_id]
+    X            = model_data["X"]
+    model        = model_data["model"]
+    feature_names = model_data["feature_names"]
+    task_type    = model_data["task_type"]
+    class_labels = model_data["class_labels"]
+
+    sample      = X.sample(min(500, len(X)), random_state=42)
+    explainer   = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(sample)
+
+    if task_type == "classification":
+        # class index 1 = the "positive" class after LabelEncoder sorts alphabetically
+        class_idx = 1 if class_labels and len(class_labels) >= 2 else 0
+        if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+            vals = shap_values[:, :, class_idx]
+        else:
+            vals = np.array(shap_values[class_idx])
+    else:
+        vals = shap_values if not isinstance(shap_values, list) else np.array(shap_values[0])
+
+    mean_vals = vals.mean(axis=0)   # signed mean per feature
+
+    if direction == "increase":
+        pairs = [(f, v) for f, v in zip(feature_names, mean_vals) if v > 0]
+        pairs = sorted(pairs, key=lambda x: x[1], reverse=True)[:8]
+    else:  # decrease
+        pairs = [(f, v) for f, v in zip(feature_names, mean_vals) if v < 0]
+        pairs = sorted(pairs, key=lambda x: x[1])[:8]   # most negative first
+
+    return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
+
+
+def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
+    """mean(abs(SHAP)) for one specific predicted class."""
+    model_data    = trained_models[chat_id]
+    X             = model_data["X"]
+    model         = model_data["model"]
+    feature_names = model_data["feature_names"]
+    task_type     = model_data["task_type"]
+    class_labels  = model_data["class_labels"]
+
+    if task_type != "classification":
+        raise HTTPException(
+            status_code=400,
+            detail="Class-specific analysis is only available for classification tasks."
+        )
+    if not class_labels or target_class not in class_labels:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Class '{target_class}' not found. Available classes: {', '.join(class_labels or [])}"
+        )
+
+    class_idx = list(class_labels).index(target_class)
+
+    sample      = X.sample(min(500, len(X)), random_state=42)
+    explainer   = shap.TreeExplainer(model)
+    shap_values = explainer.shap_values(sample)
+
+    if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
+        vals = shap_values[:, :, class_idx]
+    else:
+        vals = np.array(shap_values[class_idx])
+
+    mean_abs = np.abs(vals).mean(axis=0)
+    pairs    = sorted(zip(feature_names, mean_abs), key=lambda x: x[1], reverse=True)[:8]
+    return [{"feature": f, "importance": round(float(v), 4)} for f, v in pairs]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -377,30 +502,53 @@ TYPES:
    - "local_batch": targets all rows or a group — no specific named entity or value mentioned.
      Example: "Which customers will churn?", "How many applicants pass?", "Who gets approved?"
      → set prediction_mode to "local_batch", id_column and id_value stay null
-3. ANALYSIS — understand what features or factors drive the target outcome across the whole dataset.
-   Examples: "What drives churn?", "Which features matter most?", "What influences revenue?"
+3. ANALYSIS — understand what drives the target outcome. Determine the analysis_mode:
+   - "global":        No direction, no specific class mentioned.
+                      Examples: "What drives churn?", "Which features matter most?", "What influences revenue?"
+   - "directional":   User asks what increases OR decreases the target.
+                      Examples: "What increases churn?" → direction = "increase"
+                                "What reduces approval chances?" → direction = "decrease"
+                                "What makes revenue go up?" → direction = "increase"
+   - "class_specific": User asks about one specific outcome label.
+                      Examples: "What makes someone get Approved?" → target_class = "Approved"
+                                "Why do customers get Rejected?" → target_class = "Rejected"
+   Rules:
+   - target_column must be an exact column name from the dataset — do NOT invent names
+   - target_class must be an exact label value the model predicts — only set for class_specific
+   - direction is "increase" or "decrease" — only set for directional
 4. UNCLEAR — question is too vague, generic, or cannot be answered with the available data.
+   Also return UNCLEAR if the question looks like a PREDICTION but no column in the dataset
+   clearly matches what the user wants to predict — do NOT guess or invent a target_column.
    When UNCLEAR, generate EXACTLY 3 concrete clarification questions. Rules:
    - Use actual column names from the dataset context provided
    - Reference real values from the sample rows where useful
    - Cover different intents: one DATA_QUERY-style, one PREDICTION-style, one ANALYSIS-style
    - Make them specific and directly answerable — NOT generic placeholders
-   Also generate an "unclear_answer": a short, friendly, warm response (1-2 sentences) that
-   acknowledges what the user said and gently lets them know you need more clarity.
-   - If the user said a greeting (hi, hello, etc.), welcome them and introduce what Makeen can do
-   - If the user asked something vague, acknowledge their intent and ask for more detail
-   - Keep it conversational and kind — no robotic phrasing
+   For "unclear_answer":
+   - If the user said a greeting (hi, hello, etc.): write a short welcome message that mentions
+     Makeen by name and briefly says what it can do (predict outcomes, explore data, find patterns).
+   - For all other UNCLEAR cases: set unclear_answer to null.
 
 Return ONLY valid JSON, no extra text outside the object:
 {
   "type": "DATA_QUERY" | "PREDICTION" | "ANALYSIS" | "UNCLEAR",
+  "target_column": "<exact column name the user wants to predict or analyse>" | null,
   "prediction_mode": "local_single" | "local_batch" | null,
   "id_column": "<the ID column name to look up>" | null,
   "id_value": "<the extracted value as a string>" | null,
+  "analysis_mode": "global" | "directional" | "class_specific" | null,
+  "direction": "increase" | "decrease" | null,
+  "target_class": "<exact class label>" | null,
   "is_clear": true | false,
   "clarifications": ["question1", "question2", "question3"] or [],
   "unclear_answer": "<friendly response>" | null
 }
+
+target_column rules:
+- Only set for PREDICTION and ANALYSIS types
+- Must be an exact column name from the dataset context — do NOT invent column names
+- Infer it from the question (e.g. "will loan be approved?" → target_column = "loan_status")
+- If ambiguous or type is DATA_QUERY/UNCLEAR, set to null
 """
 
 class QuestionClassifier:
@@ -437,9 +585,13 @@ class QuestionClassifier:
             if result.get("type") not in valid_types:
                 raise ValueError(f"Unexpected type: {result.get('type')}")
 
+            result.setdefault("target_column", None)
             result.setdefault("prediction_mode", None)
             result.setdefault("id_column", None)
             result.setdefault("id_value", None)
+            result.setdefault("analysis_mode", None)
+            result.setdefault("direction", None)
+            result.setdefault("target_class", None)
             result.setdefault("is_clear", result["type"] != "UNCLEAR")
             result.setdefault("clarifications", [])
             result.setdefault("unclear_answer", None)
@@ -632,10 +784,43 @@ class QuestionProcessor:
                 "results":        shap_result["per_row"],
             }
 
-    # ── Handler 3: ANALYSIS ───────────────────────────────────────────────────
-    def handle_analysis(self, question: str, chat_id: int) -> dict:
-        # TODO: implement — Rahaf
-        raise HTTPException(status_code=501, detail="ANALYSIS handler not yet implemented")
+    # ── Handler 3: ANALYSIS (global, directional, class_specific) ─────────────
+    def handle_analysis(self, chat_id: int, classification: dict) -> dict:
+        model_data    = trained_models[chat_id]
+        target_column = model_data["target_column"]
+        class_labels  = model_data["class_labels"] or []
+        mode          = classification.get("analysis_mode") or "global"
+        direction     = classification.get("direction")
+        target_class  = classification.get("target_class")
+
+        if mode == "directional":
+            if not direction:
+                direction = "increase"   # safe fallback
+            factors    = explain_shap_directional(chat_id, direction)
+            result_key = "factors"
+
+        elif mode == "class_specific":
+            if not target_class:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Could not determine which class you are asking about. "
+                           f"Available classes: {', '.join(class_labels)}"
+                )
+            factors    = explain_shap_class_specific(chat_id, target_class)
+            result_key = "top_factors"
+
+        else:  # global
+            factors    = explain_shap_global(chat_id)
+            result_key = "top_factors"
+
+        return {
+            "type":          "ANALYSIS",
+            "mode":          mode,
+            "target_column": target_column,
+            "direction":     direction,
+            "target_class":  target_class,
+            result_key:      factors,
+        }
 
     # ── Handler 4: UNCLEAR ────────────────────────────────────────────────────
     def handle_unclear(self, clarifications: list, unclear_answer: str | None = None) -> dict:
@@ -700,7 +885,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         "columns":       df.columns.tolist(),
         "sample_rows":   df.head(5).to_dict(orient="records"),
         "id_columns":    data_cache["id_columns"],
-        "target_column": data_cache["target_column"],
+        "target_column": (model_cache or {}).get("target_column", ""),
     }
 
     # 5. classify the question
@@ -718,11 +903,30 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         result = processor.handle_data_query(question, df, df_context)
 
     elif question_type == "PREDICTION":
-        if model_cache is None:
+        inferred_target = classification.get("target_column")
+        if not inferred_target:
             raise HTTPException(
                 status_code=400,
-                detail="Please train the model first before asking prediction questions",
+                detail="Could not determine which column to predict. Please rephrase your question.",
             )
+
+        # retrain if target changed or no model exists yet
+        cached_target = (model_cache or {}).get("target_column")
+        if cached_target != inferred_target:
+            if inferred_target not in df.columns:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Column '{inferred_target}' not found. Available columns: {', '.join(df.columns)}",
+                )
+            try:
+                _run_train(chat_id, inferred_target)
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Training failed: {e}")
+            model_cache = trained_models[chat_id]
+            processor   = QuestionProcessor(data_cache, model_cache)
+
         prediction_mode = classification.get("prediction_mode", "local_batch")
 
         if prediction_mode == "local_single":
@@ -753,7 +957,32 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         else:
             raise HTTPException(status_code=400, detail=f"Unknown prediction_mode: {prediction_mode}")
 
-    # TODO: elif question_type == "ANALYSIS":
+    elif question_type == "ANALYSIS":
+        inferred_target = classification.get("target_column")
+        if not inferred_target:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not determine which column to analyse. Please rephrase your question.",
+            )
+
+        # retrain if target changed or no model exists yet
+        cached_target = (model_cache or {}).get("target_column")
+        if cached_target != inferred_target:
+            if inferred_target not in df.columns:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Column '{inferred_target}' not found. Available columns: {', '.join(df.columns)}",
+                )
+            try:
+                _run_train(chat_id, inferred_target)
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Training failed: {e}")
+            model_cache = trained_models[chat_id]
+            processor   = QuestionProcessor(data_cache, model_cache)
+
+        result = processor.handle_analysis(chat_id, classification)
 
     else:
         raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
