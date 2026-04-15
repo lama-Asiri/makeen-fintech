@@ -840,6 +840,21 @@ class LimeTestRequest(BaseModel):
     target_column: str
     instance: dict
     
+    #this method is to only test LIME functionallity, no parse nor train needed 
+
+    # test Data 
+     #{
+        #"data": [
+            #{"age": 25, "salary": 3000, "approved": "no"},
+            #{"age": 40, "salary": 8000, "approved": "yes"},
+            #{"age": 35, "salary": 6000, "approved": "yes"}
+        #],
+        #"target_column": "approved",
+        #"instance": {
+            #"age": 30,
+            #"salary": 6000
+        #}
+      #}
 @router.post("/lime-test")
 async def lime_test(body: LimeTestRequest):
 
