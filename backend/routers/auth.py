@@ -7,6 +7,10 @@ import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 from lime.lime_tabular import LimeTabularExplainer
 
+#for test LIME endpoint
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import LabelEncoder
+
 router = APIRouter(prefix="/auth")
 
 # holds cleaned data after /parse runs
@@ -829,4 +833,49 @@ async def limeExplainer(body: ExplainRequest, authorization: str = Header(None))
     return {
         "message": "Explanation generated",
         "explanation": explanation
+    }
+
+class LimeTestRequest(BaseModel):
+    data: list
+    target_column: str
+    instance: dict
+    
+@router.post("/lime-test")
+async def lime_test(body: LimeTestRequest):
+
+    # 1. Load dataset
+    df = pd.DataFrame(body.data)
+
+    X = df.drop(columns=[body.target_column])
+    y = df[body.target_column]
+
+    # 2. Encode target
+    le = LabelEncoder()
+    y = le.fit_transform(y.astype(str))
+
+    # 3. Train model (simple)
+    model = RandomForestClassifier()
+    model.fit(X, y)
+
+    # 4. Prepare instance
+    instance_df = pd.DataFrame([body.instance])
+
+    # Match columns
+    instance_df = instance_df.reindex(columns=X.columns, fill_value=0)
+
+    # 5. LIME
+    explainer = LimeTabularExplainer(
+        training_data=np.array(X),
+        feature_names=X.columns.tolist(),
+        class_names=le.classes_.tolist(),
+        mode="classification"
+    )
+
+    exp = explainer.explain_instance(
+        instance_df.iloc[0].values,
+        model.predict_proba
+    )
+
+    return {
+        "explanation": exp.as_list()
     }
