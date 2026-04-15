@@ -24,7 +24,7 @@
         Owner: Reem + Rahaf
 
   [ ] E. Manual testing — each person tests their own section once built
-        Owner: whole team
+        Owner: whole team 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
