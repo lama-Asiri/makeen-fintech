@@ -302,13 +302,13 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
         </button>
 
         {/* Content Container */}
-        <div className="relative max-w-[1000px] mx-auto px-[24px] py-[48px]">
+        <div className="relative max-w-[1000px] mx-auto px-[16px] md:px-[24px] py-[32px] md:py-[48px]">
           {/* Header */}
           <div className="mb-[40px] text-center">
-            <h1 className="font-['Roboto:Bold',sans-serif] font-bold text-[36px] text-[#fffcfe] mb-[12px]">
+            <h1 className="font-['Roboto:Bold',sans-serif] font-bold text-[24px] md:text-[36px] text-[#fffcfe] mb-[12px]">
               Help Center
             </h1>
-            <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#999]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[14px] md:text-[16px] text-[#999]">
               Find answers, learn how to use the platform, or contact us.
             </p>
           </div>
@@ -498,7 +498,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                                 }
                               }}
                               aria-expanded={isQuestionExpanded}
-                              className="w-full px-[24px] py-[16px] flex items-center gap-[12px] hover:bg-[#242424] transition-all duration-150 group"
+                              className="w-full px-[14px] md:px-[24px] py-[14px] md:py-[16px] flex items-center gap-[10px] hover:bg-[#242424] transition-all duration-150 group"
                             >
                               <div className="flex-1 text-left font-['Roboto:Regular',sans-serif] text-[15px] text-[#e0e0e0]">
                                 {debouncedSearchQuery 
@@ -519,7 +519,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
 
                             {/* Answer */}
                             {isQuestionExpanded && (
-                              <div className="px-[24px] pb-[16px] pl-[24px] animate-fadeIn">
+                              <div className="px-[14px] md:px-[24px] pb-[16px] animate-fadeIn">
                                 <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] leading-[1.6] overflow-wrap-anywhere break-words">
                                   {item.answer}
                                 </p>
