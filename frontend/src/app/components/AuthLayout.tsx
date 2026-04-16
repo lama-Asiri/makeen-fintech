@@ -46,8 +46,8 @@ export function AuthLayout({ children, onClose, title }: AuthLayoutProps) {
           
           <div className="mt-12 grid grid-cols-2 gap-4">
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <div className="text-[#7760bd] font-bold text-2xl mb-1">99.9%</div>
-              <div className="text-[#666] text-xs uppercase tracking-wider">Accuracy</div>
+              <div className="text-[#7760bd] font-bold text-2xl mb-1">SHAP + LIME</div>
+              <div className="text-[#666] text-xs uppercase tracking-wider">XAI Methods</div>
             </div>
             <div className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
               <div className="text-[#7760bd] font-bold text-2xl mb-1">24/7</div>
