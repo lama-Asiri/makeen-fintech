@@ -355,7 +355,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   // Load initial state from localStorage
   const initialState = loadFromLocalStorage();
   
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
   const [isHoveredOverToggle, setIsHoveredOverToggle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [chats, setChats] = useState<Chat[]>(initialState.chats);
@@ -2008,10 +2008,18 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
       {/* Main Chat Page */}
       <div className="bg-[#1e1e1e] relative w-full h-screen overflow-hidden">
+      {/* Mobile backdrop — tap outside to close sidebar */}
+      {!isSidebarCollapsed && (
+        <div
+          className="fixed inset-0 bg-black/50 z-10 md:hidden"
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+      )}
+
       {/* Left Sidebar */}
       <div
-        className={`absolute left-0 top-0 bottom-0 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'w-[80px]' : 'w-[300px]'
+        className={`fixed md:absolute left-0 top-0 bottom-0 z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-[80px]' : 'translate-x-0 w-[300px]'
         }`}
       >
         {/* Top Section - Fixed */}
@@ -2354,9 +2362,21 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* Main Content Area */}
       <div
         className={`h-full flex flex-col relative transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'ml-[80px]' : 'ml-[300px]'
+          isSidebarCollapsed ? 'ml-0 md:ml-[80px]' : 'ml-0 md:ml-[300px]'
         }`}
       >
+        {/* Mobile hamburger — only visible on small screens */}
+        <button
+          type="button"
+          onClick={() => setIsSidebarCollapsed(false)}
+          className="md:hidden absolute top-[14px] left-[14px] z-10 bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] p-[8px] transition-colors"
+          aria-label="Open menu"
+        >
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="white" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+
         {/* Upload Modal Overlay */}
         {showUploadModal && (
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10 p-[16px] md:p-[24px]">
