@@ -2011,14 +2011,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* Mobile backdrop — tap outside to close sidebar */}
       {!isSidebarCollapsed && (
         <div
-          className="fixed inset-0 bg-black/50 z-10 md:hidden"
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
           onClick={() => setIsSidebarCollapsed(true)}
         />
       )}
 
       {/* Left Sidebar */}
       <div
-        className={`fixed md:absolute left-0 top-0 bottom-0 z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
+        className={`fixed md:absolute left-0 top-0 bottom-0 z-50 md:z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-[80px]' : 'translate-x-0 w-[300px]'
         }`}
       >
@@ -2369,7 +2369,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         <button
           type="button"
           onClick={() => setIsSidebarCollapsed(false)}
-          className="md:hidden absolute top-[14px] left-[14px] z-10 bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] p-[8px] transition-colors"
+          className="md:hidden absolute top-[14px] left-[14px] z-30 bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] p-[8px] transition-colors"
           aria-label="Open menu"
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
