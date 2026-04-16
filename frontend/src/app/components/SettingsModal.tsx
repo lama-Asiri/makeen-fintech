@@ -284,8 +284,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-[#262626] rounded-[16px] w-[690px] h-[514px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-[12px] sm:p-[24px]">
+      <div className="bg-[#262626] rounded-[16px] w-full max-w-[690px] h-[90vh] max-h-[514px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
         {/* Left Sidebar */}
         <div className="bg-[#2c2c2c] w-[89px] rounded-l-[16px] flex flex-col items-center py-[18px] flex-shrink-0 relative">
           <div className="flex flex-col items-center gap-[24px] pt-[3px]">
