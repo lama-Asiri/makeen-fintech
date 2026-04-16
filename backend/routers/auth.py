@@ -581,7 +581,7 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
     # 5. detect ID columns — keep them in df, only strip when feeding the ML model
     id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
     id_columns = [col for col in df.columns
-                  if col.lower() in id_patterns or col.lower().endswith('_id')]
+                  if col.lower() in id_patterns or col.lower().endswith(('_id', 'id'))]
  
     # 6. remove duplicate rows
     df = df.drop_duplicates(keep='first')

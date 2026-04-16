@@ -267,7 +267,6 @@ Body: { chat_id: int, question: str }
 {
   "type": "DATA_QUERY",
   "raw_result": "5432",
-  "answer": "There are 5,432 customers in the dataset."
 }
 ```
 

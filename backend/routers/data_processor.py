@@ -517,8 +517,11 @@ TYPES:
    - target_class must be an exact label value the model predicts — only set for class_specific
    - direction is "increase" or "decrease" — only set for directional
 4. UNCLEAR — question is too vague, generic, or cannot be answered with the available data.
-   Also return UNCLEAR if the question looks like a PREDICTION but no column in the dataset
-   clearly matches what the user wants to predict — do NOT guess or invent a target_column.
+   Also return UNCLEAR if the question looks like a PREDICTION or ANALYSIS but no column in
+   the dataset clearly matches what the user wants to predict or analyse.
+   IMPORTANT: any column in the dataset can be a target — not just the current model target.
+   If the user explicitly names or clearly refers to a column that exists in the dataset,
+   set that as target_column and do NOT return UNCLEAR.
    When UNCLEAR, generate EXACTLY 3 concrete clarification questions. Rules:
    - Use actual column names from the dataset context provided
    - Reference real values from the sample rows where useful
@@ -563,7 +566,7 @@ class QuestionClassifier:
         user_message = (
             f"Dataset context:\n"
             f"Columns: {columns_str}\n"
-            f"Target column (what the model predicts): {target_str}\n\n"
+            f"Current model target (the column the model is currently trained on — but users may ask to predict ANY column): {target_str}\n\n"
             f"Sample rows (use these to recognise which column a user-mentioned value belongs to):\n{sample_str}\n\n"
             f"User question: {question}"
         )
@@ -707,38 +710,11 @@ class QuestionProcessor:
                 result_str = str(raw_result)
         except Exception as exec_err:
             print(f"[DATA_QUERY EXEC ERROR] code={code!r} error={exec_err}")
-            # fallback: let GPT answer from the sample data it already has
             result_str = None
-
-        # Step 3: format as plain English
-        if result_str is not None:
-            user_msg = f"User question: {question}\n\nRaw result:\n{result_str}"
-        else:
-            user_msg = (
-                f"User question: {question}\n\n"
-                f"Columns: {columns_str}\n\n"
-                f"Sample rows:\n{sample_str}\n\n"
-                "(Note: answer based on the sample shown — exact computation was unavailable.)"
-            )
-
-        try:
-            fmt_resp = openai_client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": _DATA_QUERY_FORMAT_SYSTEM},
-                    {"role": "user",   "content": user_msg},
-                ],
-                max_tokens=200,
-                temperature=0.3,
-            )
-            answer = fmt_resp.choices[0].message.content.strip()
-        except Exception:
-            answer = result_str or "Could not process your question. Please try rephrasing."
 
         return {
             "type":       "DATA_QUERY",
             "raw_result": result_str or "execution failed",
-            "answer":     answer,
         }
 
     # ── Handler 2: PREDICTION (local_single + local_batch) ───────────────────
