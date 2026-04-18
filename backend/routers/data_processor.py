@@ -46,6 +46,15 @@ def _run_train(chat_id: int, target_column: str) -> dict:
     y                  = df[target_column]
     feature_names_orig = X.columns.tolist()
 
+    # store pre-encoding defaults so feature-input predictions can fill missing values
+    raw_feature_defaults = {}
+    for col in feature_names_orig:
+        col_data = X[col].dropna()
+        if pd.api.types.is_numeric_dtype(col_data):
+            raw_feature_defaults[col] = float(col_data.median())
+        else:
+            raw_feature_defaults[col] = col_data.mode().iloc[0] if len(col_data) > 0 else ""
+
     if y.nunique() < 2:
         raise HTTPException(status_code=400, detail="Target column must have at least 2 unique values")
 
@@ -61,7 +70,8 @@ def _run_train(chat_id: int, target_column: str) -> dict:
             encoders[col] = {"type": "label", "encoder": le}
         elif n_unique <= 10:
             X = pd.get_dummies(X, columns=[col], prefix=col, drop_first=True)
-            encoders[col] = {"type": "one_hot"}
+            generated_columns = [c for c in X.columns if c.startswith(f"{col}_")]
+            encoders[col] = {"type": "one_hot", "generated_columns": generated_columns}
         else:
             le = LabelEncoder()
             X[col] = le.fit_transform(X[col].astype(str))
@@ -109,9 +119,10 @@ def _run_train(chat_id: int, target_column: str) -> dict:
     trained_models[chat_id] = {
         "model":                  model,
         "X":                      X,        # all rows encoded — for SHAP batch/analysis
-        "X_train":                X_train,  # training split 
+        "X_train":                X_train,  # training split
         "feature_names":          feature_names,
         "feature_names_original": feature_names_orig,
+        "raw_feature_defaults":   raw_feature_defaults,
         "target_column":          target_column,
         "task_type":              task_type,
         "class_labels":           class_labels,
@@ -174,7 +185,12 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
 # Prediction logic
 # ─────────────────────────────────────────────────────────────────────────────
 
-def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
+def predict_local_single(
+    chat_id: int,
+    id_column: str | None,
+    id_value: str | None,
+    feature_values: dict | None = None,
+) -> dict:
     data_cache    = cleaned_data_cache[chat_id]
     model_data    = trained_models[chat_id]
     df            = data_cache["df"]
@@ -185,37 +201,78 @@ def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
     encoders      = model_data["encoders"]
     target_col    = model_data["target_column"]
     id_cols       = data_cache["id_columns"]
+    filled_columns: list[str] = []
 
-    # 1. find the row the user is asking about
-    match = df[df[id_column].astype(str) == str(id_value)]
-    if match.empty:
-        raise HTTPException(
-            status_code=404,
-            detail=f"No row found where {id_column} = '{id_value}'. Please check the value and try again."
-        )
-    row = match.iloc[[0]].copy()
+    if feature_values is not None:
+        # ── Feature-input branch: build a new row from user-provided values ──
+        raw_defaults       = model_data["raw_feature_defaults"]
+        feature_names_orig = model_data["feature_names_original"]
 
-    # 2. drop id columns and target — same as what the model was trained on
-    cols_to_drop = [c for c in id_cols + [target_col] if c in row.columns]
-    row_df = row.drop(columns=cols_to_drop)
+        raw_row        = {col: raw_defaults.get(col, 0) for col in feature_names_orig}
+        filled_columns = [col for col in feature_names_orig if col not in feature_values]
+        if len(filled_columns) > len(feature_names_orig) / 2:
+            provided = len(feature_names_orig) - len(filled_columns)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Sorry, I'm unable to generate a reliable prediction with the information provided — "
+                    f"you supplied {provided} out of {len(feature_names_orig)} required features. "
+                    f"When most features are missing, the model relies on dataset-wide averages instead of your specific case, "
+                    f"which significantly reduces accuracy. "
+                    f"Please also provide: {', '.join(filled_columns)}."
+                ),
+            )
+        for col, val in feature_values.items():
+            if col in raw_row:
+                raw_row[col] = val
 
-    # 3. apply the same encoders used at training time
-    for col, enc in encoders.items():
-        if col in row_df.columns:
+        row_df = pd.DataFrame([raw_row])
+
+        for col, enc in encoders.items():
+            if col not in row_df.columns:
+                continue
             if enc["type"] == "label":
-                row_df[col] = enc["encoder"].transform(row_df[col].astype(str))
+                try:
+                    row_df[col] = enc["encoder"].transform(row_df[col].astype(str))
+                except ValueError:
+                    row_df[col] = 0  # unseen label — fall back to encoded 0
             elif enc["type"] == "one_hot":
-                dummies = pd.get_dummies(row_df[col], prefix=col)
-                row_df = pd.concat([row_df.drop(columns=[col]), dummies], axis=1)
+                generated_cols = enc.get("generated_columns", [])
+                user_val = str(row_df[col].iloc[0])
+                for gc in generated_cols:
+                    row_df[gc] = 0
+                matching_col = f"{col}_{user_val}"
+                if matching_col in generated_cols:
+                    row_df[matching_col] = 1
+                row_df = row_df.drop(columns=[col])
 
-    # 4. boolean → int
+    else:
+        # ── ID-lookup branch: find the existing row by id_column/id_value ──
+        match = df[df[id_column].astype(str) == str(id_value)]
+        if match.empty:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No row found where {id_column} = '{id_value}'. Please check the value and try again."
+            )
+        row = match.iloc[[0]].copy()
+
+        cols_to_drop = [c for c in id_cols + [target_col] if c in row.columns]
+        row_df = row.drop(columns=cols_to_drop)
+
+        for col, enc in encoders.items():
+            if col in row_df.columns:
+                if enc["type"] == "label":
+                    row_df[col] = enc["encoder"].transform(row_df[col].astype(str))
+                elif enc["type"] == "one_hot":
+                    dummies = pd.get_dummies(row_df[col], prefix=col)
+                    row_df = pd.concat([row_df.drop(columns=[col]), dummies], axis=1)
+
+    # ── Shared: boolean → int, align to training feature order, predict ──
     bool_cols = row_df.select_dtypes(include=["bool"]).columns
     row_df[bool_cols] = row_df[bool_cols].astype(int)
 
-    # 5. align columns exactly to training feature order
     row_df = row_df.reindex(columns=feature_names, fill_value=0)
 
-    # 6. predict
     pred_encoded = model.predict(row_df)[0]
 
     confidence            = None
@@ -229,7 +286,6 @@ def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
     else:
         pred_label = round(float(pred_encoded), 4)
 
-    # 7. write to prediction_cache so LIME can read it 
     prediction_cache[chat_id] = {
         "mode":                  "local_single",
         "row_df":                row_df,
@@ -245,6 +301,7 @@ def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
         "prediction":            str(pred_label),
         "confidence":            confidence,
         "predicted_class_index": predicted_class_index,
+        "filled_columns":        filled_columns,
     }
 
 
@@ -522,15 +579,22 @@ TYPES:
 1. DATA_QUERY — lookups, statistics, counts, comparisons, filters, aggregations.
    Examples: "How many rows?", "Average salary?", "Top 5 by revenue", "Count per region"
 2. PREDICTION — predict an outcome using the trained ML model. Two sub-modes:
-   - "local_single": the question targets one specific entity or row, identified by a concrete value
-     the user mentions that matches a value in ANY column of the dataset (not just ID columns).
-     Look at all columns and sample rows to find which column the user is referring to.
-     Examples:
-       "Will applicant A005 be approved?"     → id_column = "applicant_id", id_value = "A005"
-       "Will factory Tesla pass the check?"   → id_column = "factory_name", id_value = "Tesla"
-       "Predict for patient John Doe"         → id_column = "patient_name", id_value = "John Doe"
-     → set prediction_mode to "local_single", id_column to the matching column name,
-       id_value to the extracted value as a string
+   - "local_single": the question targets one specific entity. Two sub-cases:
+     a) ID lookup — user mentions a value that matches an existing row in the dataset.
+        Look at all columns and sample rows to find which column the value belongs to.
+        Examples:
+          "Will applicant A005 be approved?"   → id_column="applicant_id", id_value="A005", feature_values=null
+          "Will factory Tesla pass?"           → id_column="factory_name", id_value="Tesla", feature_values=null
+        → set id_column and id_value; leave feature_values null
+     b) Feature input — user provides feature values for a new/hypothetical instance not in the dataset.
+        Examples:
+          "Predict for age=35, salary=50000, credit=good"
+            → feature_values={"age": 35, "salary": 50000, "credit": "good"}, id_column=null, id_value=null
+          "What if someone has 5 years experience and a Bachelor degree?"
+            → feature_values={"experience": 5, "education": "Bachelor"}, id_column=null, id_value=null
+        → set feature_values with exact column names from the dataset context;
+          leave id_column and id_value null.
+          Only include columns the user actually mentioned — do NOT fill missing ones yourself.
    - "local_batch": targets all rows or a group — no specific named entity or value mentioned.
      Example: "Which customers will churn?", "How many applicants pass?", "Who gets approved?"
      → set prediction_mode to "local_batch", id_column and id_value stay null
@@ -594,6 +658,7 @@ Return ONLY valid JSON, no extra text outside the object:
   "prediction_mode": "local_single" | "local_batch" | null,
   "id_column": "<the ID column name to look up>" | null,
   "id_value": "<the extracted value as a string>" | null,
+  "feature_values": {"<column_name>": <value>, ...} | null,
   "analysis_mode": "global" | "directional" | "class_specific" | null,
   "direction": "increase" | "decrease" | null,
   "target_class": "<exact class label>" | null,
@@ -662,6 +727,7 @@ class QuestionClassifier:
             result.setdefault("prediction_mode", None)
             result.setdefault("id_column", None)
             result.setdefault("id_value", None)
+            result.setdefault("feature_values", None)
             result.setdefault("analysis_mode", None)
             result.setdefault("direction", None)
             result.setdefault("target_class", None)
@@ -793,13 +859,14 @@ class QuestionProcessor:
         mode = classification["prediction_mode"]
 
         if mode == "local_single":
-            id_column = classification["id_column"]
-            id_value  = classification["id_value"]
+            id_column     = classification["id_column"]
+            id_value      = classification["id_value"]
+            feature_values = classification.get("feature_values")
 
-            pred        = predict_local_single(chat_id, id_column, id_value)
+            pred        = predict_local_single(chat_id, id_column, id_value, feature_values)
             shap_result = explain_shap_local_single(chat_id)
 
-            return {
+            result = {
                 "type":        "PREDICTION",
                 "mode":        "local_single",
                 "id_column":   id_column,
@@ -808,6 +875,9 @@ class QuestionProcessor:
                 "confidence":  pred["confidence"],
                 "shap_values": shap_result,
             }
+            if pred["filled_columns"]:
+                result["filled_columns"] = pred["filled_columns"]
+            return result
 
         else:  # local_batch
             batch       = predict_local_batch(chat_id)
@@ -1059,18 +1129,20 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         prediction_mode = classification.get("prediction_mode", "local_batch")
 
         if prediction_mode == "local_single":
-            id_column = classification.get("id_column")
-            id_value  = classification.get("id_value")
-            if not id_column or not id_value:
+            id_column      = classification.get("id_column")
+            id_value       = classification.get("id_value")
+            feature_values = classification.get("feature_values")
+
+            if not feature_values and (not id_column or not id_value):
                 raise HTTPException(
                     status_code=400,
                     detail=(
                         "Could not identify which row you are asking about. "
-                        "Please mention a specific value — for example a name, ID, or any "
-                        f"unique value from one of the columns: {', '.join(df.columns.tolist())}."
+                        "Either mention a specific value (name, ID, etc.) or provide "
+                        f"feature values — for example: age=35, salary=50000."
                     ),
                 )
-            if id_column not in df.columns:
+            if id_column and id_column not in df.columns:
                 raise HTTPException(
                     status_code=400,
                     detail=(
