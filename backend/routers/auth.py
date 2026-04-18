@@ -22,6 +22,9 @@ trained_models = {}
 # holds the last prediction result per chat — used by LIME and SHAP to explain without re-predicting.
 prediction_cache: dict = {}
 
+# holds the last 3 Q&A pairs per chat for fast follow-up resolution.
+chat_history_cache: dict[int, list[dict]] = {}
+
 class SignUpRequest(BaseModel):
     email: str
     password: str
@@ -517,6 +520,73 @@ async def get_messages(chat_id: int, authorization: str = Header(None)):
 
     return {"messages": queries.data}
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Shared cleaning helper — used by /parse and by the auto-recovery in
+# data_processor.py so both always apply identical transformations.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, list[str]]:
+    """
+    Load raw file bytes into a cleaned DataFrame.
+    Returns (df, id_columns).
+    Raises HTTPException on empty file or parse failure.
+    """
+    try:
+        if file_type == "csv":
+            df = pd.read_csv(io.BytesIO(file_bytes))
+        else:
+            df = pd.read_excel(io.BytesIO(file_bytes))
+        if df.empty:
+            raise HTTPException(status_code=400, detail="File is empty")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
+
+    # standardize column names
+    def _clean_col(col):
+        col = str(col).strip().replace(" ", "_").replace("-", "_")
+        col = "".join(c if c.isalnum() or c == "_" else "" for c in col)
+        while "__" in col:
+            col = col.replace("__", "_")
+        return col
+
+    df.columns = [_clean_col(c) for c in df.columns]
+
+    # detect ID columns — kept in df, excluded only when feeding the ML model
+    id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
+    id_columns = [c for c in df.columns
+                  if c.lower() in id_patterns or c.lower().endswith(('_id', 'id'))]
+
+    df = df.drop_duplicates(keep='first')
+    df = df.dropna(axis=1, thresh=len(df) * 0.4)
+
+    for col in df.select_dtypes(include=['object']).columns:
+        df[col] = df[col].astype(str).str.strip()
+
+    for col in df.select_dtypes(include=['object']).columns:
+        if col in id_columns:
+            continue
+        try:
+            numeric_version = pd.to_numeric(df[col], errors='coerce')
+            if numeric_version.notna().sum() / len(numeric_version) > 0.9:
+                df[col] = numeric_version
+        except Exception:
+            pass
+
+    for col in df.columns:
+        if col in id_columns:
+            continue
+        if df[col].isnull().any():
+            if pd.api.types.is_numeric_dtype(df[col]):
+                df[col].fillna(df[col].median(), inplace=True)
+            else:
+                mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
+                df[col].fillna(mode_val, inplace=True)
+
+    return df, id_columns
+
+
 # /parse — download the user's file, clean it, and cache it for the ML pipeline
 class ParseRequest(BaseModel):
     chat_id: int
@@ -536,9 +606,11 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
             .execute()
         if not chat_check.data:
             raise HTTPException(status_code=404, detail="Chat not found")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
- 
+
     # 2. get the file path and type from the database
     try:
         file_result = supabase.table("File") \
@@ -550,81 +622,26 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
             raise HTTPException(status_code=404, detail="No file found for this chat")
         file_path = file_result.data["path"]
         file_type = file_result.data["filetype"]
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"File lookup failed: {e}")
- 
-    # 3. download from storage and load into a dataframe
+
+    # 3. download from storage
     try:
         file_bytes = supabase.storage.from_("user-files").download(file_path)
-        if file_type == "csv":
-            df = pd.read_csv(io.BytesIO(file_bytes))
-        else:
-            df = pd.read_excel(io.BytesIO(file_bytes))
- 
-        if df.empty:
-            raise HTTPException(status_code=400, detail="File is empty")
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
- 
-    # 4. standardize column names
-    def clean_column_name(col):
-        col = str(col).strip()
-        col = col.replace(" ", "_")
-        col = col.replace("-", "_")
-        col = "".join(c if c.isalnum() or c == "_" else "" for c in col)
-        while "__" in col:
-            col = col.replace("__", "_")
-        return col
-    
-    df.columns = [clean_column_name(col) for col in df.columns]
+        raise HTTPException(status_code=400, detail=f"File download failed: {e}")
 
-    # 5. detect ID columns — keep them in df, only strip when feeding the ML model
-    id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
-    id_columns = [col for col in df.columns
-                  if col.lower() in id_patterns or col.lower().endswith(('_id', 'id'))]
- 
-    # 6. remove duplicate rows
-    df = df.drop_duplicates(keep='first')
- 
-    # 7. drop columns where more than 60% of values are missing
-    df = df.dropna(axis=1, thresh=len(df) * 0.4)
- 
-    # 8. strip leading/trailing whitespace from text columns
-    for col in df.select_dtypes(include=['object']).columns:
-        df[col] = df[col].astype(str).str.strip()
- 
-    # 9. convert text columns that are actually numbers
-    #     only converts if 90%+ of the column's values are valid numbers.
-    #     skip ID columns — their values should never be coerced to floats.
-    for col in df.select_dtypes(include=['object']).columns:
-        if col in id_columns:
-            continue
-        try:
-            numeric_version = pd.to_numeric(df[col], errors='coerce')
-            if numeric_version.notna().sum() / len(numeric_version) > 0.9:
-                df[col] = numeric_version
-        except Exception:
-            pass
- 
-    # 10. fill remaining empty cells: numbers get the median, text gets the most common value
-    #     skip ID columns — missing IDs stay missing (they're used for row lookup, not imputed).
-    for col in df.columns:
-        if col in id_columns:
-            continue
-        if df[col].isnull().any():
-            if pd.api.types.is_numeric_dtype(df[col]):
-                df[col].fillna(df[col].median(), inplace=True)
-            else:
-                mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
-                df[col].fillna(mode_val, inplace=True)
+    # 4. clean using shared helper
+    df, id_columns = _clean_dataframe(file_bytes, file_type)
 
-    # 11. cache cleaned data — target column and X/y are built later in /train
+    # 5. cache cleaned data — target column and X/y are built later in /train
     cleaned_data_cache[chat_id] = {
-        "df":         df,          # full df, IDs intact — for lookups and DATA_QUERY
-        "id_columns": id_columns,  # which columns are IDs
+        "df":         df,
+        "id_columns": id_columns,
     }
 
-    # 12. return summary
     return {
         "message":    "File parsed and ready",
         "rows":       len(df),

@@ -3,12 +3,15 @@ Test router — same logic as data_processor.py + auth.py parse/train/processQue
 but with NO authentication and NO Supabase.
 
 How to use from Swagger:
-  1. POST /test/parse          — upload your CSV/XLSX file + set chat_id (e.g. 1)
-  2. POST /test/train          — body: {"chat_id": 1, "target_column": "your_target"}
+  1. POST /test/parse           — upload your CSV/XLSX file + set chat_id (e.g. 1)
+  2. POST /test/train           — body: {"chat_id": 1, "target_column": "your_target"}
   3. POST /test/processQuestion — body: {"chat_id": 1, "question": "your question"}
 
 Target column changes: /test/processQuestion auto-retrains if the question implies
 a different target than the one currently trained. No manual re-call to /test/train needed.
+
+HISTORY_EXPLANATION: follow-up questions (e.g. "why?", "explain more") are handled by
+reading from the in-memory _chat_history_cache, same as the production endpoint.
 """
 
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
@@ -35,6 +38,7 @@ router = APIRouter(prefix="/test")
 _cleaned_data_cache: dict = {}
 _trained_models: dict = {}
 _prediction_cache: dict = {}
+_chat_history_cache: dict[int, list[dict]] = {}
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -67,7 +71,6 @@ async def test_parse(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"File parse failed: {e}")
 
-    # standardize column names
     def clean_col(col):
         col = str(col).strip().replace(" ", "_").replace("-", "_")
         col = "".join(c if c.isalnum() or c == "_" else "" for c in col)
@@ -254,7 +257,7 @@ def predict_local_single(chat_id: int, id_column: str, id_value: str) -> dict:
     if match.empty:
         raise HTTPException(
             status_code=404,
-            detail=f"No row found where {id_column} = '{id_value}'"
+            detail=f"No row found where {id_column} = '{id_value}'. Please check the value and try again."
         )
     row = match.iloc[[0]].copy()
 
@@ -349,7 +352,7 @@ def predict_local_batch(chat_id: int) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SHAP helpers
+# SHAP helpers — must match data_processor.py exactly
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _shap_vals_for_row(shap_values, row_idx: int, class_idx, task_type: str) -> np.ndarray:
@@ -413,37 +416,47 @@ def explain_shap_local_batch(chat_id: int, batch_result: dict) -> dict:
 
     mean_abs  = np.abs(all_vals).mean(axis=0)
     agg_pairs = sorted(zip(feature_names, mean_abs), key=lambda x: x[1], reverse=True)[:8]
-    aggregate = [{"feature": f, "importance": round(float(v), 4)} for f, v in agg_pairs]
+    aggregate = [{"feature": f, "shap_value": round(float(v), 4)} for f, v in agg_pairs]
 
     return {"per_row": per_row, "aggregate": aggregate}
 
 
 def explain_shap_global(chat_id: int) -> list:
+    """
+    Signed mean SHAP across all rows — positive values push the prediction up,
+    negative values pull it down. Ranked by absolute value.
+    For classification uses class index 1 (the positive/higher-sorted class).
+    """
     model_data    = _trained_models[chat_id]
     X             = model_data["X"]
     model         = model_data["model"]
     feature_names = model_data["feature_names"]
     task_type     = model_data["task_type"]
+    class_labels  = model_data["class_labels"]
 
     sample      = X.sample(min(500, len(X)), random_state=42)
     explainer   = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(sample)
 
     if task_type == "classification":
+        class_idx = 1 if class_labels and len(class_labels) >= 2 else 0
         if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
-            abs_vals = np.abs(shap_values).mean(axis=2)
+            vals = shap_values[:, :, class_idx]
         else:
-            abs_vals = np.mean([np.abs(sv) for sv in shap_values], axis=0)
+            vals = np.array(shap_values[class_idx])
     else:
-        sv       = shap_values if not isinstance(shap_values, list) else shap_values[0]
-        abs_vals = np.abs(sv)
+        vals = shap_values if not isinstance(shap_values, list) else np.array(shap_values[0])
 
-    mean_importance = abs_vals.mean(axis=0)
-    pairs = sorted(zip(feature_names, mean_importance), key=lambda x: x[1], reverse=True)[:8]
-    return [{"feature": f, "importance": round(float(v), 4)} for f, v in pairs]
+    mean_vals = vals.mean(axis=0)
+    pairs = sorted(zip(feature_names, mean_vals), key=lambda x: abs(x[1]), reverse=True)[:8]
+    return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
 
 
 def explain_shap_directional(chat_id: int, direction: str) -> list:
+    """
+    Signed mean SHAP — features that push the prediction up (increase) or down (decrease).
+    For classification uses class index 1 (the positive/higher-sorted class).
+    """
     model_data    = _trained_models[chat_id]
     X             = model_data["X"]
     model         = model_data["model"]
@@ -477,6 +490,7 @@ def explain_shap_directional(chat_id: int, direction: str) -> list:
 
 
 def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
+    """mean(abs(SHAP)) for one specific predicted class."""
     model_data    = _trained_models[chat_id]
     X             = model_data["X"]
     model         = model_data["model"]
@@ -504,16 +518,24 @@ def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
 
     mean_abs = np.abs(vals).mean(axis=0)
     pairs    = sorted(zip(feature_names, mean_abs), key=lambda x: x[1], reverse=True)[:8]
-    return [{"feature": f, "importance": round(float(v), 4)} for f, v in pairs]
+    return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Question classifier (same prompts as data_processor.py)
+# Conversation history helper
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _load_history_from_cache(chat_id: int) -> list[dict]:
+    return _chat_history_cache.get(chat_id, [])
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Question classifier
 # ─────────────────────────────────────────────────────────────────────────────
 
 CLASSIFIER_SYSTEM_PROMPT = """
 You are a question classifier for Makeen, an AI data analysis platform.
-Classify the user's question about their dataset into exactly one of 4 types.
+Classify the user's question about their dataset into exactly one of 5 types.
 TYPES:
 1. DATA_QUERY — lookups, statistics, counts, comparisons, filters, aggregations.
    Examples: "How many rows?", "Average salary?", "Top 5 by revenue", "Count per region"
@@ -531,7 +553,8 @@ TYPES:
      Example: "Which customers will churn?", "How many applicants pass?", "Who gets approved?"
      → set prediction_mode to "local_batch", id_column and id_value stay null
 3. ANALYSIS — understand what drives the target outcome. Determine the analysis_mode:
-   - "global":        No direction, no specific class mentioned.
+   - "global":        No direction, no specific class mentioned. Returns signed SHAP means —
+                      positive values push the outcome up, negative values pull it down.
                       Examples: "What drives churn?", "Which features matter most?", "What influences revenue?"
    - "directional":   User asks what increases OR decreases the target.
                       Examples: "What increases churn?" → direction = "increase"
@@ -544,7 +567,27 @@ TYPES:
    - target_column must be an exact column name from the dataset — do NOT invent names
    - target_class must be an exact label value the model predicts — only set for class_specific
    - direction is "increase" or "decrease" — only set for directional
-4. UNCLEAR — question is too vague, generic, or cannot be answered with the available data.
+4. HISTORY_EXPLANATION — the user is asking a follow-up, clarification, or deeper explanation
+   about something that was already discussed in this conversation.
+   Use this type when:
+   - The question is clearly a continuation ("explain more", "why?", "tell me more", "elaborate",
+     "what does that mean?", "I don't understand", "go deeper", "how did you get that",
+     "can you clarify that?", "break it down")
+   - The question references a specific past result
+     ("explain the approval prediction", "what drove the churn analysis result?")
+   - Recent conversation history is provided — use it to confirm the follow-up context.
+     Even if history is empty (server restart), classify as HISTORY_EXPLANATION;
+     the handler will recover context from what's available.
+   Also set history_mode:
+   - "last" → short vague follow-up that refers to the most recent result only.
+              Signals: few words, no named entity, no specific reference to an older turn.
+              Examples: "explain", "why?", "what does that mean?", "tell me more",
+                        "elaborate", "go deeper", "I don't understand", "how did you get that"
+   - "full" → references something specific — a particular prediction,
+              an older analysis, or anything that may not be in the last result.
+              Examples: "explain the batch prediction", "what factors drove the churn analysis?",
+                        "go back to the first prediction"
+5. UNCLEAR — question is too vague, generic, or cannot be answered with the available data.
    Also return UNCLEAR if the question looks like a PREDICTION or ANALYSIS but no column in
    the dataset clearly matches what the user wants to predict or analyse.
    IMPORTANT: any column in the dataset can be a target — not just the current model target.
@@ -562,7 +605,8 @@ TYPES:
 
 Return ONLY valid JSON, no extra text outside the object:
 {
-  "type": "DATA_QUERY" | "PREDICTION" | "ANALYSIS" | "UNCLEAR",
+  "type": "DATA_QUERY" | "PREDICTION" | "ANALYSIS" | "UNCLEAR" | "HISTORY_EXPLANATION",
+  "history_mode": "last" | "full" | null,
   "target_column": "<exact column name the user wants to predict or analyse>" | null,
   "prediction_mode": "local_single" | "local_batch" | null,
   "id_column": "<the ID column name to look up>" | null,
@@ -579,25 +623,40 @@ target_column rules:
 - Only set for PREDICTION and ANALYSIS types
 - Must be an exact column name from the dataset context — do NOT invent column names
 - Infer it from the question (e.g. "will loan be approved?" → target_column = "loan_status")
-- If ambiguous or type is DATA_QUERY/UNCLEAR, set to null
+- If ambiguous or type is DATA_QUERY/UNCLEAR/HISTORY_EXPLANATION, set to null
 """
 
 
 class QuestionClassifier:
-    def classify(self, question: str, df_context: dict) -> dict:
+    def classify(self, question: str, df_context: dict, recent_history: list[dict] | None = None) -> dict:
         columns_str = ", ".join(df_context["columns"])
         target_str  = df_context["target_column"]
         sample_str  = "\n".join(
             "  " + ", ".join(f"{k}: {v}" for k, v in row.items())
             for row in df_context.get("sample_rows", [])[:5]
         )
+
+        history_section = ""
+        if recent_history:
+            lines = []
+            for i, turn in enumerate(recent_history, 1):
+                answer_preview = (
+                    json.dumps(turn["answer"])[:200]
+                    if isinstance(turn["answer"], dict)
+                    else str(turn["answer"])[:200]
+                )
+                lines.append(f"  Turn {i} — Q: {turn['question']}\n           A: {answer_preview}")
+            history_section = "\nRecent conversation (last 3 turns):\n" + "\n".join(lines) + "\n"
+
         user_message = (
             f"Dataset context:\n"
             f"Columns: {columns_str}\n"
             f"Current model target (the column the model is currently trained on — but users may ask to predict ANY column): {target_str}\n\n"
-            f"Sample rows (use these to recognise which column a user-mentioned value belongs to):\n{sample_str}\n\n"
+            f"Sample rows (use these to recognise which column a user-mentioned value belongs to):\n{sample_str}\n"
+            f"{history_section}\n"
             f"User question: {question}"
         )
+
         try:
             response = openai_client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -610,9 +669,10 @@ class QuestionClassifier:
                 temperature=0,
             )
             result = json.loads(response.choices[0].message.content)
-            valid_types = {"DATA_QUERY", "PREDICTION", "ANALYSIS", "UNCLEAR"}
+            valid_types = {"DATA_QUERY", "PREDICTION", "ANALYSIS", "UNCLEAR", "HISTORY_EXPLANATION"}
             if result.get("type") not in valid_types:
                 raise ValueError(f"Unexpected type: {result.get('type')}")
+            result.setdefault("history_mode", None)
             result.setdefault("target_column", None)
             result.setdefault("prediction_mode", None)
             result.setdefault("id_column", None)
@@ -634,6 +694,7 @@ class QuestionClassifier:
             col1   = non_id[1] if len(non_id) > 1 else col0
             return {
                 "type":            "UNCLEAR",
+                "history_mode":    None,
                 "prediction_mode": None,
                 "id_column":       None,
                 "id_value":        None,
@@ -676,6 +737,7 @@ class QuestionProcessor:
         self.data_cache  = data_cache
         self.model_cache = model_cache
 
+    # ── Handler 1: DATA_QUERY ─────────────────────────────────────────────────
     def handle_data_query(self, question: str, df: pd.DataFrame, df_context: dict) -> dict:
         columns_str = ", ".join(df_context["columns"])
         sample_str  = "\n".join(
@@ -714,6 +776,7 @@ class QuestionProcessor:
 
         return {"type": "DATA_QUERY", "raw_result": result_str or "execution failed"}
 
+    # ── Handler 2: PREDICTION (local_single + local_batch) ───────────────────
     def handle_prediction(self, question: str, chat_id: int, classification: dict) -> dict:
         mode = classification["prediction_mode"]
 
@@ -731,7 +794,7 @@ class QuestionProcessor:
                 "confidence":  pred["confidence"],
                 "shap_values": shap_res,
             }
-        else:
+        else:  # local_batch
             batch    = predict_local_batch(chat_id)
             shap_res = explain_shap_local_batch(chat_id, batch)
             predicted_as: dict = {}
@@ -750,6 +813,7 @@ class QuestionProcessor:
                 "results":        shap_res["per_row"],
             }
 
+    # ── Handler 3: ANALYSIS (global, directional, class_specific) ─────────────
     def handle_analysis(self, chat_id: int, classification: dict) -> dict:
         model_data    = _trained_models[chat_id]
         target_column = model_data["target_column"]
@@ -761,19 +825,16 @@ class QuestionProcessor:
         if mode == "directional":
             if not direction:
                 direction = "increase"
-            factors    = explain_shap_directional(chat_id, direction)
-            result_key = "factors"
+            factors = explain_shap_directional(chat_id, direction)
         elif mode == "class_specific":
             if not target_class:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Could not determine which class. Available: {', '.join(class_labels)}"
                 )
-            factors    = explain_shap_class_specific(chat_id, target_class)
-            result_key = "top_factors"
-        else:
-            factors    = explain_shap_global(chat_id)
-            result_key = "top_factors"
+            factors = explain_shap_class_specific(chat_id, target_class)
+        else:  # global
+            factors = explain_shap_global(chat_id)
 
         return {
             "type":          "ANALYSIS",
@@ -781,9 +842,65 @@ class QuestionProcessor:
             "target_column": target_column,
             "direction":     direction,
             "target_class":  target_class,
-            result_key:      factors,
+            "shap_values":   factors,
         }
 
+    # ── Handler 4: HISTORY_EXPLANATION ───────────────────────────────────────
+    def handle_history_explanation(self, question: str, chat_id: int, history_mode: str) -> dict:
+        history = _load_history_from_cache(chat_id)
+
+        if not history:
+            return {
+                "type":   "HISTORY_EXPLANATION",
+                "answer": "I don't have any previous results to refer to. Please ask a question first.",
+            }
+
+        messages = [
+            {
+                "role":    "system",
+                "content": (
+                    "You are Makeen, an AI data analysis assistant that explains machine learning results "
+                    "in plain, friendly language.\n\n"
+                    "The user is asking a follow-up or clarification question about a previous result "
+                    "from this conversation. The conversation history is provided below.\n\n"
+                    "Guidelines:\n"
+                    "- Identify what result the user is referring to from the history.\n"
+                    "- If it was a PREDICTION: explain what was predicted, why (use the SHAP factors "
+                    "if available — name the top features and whether they pushed the result up or down), "
+                    "and what that means in simple terms.\n"
+                    "- If it was an ANALYSIS: explain which features matter most and what the user "
+                    "can take away from that.\n"
+                    "- If it was a DATA_QUERY: clarify or expand on the numbers/findings.\n"
+                    "- Use plain language — no technical jargon, no mention of 'SHAP', 'model', "
+                    "'features', or 'JSON'. Speak as if explaining to a business user.\n"
+                    "- Be direct and specific. Maximum 180 words."
+                ),
+            }
+        ]
+        for turn in history:
+            messages.append({"role": "user", "content": turn["question"]})
+            answer_text = (
+                json.dumps(turn["answer"]) if isinstance(turn["answer"], dict)
+                else str(turn["answer"])
+            )
+            messages.append({"role": "assistant", "content": answer_text})
+        messages.append({"role": "user", "content": question})
+
+        try:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=messages,
+                max_tokens=300,
+                temperature=0.3,
+            )
+            answer = response.choices[0].message.content.strip()
+        except Exception as e:
+            print(f"[TEST HISTORY_EXPLANATION ERROR] {e}")
+            answer = "Sorry, I couldn't generate an explanation at this time."
+
+        return {"type": "HISTORY_EXPLANATION", "answer": answer}
+
+    # ── Handler 5: UNCLEAR ────────────────────────────────────────────────────
     def handle_unclear(self, clarifications: list, unclear_answer: str | None = None) -> dict:
         suggestions = [c for c in clarifications if isinstance(c, str) and c.strip()][:3]
         answer = unclear_answer or "Could you clarify what you meant? Here are some questions that might match:"
@@ -794,6 +911,7 @@ class QuestionProcessor:
 # /processQuestion
 # Auto-retrains if the question implies a different target column than what
 # is currently trained. No manual /test/train call needed when target changes.
+# Keeps last 3 Q&A pairs in _chat_history_cache so HISTORY_EXPLANATION works.
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProcessQuestionRequest(BaseModel):
@@ -824,26 +942,32 @@ async def test_process_question(body: ProcessQuestionRequest):
     }
 
     classifier     = QuestionClassifier()
-    classification = classifier.classify(question, df_context)
+    classification = classifier.classify(question, df_context, _chat_history_cache.get(chat_id, []))
     question_type  = classification["type"]
 
     processor = QuestionProcessor(data_cache, model_cache)
 
-    if question_type == "UNCLEAR":
-        return processor.handle_unclear(classification["clarifications"], classification.get("unclear_answer"))
+    if question_type == "HISTORY_EXPLANATION":
+        result = processor.handle_history_explanation(
+            question,
+            chat_id,
+            classification.get("history_mode") or "last",
+        )
 
-    if question_type == "DATA_QUERY":
-        return processor.handle_data_query(question, df, df_context)
+    elif question_type == "UNCLEAR":
+        result = processor.handle_unclear(classification["clarifications"], classification.get("unclear_answer"))
 
-    if question_type in ("PREDICTION", "ANALYSIS"):
+    elif question_type == "DATA_QUERY":
+        result = processor.handle_data_query(question, df, df_context)
+
+    elif question_type == "PREDICTION":
         inferred_target = classification.get("target_column")
         if not inferred_target:
             raise HTTPException(
                 status_code=400,
-                detail="Could not determine which column to predict or analyse. Please rephrase your question.",
+                detail="Could not determine which column to predict. Please rephrase your question.",
             )
 
-        # ── auto-retrain if target changed or no model exists yet ──────────
         cached_target = (model_cache or {}).get("target_column")
         if cached_target != inferred_target:
             if inferred_target not in df.columns:
@@ -860,27 +984,60 @@ async def test_process_question(body: ProcessQuestionRequest):
             model_cache = _trained_models[chat_id]
             processor   = QuestionProcessor(data_cache, model_cache)
 
-        if question_type == "PREDICTION":
-            prediction_mode = classification.get("prediction_mode", "local_batch")
-            if prediction_mode == "local_single":
-                id_column = classification.get("id_column")
-                id_value  = classification.get("id_value")
-                if not id_column or not id_value:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=(
-                            "Could not identify which row you are asking about. "
-                            f"Please mention a specific value from: {', '.join(df.columns.tolist())}."
-                        ),
-                    )
-                if id_column not in df.columns:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"'{id_column}' is not a column. Available: {', '.join(df.columns.tolist())}."
-                    )
-            return processor.handle_prediction(question, chat_id, classification)
+        prediction_mode = classification.get("prediction_mode", "local_batch")
 
-        # ANALYSIS
-        return processor.handle_analysis(chat_id, classification)
+        if prediction_mode == "local_single":
+            id_column = classification.get("id_column")
+            id_value  = classification.get("id_value")
+            if not id_column or not id_value:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        "Could not identify which row you are asking about. "
+                        f"Please mention a specific value from: {', '.join(df.columns.tolist())}."
+                    ),
+                )
+            if id_column not in df.columns:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"'{id_column}' is not a column. Available: {', '.join(df.columns.tolist())}."
+                )
 
-    raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
+        result = processor.handle_prediction(question, chat_id, classification)
+
+    elif question_type == "ANALYSIS":
+        inferred_target = classification.get("target_column")
+        if not inferred_target:
+            raise HTTPException(
+                status_code=400,
+                detail="Could not determine which column to analyse. Please rephrase your question.",
+            )
+
+        cached_target = (model_cache or {}).get("target_column")
+        if cached_target != inferred_target:
+            if inferred_target not in df.columns:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Column '{inferred_target}' not found. Available: {', '.join(df.columns)}",
+                )
+            try:
+                _run_train(chat_id, inferred_target)
+            except HTTPException:
+                raise
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Training failed: {e}")
+            model_cache = _trained_models[chat_id]
+            processor   = QuestionProcessor(data_cache, model_cache)
+
+        result = processor.handle_analysis(chat_id, classification)
+
+    else:
+        raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
+
+    # Keep last 3 Q&A pairs for HISTORY_EXPLANATION follow-up questions
+    entry   = {"question": question, "answer": result}
+    history = _chat_history_cache.get(chat_id, [])
+    history.append(entry)
+    _chat_history_cache[chat_id] = history[-3:]
+
+    return result
