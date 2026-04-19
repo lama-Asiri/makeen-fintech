@@ -19,8 +19,10 @@ from pydantic import BaseModel
 import pandas as pd
 import json
 import io
+import os
 import numpy as np
 import shap
+import httpx
 from collections import Counter
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -30,6 +32,8 @@ from sklearn.metrics import accuracy_score, r2_score
 from core.openai_client import openai_client
 
 router = APIRouter(prefix="/test")
+
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # In-memory caches (isolated from the real auth.py caches)
@@ -584,6 +588,32 @@ def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
     return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
 
 
+def explain_lime_local_single(chat_id: int) -> list:
+    """Runs LIME on the row already stored in _prediction_cache[chat_id]."""
+    from lime.lime_tabular import LimeTabularExplainer
+
+    cache         = _prediction_cache[chat_id]
+    model_data    = _trained_models[chat_id]
+    row_df        = cache["row_df"]
+    task_type     = cache["task_type"]
+    model         = model_data["model"]
+    X_train       = model_data["X_train"]
+    feature_names = model_data["feature_names"]
+    class_labels  = model_data["class_labels"]
+
+    explainer = LimeTabularExplainer(
+        training_data=np.array(X_train),
+        feature_names=feature_names,
+        class_names=class_labels if task_type == "classification" else None,
+        mode=task_type,
+    )
+    exp = explainer.explain_instance(
+        row_df.iloc[0].values,
+        model.predict_proba if task_type == "classification" else model.predict,
+    )
+    return [{"feature": f, "impact": round(float(w), 4)} for f, w in exp.as_list()]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Conversation history helper
 # ─────────────────────────────────────────────────────────────────────────────
@@ -856,8 +886,9 @@ class QuestionProcessor:
             id_column      = classification["id_column"]
             id_value       = classification["id_value"]
             feature_values = classification.get("feature_values")
-            pred           = predict_local_single(chat_id, id_column, id_value, feature_values)
-            shap_res       = explain_shap_local_single(chat_id)
+            pred      = predict_local_single(chat_id, id_column, id_value, feature_values)
+            shap_res  = explain_shap_local_single(chat_id)
+            lime_res  = explain_lime_local_single(chat_id)
             result = {
                 "type":        "PREDICTION",
                 "mode":        "local_single",
@@ -866,6 +897,7 @@ class QuestionProcessor:
                 "prediction":  pred["prediction"],
                 "confidence":  pred["confidence"],
                 "shap_values": shap_res,
+                "lime_values": lime_res,
             }
             if pred["filled_columns"]:
                 result["filled_columns"] = pred["filled_columns"]
@@ -989,6 +1021,45 @@ class QuestionProcessor:
 # is currently trained. No manual /test/train call needed when target changes.
 # Keeps last 3 Q&A pairs in _chat_history_cache so HISTORY_EXPLANATION works.
 # ─────────────────────────────────────────────────────────────────────────────
+
+async def _format_answer(question: str, result: dict, df: pd.DataFrame) -> str:
+    """Calls /ask-with-file and returns a plain-text answer. Skips for UNCLEAR/HISTORY."""
+    if result.get("type") in ("UNCLEAR", "HISTORY_EXPLANATION"):
+        return result.get("answer", "")
+    try:
+        result_type = result.get("type", "")
+        form_data = {
+            "question":        question,
+            "result_type":     result_type,
+            "prediction_mode": result.get("mode", "") if result_type == "PREDICTION" else "",
+            "analysis_mode":   result.get("mode", "") if result_type == "ANALYSIS"   else "",
+            "target_column":   result.get("target_column", ""),
+            "target_class":    result.get("target_class", ""),
+            "prediction":      str(result.get("prediction", "")),
+            "confidence":      str(result.get("confidence", 0.0)),
+            "raw_result":      result.get("raw_result", ""),
+            "shap_values":     json.dumps(result.get("shap_values", [])),
+            "lime_values":     json.dumps(result.get("lime_values", [])),
+            "summary":         json.dumps(result.get("summary", {})),
+            "predicted_as":    json.dumps(result.get("predicted_as", {})),
+            "shap_aggregate":  json.dumps(result.get("shap_aggregate", [])),
+            "results":         json.dumps(result.get("results", [])),
+        }
+        file_bytes = df.to_csv(index=False).encode()
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{BACKEND_URL}/ask-with-file",
+                data=form_data,
+                files={"parsed_file": ("data.csv", file_bytes, "text/csv")},
+                timeout=60,
+            )
+        if resp.status_code == 200:
+            return resp.json().get("answer", "")
+        print(f"[TEST LLM FORMAT ERROR] status={resp.status_code} body={resp.text}")
+    except Exception as e:
+        print(f"[TEST LLM FORMAT ERROR] {e}")
+    return ""
+
 
 class ProcessQuestionRequest(BaseModel):
     chat_id:  int
@@ -1114,9 +1185,9 @@ async def test_process_question(body: ProcessQuestionRequest):
         raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
 
     # Keep last 3 Q&A pairs for HISTORY_EXPLANATION follow-up questions
-    entry   = {"question": question, "answer": result}
     history = _chat_history_cache.get(chat_id, [])
-    history.append(entry)
+    history.append({"question": question, "answer": result})
     _chat_history_cache[chat_id] = history[-3:]
 
-    return result
+    formatted_answer = await _format_answer(question, result, df)
+    return {**result, "formatted_answer": formatted_answer}

@@ -6,7 +6,6 @@ import io
 import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 from lime.lime_tabular import LimeTabularExplainer
-from backend.routers.data_processor import predict_local_single, prediction_cache
 
 #for test LIME endpoint
 from sklearn.ensemble import RandomForestClassifier
@@ -764,62 +763,3 @@ async def report_bug(
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-
-class ExplainRequest(BaseModel):
-    chat_id: int
-    instance: dict | None = None
-    id_column: str | None = None
-    id_value: str | None = None
-
-
-@router.post("/lime-explainer")
-async def limeExplainer(body: ExplainRequest, authorization: str = Header(None)):
-
-    # 1. Check model exists
-    if body.chat_id not in trained_models:
-        raise HTTPException(status_code=400, detail="Model not trained")
-
-    model_data = trained_models[body.chat_id]
-
-    model = model_data["model"]
-    X_train = model_data["X_train"]
-    feature_names = model_data["feature_names"]
-    task_type = model_data["task_type"]
-    class_labels = model_data["class_labels"]
-
-    # 2. Use your existing method (this does ALL preprocessing correctly)
-    predict_local_single(
-        chat_id=body.chat_id,
-        id_column=body.id_column,
-        id_value=body.id_value,
-        feature_values=body.instance
-    )
-
-    # 3. Get the processed row (already encoded + aligned)
-    row_df = prediction_cache[body.chat_id]["row_df"]
-
-    # 4. Create LIME explainer
-    explainer = LimeTabularExplainer(
-        training_data=np.array(X_train),
-        feature_names=feature_names,
-        class_names=class_labels if task_type == "classification" else None,
-        mode=task_type
-    )
-
-    # 5. Generate explanation
-    exp = explainer.explain_instance(
-        row_df.iloc[0].values,
-        model.predict_proba if task_type == "classification" else model.predict
-    )
-
-    # 6. Format result
-    explanation = [
-        {"feature": feature, "impact": float(weight)}
-        for feature, weight in exp.as_list()
-    ]
-
-    return {
-        "message": "Explanation generated",
-        "explanation": explanation
-    }
-  

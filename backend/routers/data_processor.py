@@ -4,11 +4,15 @@ import pandas as pd
 import json
 import numpy as np
 import shap
+import httpx
+import os
 from collections import Counter
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, r2_score
+
+from lime.lime_tabular import LimeTabularExplainer
 
 from core.openai_client import openai_client
 from core.supabase_client import supabase
@@ -16,10 +20,11 @@ from routers.auth import cleaned_data_cache, trained_models, prediction_cache, c
 
 router = APIRouter()
 
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Training logic
 # ─────────────────────────────────────────────────────────────────────────────
-
 class TrainRequest(BaseModel):
     chat_id: int
     target_column: str  # inferred by classifier or sent explicitly by frontend
@@ -184,7 +189,6 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
 # ─────────────────────────────────────────────────────────────────────────────
 # Prediction logic
 # ─────────────────────────────────────────────────────────────────────────────
-
 def predict_local_single(
     chat_id: int,
     id_column: str | None,
@@ -357,7 +361,6 @@ def predict_local_batch(chat_id: int) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 # SHAP explanation logic
 # ─────────────────────────────────────────────────────────────────────────────
-
 def _shap_vals_for_row(shap_values, row_idx: int, class_idx, task_type: str) -> np.ndarray:
     """
     Extract the SHAP value vector for one row.
@@ -507,7 +510,6 @@ def explain_shap_directional(chat_id: int, direction: str) -> list:
 
     return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
 
-
 def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
     """mean(abs(SHAP)) for one specific predicted class."""
     model_data    = trained_models[chat_id]
@@ -543,9 +545,42 @@ def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
     pairs    = sorted(zip(feature_names, mean_abs), key=lambda x: x[1], reverse=True)[:8]
     return [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs]
 
+# ─────────────────────────────────────────────────────────────────────────────
+# LIME explanation logic
+# ─────────────────────────────────────────────────────────────────────────────
+def explain_lime_local_single(chat_id: int) -> list:
+    # 1. Get model and cached row 
+    cache         = prediction_cache[chat_id]
+    model_data    = trained_models[chat_id]
+    row_df        = cache["row_df"]
+    task_type     = cache["task_type"]
+    model         = model_data["model"]
+    X_train       = model_data["X_train"]
+    feature_names = model_data["feature_names"]
+    class_labels  = model_data["class_labels"]
+
+    # 2. Create LIME explainer
+    explainer = LimeTabularExplainer(
+        training_data=np.array(X_train),
+        feature_names=feature_names,
+        class_names=class_labels if task_type == "classification" else None,
+        mode=task_type,
+    )
+    # 3. Generate explanation
+    exp = explainer.explain_instance(
+        row_df.iloc[0].values,
+        model.predict_proba if task_type == "classification" else model.predict,
+    )
+
+    # 4. Format result
+    explanation = [
+        {"feature": feature, "impact": float(weight)}
+        for feature, weight in exp.as_list()
+    ]
+    return explanation
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Conversation history helpers
+# Conversation history 
 # ─────────────────────────────────────────────────────────────────────────────
 def _load_all_history_from_db(chat_id: int) -> list[dict]:
     try:
@@ -571,7 +606,6 @@ def _load_all_history_from_db(chat_id: int) -> list[dict]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Question Classifier
 # ─────────────────────────────────────────────────────────────────────────────
-
 CLASSIFIER_SYSTEM_PROMPT = """
 You are a question classifier for Makeen, an AI data analysis platform.
 Classify the user's question about their dataset into exactly one of 4 types.
@@ -763,7 +797,6 @@ class QuestionClassifier:
 # ─────────────────────────────────────────────────────────────────────────────
 # Question Processor (4 handlers)
 # ─────────────────────────────────────────────────────────────────────────────
-
 # Prompt 1: ask GPT to write a single pandas expression that answers the question.
 _DATA_QUERY_CODE_PROMPT = """\
 You are a data analyst. A pandas DataFrame called `df` is available.
@@ -783,19 +816,6 @@ Sample rows:
 User question: {question}
 
 Expression:"""
-
-# Prompt 2: turn the raw query result into a plain-English answer.
-_DATA_QUERY_FORMAT_SYSTEM = """\
-You are a helpful assistant inside Makeen, an AI data analysis platform.
-A data query was run and returned a raw result. Rewrite it as a clear, natural answer.
-
-Rules:
-- Lead with the direct answer
-- Use plain language — no technical terms, no "the DataFrame", no "the dataset"
-- If the result is a table or list, summarize the key takeaways
-- Maximum 80 words
-- Output only the answer text, nothing else"""
-
 
 class QuestionProcessor:
     def __init__(self, data_cache: dict, model_cache: dict | None):
@@ -865,6 +885,7 @@ class QuestionProcessor:
 
             pred        = predict_local_single(chat_id, id_column, id_value, feature_values)
             shap_result = explain_shap_local_single(chat_id)
+            lime_result = explain_lime_local_single(chat_id)
 
             result = {
                 "type":        "PREDICTION",
@@ -874,6 +895,7 @@ class QuestionProcessor:
                 "prediction":  pred["prediction"],
                 "confidence":  pred["confidence"],
                 "shap_values": shap_result,
+                "lime_values": lime_result,
             }
             if pred["filled_columns"]:
                 result["filled_columns"] = pred["filled_columns"]
@@ -968,7 +990,7 @@ class QuestionProcessor:
                     "- Use plain language — no technical jargon, no mention of 'SHAP', 'model', "
                     "'features', or 'JSON'. Speak as if explaining to a business user.\n"
                     "- Be direct and specific. Do not repeat the raw numbers unless they add value.\n"
-                    "- Maximum 180 words."
+                    "- Maximum 120 words."
                 ),
             }
         ]
@@ -1007,9 +1029,49 @@ class QuestionProcessor:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Format answers
+# ─────────────────────────────────────────────────────────────────────────────
+async def _format_answer(question: str, result: dict, df: pd.DataFrame) -> str:
+    """Calls /ask-with-file and returns a plain-text answer. Skips for UNCLEAR/HISTORY."""
+    if result.get("type") in ("UNCLEAR", "HISTORY_EXPLANATION"):
+        return result.get("answer", "")
+    try:
+        result_type = result.get("type", "")
+        form_data = {
+            "question":        question,
+            "result_type":     result_type,
+            "prediction_mode": result.get("mode", "") if result_type == "PREDICTION" else "",
+            "analysis_mode":   result.get("mode", "") if result_type == "ANALYSIS"   else "",
+            "target_column":   result.get("target_column", ""),
+            "target_class":    result.get("target_class", ""),
+            "prediction":      str(result.get("prediction", "")),
+            "confidence":      str(result.get("confidence", 0.0)),
+            "raw_result":      result.get("raw_result", ""),
+            "shap_values":     json.dumps(result.get("shap_values", [])),
+            "lime_values":     json.dumps(result.get("lime_values", [])),
+            "summary":         json.dumps(result.get("summary", {})),
+            "predicted_as":    json.dumps(result.get("predicted_as", {})),
+            "shap_aggregate":  json.dumps(result.get("shap_aggregate", [])),
+            "results":         json.dumps(result.get("results", [])),
+        }
+        file_bytes = df.to_csv(index=False).encode()
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{BACKEND_URL}/ask-with-file",
+                data=form_data,
+                files={"parsed_file": ("data.csv", file_bytes, "text/csv")},
+                timeout=60,
+            )
+        if resp.status_code == 200:
+            return resp.json().get("answer", "")
+        print(f"[LLM FORMAT ERROR] status={resp.status_code} body={resp.text}")
+    except Exception as e:
+        print(f"[LLM FORMAT ERROR] {e}")
+    return ""
+
+# ─────────────────────────────────────────────────────────────────────────────
 # /processQuestion main endpoint
 # ─────────────────────────────────────────────────────────────────────────────
-
 class ProcessQuestionRequest(BaseModel):
     chat_id:  int
     question: str
@@ -1188,10 +1250,10 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
     else:
         raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
 
-    # Update conversation history cache — keep last 3 Q&A pairs
-    entry   = {"question": question, "answer": result}
+    # Update conversation history cache — keep last 4 Q&A pairs
     history = chat_history_cache.get(chat_id, [])
-    history.append(entry)
+    history.append({"question": question, "answer": result})
     chat_history_cache[chat_id] = history[-3:]
 
-    return result
+    formatted_answer = await _format_answer(question, result, df)
+    return {**result, "formatted_answer": formatted_answer}
