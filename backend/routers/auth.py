@@ -6,6 +6,7 @@ import io
 import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 from lime.lime_tabular import LimeTabularExplainer
+from backend.routers.data_processor import predict_local_single, prediction_cache
 
 #for test LIME endpoint
 from sklearn.ensemble import RandomForestClassifier
@@ -766,46 +767,38 @@ async def report_bug(
 
 class ExplainRequest(BaseModel):
     chat_id: int
+    instance: dict | None = None
+    id_column: str | None = None
+    id_value: str | None = None
+
 
 @router.post("/lime-explainer")
 async def limeExplainer(body: ExplainRequest, authorization: str = Header(None)):
-    user_id = _get_user_id(authorization)
-    chat_id = body.chat_id
 
     # 1. Check model exists
-    if chat_id not in trained_models:
+    if body.chat_id not in trained_models:
         raise HTTPException(status_code=400, detail="Model not trained")
 
-    model_data = trained_models[chat_id]
+    model_data = trained_models[body.chat_id]
 
     model = model_data["model"]
     X_train = model_data["X_train"]
     feature_names = model_data["feature_names"]
     task_type = model_data["task_type"]
     class_labels = model_data["class_labels"]
-    encoders = model_data["encoders"]
 
-    # 2. Convert input (dict → dataframe)
-    instance_df = pd.DataFrame([body.instance])
+    # 2. Use your existing method (this does ALL preprocessing correctly)
+    predict_local_single(
+        chat_id=body.chat_id,
+        id_column=body.id_column,
+        id_value=body.id_value,
+        feature_values=body.instance
+    )
 
-    # 3. Apply SAME encoding used in training
-    for col, enc in encoders.items():
-        if col in instance_df.columns:
-            if enc["type"] == "label":
-                le = enc["encoder"]
-                instance_df[col] = le.transform(instance_df[col].astype(str))
+    # 3. Get the processed row (already encoded + aligned)
+    row_df = prediction_cache[body.chat_id]["row_df"]
 
-            elif enc["type"] == "one_hot":
-                dummies = pd.get_dummies(instance_df[col], prefix=col)
-                instance_df = pd.concat(
-                    [instance_df.drop(columns=[col]), dummies],
-                    axis=1
-                )
-
-    # 4. Match training columns exactly
-    instance_df = instance_df.reindex(columns=feature_names, fill_value=0)
-
-    # 5. Create LIME explainer
+    # 4. Create LIME explainer
     explainer = LimeTabularExplainer(
         training_data=np.array(X_train),
         feature_names=feature_names,
@@ -813,13 +806,13 @@ async def limeExplainer(body: ExplainRequest, authorization: str = Header(None))
         mode=task_type
     )
 
-    # 6. Generate explanation
+    # 5. Generate explanation
     exp = explainer.explain_instance(
-        instance_df.iloc[0].values,
+        row_df.iloc[0].values,
         model.predict_proba if task_type == "classification" else model.predict
     )
 
-    # 7. Format result
+    # 6. Format result
     explanation = [
         {"feature": feature, "impact": float(weight)}
         for feature, weight in exp.as_list()
@@ -829,63 +822,4 @@ async def limeExplainer(body: ExplainRequest, authorization: str = Header(None))
         "message": "Explanation generated",
         "explanation": explanation
     }
-
-class LimeTestRequest(BaseModel):
-    data: list
-    target_column: str
-    instance: dict
-    
-    #this method is to only test LIME functionallity, no parse nor train needed 
-
-    # test Data 
-     #{
-        #"data": [
-            #{"age": 25, "salary": 3000, "approved": "no"},
-            #{"age": 40, "salary": 8000, "approved": "yes"},
-            #{"age": 35, "salary": 6000, "approved": "yes"}
-        #],
-        #"target_column": "approved",
-        #"instance": {
-            #"age": 30,
-            #"salary": 6000
-        #}
-      #}
-@router.post("/lime-test")
-async def lime_test(body: LimeTestRequest):
-
-    # 1. Load dataset
-    df = pd.DataFrame(body.data)
-
-    X = df.drop(columns=[body.target_column])
-    y = df[body.target_column]
-
-    # 2. Encode target
-    le = LabelEncoder()
-    y = le.fit_transform(y.astype(str))
-
-    # 3. Train model (simple)
-    model = RandomForestClassifier()
-    model.fit(X, y)
-
-    # 4. Prepare instance
-    instance_df = pd.DataFrame([body.instance])
-
-    # Match columns
-    instance_df = instance_df.reindex(columns=X.columns, fill_value=0)
-
-    # 5. LIME
-    explainer = LimeTabularExplainer(
-        training_data=np.array(X),
-        feature_names=X.columns.tolist(),
-        class_names=le.classes_.tolist(),
-        mode="classification"
-    )
-
-    exp = explainer.explain_instance(
-        instance_df.iloc[0].values,
-        model.predict_proba
-    )
-
-    return {
-        "explanation": exp.as_list()
-    }
+  
