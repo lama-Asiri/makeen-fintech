@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Form, HTTPException
 from pydantic import BaseModel
 import json
-from backend.routers.data_processor import process_ask_logic
+from routers.data_processor import process_ask_logic
 
 router = APIRouter()
 
