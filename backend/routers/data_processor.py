@@ -567,6 +567,7 @@ def explain_lime_local_single(chat_id: int) -> list:
     exp = explainer.explain_instance(
         row_df.iloc[0].values,
         model.predict_proba if task_type == "classification" else model.predict,
+        num_samples=500,
     )
 
     # 4. Format result
@@ -882,7 +883,11 @@ class QuestionProcessor:
 
             pred        = predict_local_single(chat_id, id_column, id_value, feature_values)
             shap_result = explain_shap_local_single(chat_id)
-            lime_result = explain_lime_local_single(chat_id)
+            try:
+                lime_result = explain_lime_local_single(chat_id)
+            except Exception as lime_err:
+                print(f"[LIME] skipped: {lime_err}")
+                lime_result = []
 
             result = {
                 "type":        "PREDICTION",

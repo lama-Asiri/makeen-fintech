@@ -1229,8 +1229,15 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         });
 
         if (!res.ok) {
-          const errText = await res.text();
-          throw new Error(errText);
+          let errorDetail = 'Something went wrong. Please try again.';
+          try {
+            const errJson = await res.json();
+            if (errJson?.detail) errorDetail = errJson.detail;
+          } catch {
+            const raw = await res.text().catch(() => '');
+            if (raw) errorDetail = raw;
+          }
+          throw new Error(errorDetail);
         }
 
         const data = await res.json();
