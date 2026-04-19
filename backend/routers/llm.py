@@ -172,15 +172,13 @@ def get_llm_response(system_prompt: str, user_message: str) -> str:
 # ─────────────────────────────────────────────────────────────
 # Endpoint
 # ─────────────────────────────────────────────────────────────
-@router.post("/ask-with-file", response_model=LLMResponse)
-async def ask_with_file(
-    # Always required
+@router.post("/ask", response_model=LLMResponse)
+async def ask(
     question: str = Form(...),
     df_context: str = Form(default="{}"),
     result_type: str = Form(...),
-    parsed_file: UploadFile = File(...),
 
-    # Other
+    # Other inputs
     raw_result: str = Form(default=""),
     prediction_mode: str = Form(default=""),
     target_column: str = Form(default=""),
@@ -196,25 +194,7 @@ async def ask_with_file(
     target_class: str = Form(default=""),
 ):
     try:
-        # ── 1. Read file ─────────────────────────────
-        contents = await parsed_file.read()
-
-        if parsed_file.filename.endswith(".csv"):
-            df = pd.read_csv(StringIO(contents.decode()))
-        else:
-            df = pd.read_excel(BytesIO(contents))
-
-        data_summary = (
-            f"Dataset '{parsed_file.filename}' with {df.shape[0]} rows and {df.shape[1]} columns. "
-            f"Columns: {', '.join(df.columns)}"
-        )
-
-        sample_rows = df.head(5).to_dict(orient="records")
-        sample_text = "\n".join(
-            [", ".join(f"{k}: {v}" for k, v in row.items()) for row in sample_rows]
-        )
-
-        # ── 2. Safe JSON parsing ─────────────────────
+        # ── 1. Safe JSON parsing ─────────────────────
         def safe_json(val, default):
             try:
                 return json.loads(val)
@@ -229,7 +209,7 @@ async def ask_with_file(
         shap_agg_data = safe_json(shap_aggregate, [])
         results_data = safe_json(results, [])
 
-        # ── 3. Build structured context ──────────────
+        # ── 2. Build structured context ──────────────
         context_block = {
             "result_type": result_type,
             "prediction_mode": prediction_mode,
@@ -239,6 +219,7 @@ async def ask_with_file(
             "prediction": prediction,
             "confidence": confidence,
             "raw_result": raw_result,
+            "df_context": df_context_data,
             "summary": summary_data,
             "predicted_as": predicted_as_data,
             "shap_values": shap_data,
@@ -247,7 +228,7 @@ async def ask_with_file(
             "results": results_data
         }
 
-        # ── 4. Build prompt (clean + structured) ─────
+        # ── 3. Build prompt ─────────────────────────
         user_message = textwrap.dedent(f"""
         User question:
         {question}
@@ -257,15 +238,9 @@ async def ask_with_file(
 
         Context:
         {json.dumps(context_block, indent=2)}
-
-        Dataset summary:
-        {data_summary}
-
-        Sample data:
-        {sample_text}
         """)
 
-        # ── 5. LLM call ─────────────────────────────
+        # ── 4. LLM call ─────────────────────────────
         answer = get_llm_response(SYSTEM_PROMPT, user_message)
 
         return LLMResponse(answer=answer)
