@@ -2,8 +2,8 @@
 ║                     MAKEEN - TODO LIST                       ║
 ╚══════════════════════════════════════════════════════════════╝
 
-  CRITICAL PATH   #13 ✓ → #16 ✓ → #17 ✓ → #15 ✓ → #23 ✓ → #19b
-  Pipeline is LIVE on Railway + Vercel. Most question types working. Remaining: #19b, #20b, deploy fixes, mobile test.
+  CRITICAL PATH   #13 ✓ → #16 ✓ → #17 ✓ → #15 ✓ → #23 ✓ → #19b ✓  — ALL DONE
+  Pipeline is LIVE on Railway + Vercel. Remaining: #20b, mobile test, manual testing.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -17,11 +17,9 @@
         Connection tested and confirmed working (POST /test-llm returns real GPT response)
         Next: Reem wires real pipeline data into /ask endpoint (#15)
 
-  [x] C. Decide how target column is selected — user picks from dropdown after upload
+  [x] C. Decide how target column is selected — backend infers it automatically from the question (removed manual picker)
 
-  [x ] D. Decide LIME usage — always compute alongside SHAP vs on-demand button only
-        Recommended: on-demand ("Show LIME explanation") — keeps response time under 10s
-        Owner: Reem + Rahaf
+  [x] D. Decide LIME usage — computed automatically alongside SHAP for local_single (num_samples=200)
 
   [ ] E. Manual testing — each person tests their own section once built
         Owner: whole team 
@@ -29,10 +27,7 @@
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   SECTION 1 —  CLEANUP
-  Owner: Reem | Priority: LOW
-
-  [ ] 1. Clean up PythonClasses/ folder — move models into routers as Pydantic models
-  [ ] 2. Decide on database/connection.py — keep SQLAlchemy or remove in favour of Supabase client
+  Owner: Reem | Priority: LOW - CLOSED
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   SECTION 2 — DATABASE CONNECTIONS - CLOSED
@@ -42,19 +37,19 @@
   Owner: Reem (backend) + Lama (frontend) | Priority: MID
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 4 — FILE PROCESSING
+  SECTION 4 — FILE PROCESSING - CLOSED
   Owner: Rahaf (backend) + Lama (frontend) | Priority: HIGH
 
   [x] 11. Accept Excel/CSV uploads — validate file type, error for unsupported formats
   [x] 12. File size validation — enforce max 10 MB limit before upload
   [x] 13. Parse uploaded file server-side — /auth/parse fully built                     | Rahaf
-  [x] 13a. Column selection UI — upload modal step 2: spinner → dropdown to pick column | Lama
-  [ ] 13b. Change target column mid-chat — needs pipeline to be testable                | Lama
-  [ ] 14. Show file processing status — loading indicator while file is parsed           | Rahaf + Lama
+  ~~13a. Column selection UI~~ — removed, backend infers target column automatically
+  ~~13b. Change target column mid-chat~~ — removed, no longer needed
+  [x] 14. Show file processing status — spinner shown during upload/parse (uploadStep=loading)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  SECTION 5 — AI / XAI PIPELINE
+  SECTION 5 — AI / XAI PIPELINE - CLOSED
   Priority: HIGH (core of the project)
   Flow: upload → NL query → /parse → /train → /predict → /explain → /ask → display
 
@@ -70,23 +65,26 @@
   [x] 19. XAI results card — prediction badge + animated SHAP bar chart                | Lama
   [x] 19b. Wire real SHAP data into XAI card — xaiData built from API shap_values       | Lama ✓
            XAI card shows for local_single predictions only; SHAP saved to DB explanation column so it restores after logout
-  [ ] 20b. Swap loading step labels/timings to match real pipeline stages               | Lama
+  [x] 20b. Swap loading step labels/timings to match real pipeline stages               | Lama ✓
+           Labels: Understanding question → Analysing data → Computing explanations → Generating response
+           Timings: 2s / 3s / 5s matching classifier / ML / SHAP+LIME / GPT stages
   [x] 24. Test /auth/parse and /auth/train with a real CSV file end-to-end              | done ✓ (stroke dataset)
 
   └────────────────────────────────────────────────────────────┘
 
-  ┌─ depends on SHAP (#17) ────────────────────────────────────┐
+  ┌─ depends on SHAP (#17) ────────────────────────────────────┐ - CLOSED
 
-  [ ] 18. LIME integration — on-demand explanation alongside SHAP                       | Reem   [needs #17]
+  [x] 18. LIME integration — computed alongside SHAP for every local_single prediction  | Reem ✓
+           explain_lime_local_single() runs with num_samples=200, wrapped in try/except
 
   └────────────────────────────────────────────────────────────┘
 
-  ┌─ AFTER PIPELINE WORKS ─────────────────────────────────────┐
+  ┌─ AFTER PIPELINE WORKS ─────────────────────────────────────┐ - CLOSED
 
   [x] 20. Loading indicator — 4-step progress card with animated progress bar           | Lama
-  [ ] 20b. Swap loading timings to real values once pipeline is wired                   | Lama
-  [ ] 21. Export results — download prediction + explanation as PDF/Excel/HTML          | Reem + Lama
-  [ ] 22. Rate explanation — already wired to Rating table via thumbs up/down           | done ✓
+  [x] 20b. Swap loading timings to real values once pipeline is wired                   | Lama ✓
+  [x] 21. Export results — PDF, HTML, CSV all implemented in Chat.tsx                   | Lama ✓
+  [x] 22. Rate explanation — wired to /auth/addRating via thumbs up/down                | done ✓
 
   └────────────────────────────────────────────────────────────┘
 
@@ -118,7 +116,7 @@
         Frontend: https://makeen-topaz.vercel.app (Vercel, auto-deploys from GitHub)
         Backend:  https://makeen-production.up.railway.app (Railway)
         VITE_API_URL set in Vercel env vars pointing to Railway
-  [ ] M2. Verify latest Railway deploy — local_single prediction, error messages, XAI restore after logout
+  [x] M2. Verify latest Railway deploy — local_single prediction, error messages, XAI restore after logout
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -143,8 +141,7 @@
   [x] Delete single chat with 8-second undo window
   [x] Delete all chats
   [x] Rename chat
-  [x] Column selection — upload modal step 2 dropdown, stored in chat + DB
-  [x] File chip + target column restored after logout/login
+  [x] File chip restored after logout/login
   [x] Loading indicator — 4-step pipeline progress card
   [x] XAI results card — prediction badge + animated SHAP bars (mock data)
   [x] Google OAuth wired via Supabase (Apple stays Coming Soon)

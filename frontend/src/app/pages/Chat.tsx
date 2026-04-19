@@ -615,8 +615,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       setProcessingStage(0);
       return;
     }
-    // Stage durations (ms): advances every 2s for demo — swap to [5000,10000,10000] when real pipeline is wired
-    const delays = [2000, 2000, 2000];
+    // Stage durations (ms): classifier ~2s, data/ML ~3s, SHAP/LIME ~5s, GPT format runs last
+    const delays = [2000, 3000, 5000];
     let stage = 0;
     const timers: ReturnType<typeof setTimeout>[] = [];
     delays.forEach((delay, i) => {
@@ -1136,6 +1136,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const sendMessage = (overrideContent?: string) => {
     const content = overrideContent ?? inputValue;
     if (content.trim() === '' || isProcessing) return;
+    if (content.trim().length > 500) {
+      setToastMessage('Question is too long. Please keep it under 500 characters.');
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -1156,6 +1160,9 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setShouldStopTyping(false);
 
     (async () => {
+      // Capture the active chat ID now — it won't change during the stream
+      const chatId = activeChatId;
+
       try {
         if (!session?.access_token || activeChat?.backendId === undefined) {
           throw new Error('No active session or chat');
@@ -1171,6 +1178,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           body: JSON.stringify({ chat_id: activeChat.backendId, question: content }),
         });
 
+        // Non-2xx response: parse the FastAPI detail message and show it in chat
         if (!res.ok) {
           let errorDetail = 'Something went wrong. Please try again.';
           try {
@@ -1183,46 +1191,122 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           throw new Error(errorDetail);
         }
 
-        const data = await res.json();
-
-        // UNCLEAR uses result.answer (clarification prompt); all others use GPT-formatted string
-        const aiContent: string = data.formatted_answer || data.answer || 'No response received.';
-
-        // Build XAI data for single-row predictions only
-        let xaiData: XaiData | undefined;
-        if (data.type === 'PREDICTION' && data.mode === 'local_single' && Array.isArray(data.shap_values)) {
-          const shapMap: Record<string, number> = {};
-          for (const entry of data.shap_values) {
-            shapMap[entry.feature] = entry.shap_value;
-          }
-          xaiData = { prediction: String(data.prediction ?? ''), shapValues: shapMap };
-        }
-
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
+        // ── Create an empty placeholder message right away ───────────────────
+        // The user sees the message bubble appear immediately while tokens stream in.
+        const aiMessageId = (Date.now() + 1).toString();
+        const placeholder: Message = {
+          id: aiMessageId,
           role: 'assistant',
-          content: aiContent,
+          content: '',
           timestamp: new Date(),
           feedback: null,
-          xaiData,
-          suggestions: data.type === 'UNCLEAR' ? data.clarifications : undefined,
-          backendResponseId: data.response_id ?? undefined,
         };
+        setLatestAiMessageId(aiMessageId);
+        setChats((prev) =>
+          prev.map((c) => c.id === chatId ? { ...c, messages: [...c.messages, placeholder] } : c)
+        );
 
-        if (activeChat) {
-          setLatestAiMessageId(aiMessage.id);
-          setChats((prevChats) =>
-            prevChats.map((chat) =>
-              chat.id === activeChatId ? { ...chat, messages: [...chat.messages, aiMessage] } : chat
-            )
-          );
+        // ── Read the SSE stream ──────────────────────────────────────────────
+        // The backend sends three event types:
+        //   metadata — structured pipeline data (type, shap_values, prediction…)
+        //   token    — one GPT word at a time
+        //   done     — stream finished, carries response_id for ratings
+        const reader  = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer   = '';       // incomplete SSE line carried across chunks
+        let metadata: Record<string, unknown> = {};  // filled by the metadata event
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Decode the raw bytes and append to any leftover from the previous chunk
+          buffer += decoder.decode(value, { stream: true });
+
+          // SSE lines are newline-delimited; keep the last incomplete line in the buffer
+          const lines = buffer.split('\n');
+          buffer = lines.pop() ?? '';
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const raw = line.slice(6).trim();
+            if (!raw) continue;
+
+            let event: Record<string, unknown>;
+            try { event = JSON.parse(raw); } catch { continue; }
+
+            if (event.event === 'metadata') {
+              // Store pipeline metadata for use when the done event arrives
+              metadata = event;
+
+            } else if (event.event === 'token') {
+              // Append the incoming word to the placeholder message content
+              const token = event.content as string;
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === chatId
+                    ? { ...c, messages: c.messages.map((m) => m.id === aiMessageId ? { ...m, content: m.content + token } : m) }
+                    : c
+                )
+              );
+
+            } else if (event.event === 'done') {
+              // Stream complete — attach metadata fields to the finalized message
+
+              // Build XAI data if this was a local_single prediction with SHAP values
+              let xaiData: XaiData | undefined;
+              const shapValues = metadata.shap_values as { feature: string; shap_value: number }[] | undefined;
+              if (metadata.type === 'PREDICTION' && metadata.mode === 'local_single' && Array.isArray(shapValues) && shapValues.length > 0) {
+                const shapMap: Record<string, number> = {};
+                for (const entry of shapValues) shapMap[entry.feature] = entry.shap_value;
+                xaiData = { prediction: String(metadata.prediction ?? ''), shapValues: shapMap };
+              }
+
+              // For UNCLEAR, the content comes from metadata.answer (no tokens were streamed)
+              const isUnclear = metadata.type === 'UNCLEAR' || metadata.type === 'HISTORY_EXPLANATION';
+
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === chatId
+                    ? {
+                        ...c,
+                        messages: c.messages.map((m) =>
+                          m.id === aiMessageId
+                            ? {
+                                ...m,
+                                // For UNCLEAR/HISTORY: use metadata.answer since no tokens were sent
+                                content: isUnclear ? (metadata.answer as string || '') : m.content,
+                                xaiData,
+                                suggestions: metadata.type === 'UNCLEAR' ? (metadata.clarifications as string[]) : undefined,
+                                backendResponseId: (event.response_id as number) ?? undefined,
+                              }
+                            : m
+                        ),
+                      }
+                    : c
+                )
+              );
+
+            } else if (event.event === 'error') {
+              // Backend error mid-stream — show it as the message content
+              setChats((prev) =>
+                prev.map((c) =>
+                  c.id === chatId
+                    ? { ...c, messages: c.messages.map((m) => m.id === aiMessageId ? { ...m, content: (event.detail as string) || 'Something went wrong.' } : m) }
+                    : c
+                )
+              );
+            }
+          }
         }
+
       } catch (err) {
         console.error('[sendMessage] API call failed:', err);
+        // Show the error as a chat message (content is the backend detail or generic fallback)
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'Something went wrong. Please try again.',
+          content: err instanceof Error ? err.message : 'Something went wrong. Please try again.',
           timestamp: new Date(),
           feedback: null,
         };
@@ -1230,7 +1314,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           setLatestAiMessageId(errorMessage.id);
           setChats((prevChats) =>
             prevChats.map((chat) =>
-              chat.id === activeChatId ? { ...chat, messages: [...chat.messages, errorMessage] } : chat
+              chat.id === chatId ? { ...chat, messages: [...chat.messages, errorMessage] } : chat
             )
           );
         }
@@ -2830,10 +2914,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <AnimatePresence>
               {isProcessing && (() => {
                 const stages = [
-                  { label: 'Parsing data',          icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-                  { label: 'Training model',         icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2' },
-                  { label: 'Computing SHAP values',  icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
-                  { label: 'Generating explanation', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+                  { label: 'Understanding your question', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+                  { label: 'Analysing your data',         icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2' },
+                  { label: 'Computing explanations',      icon: 'M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z' },
+                  { label: 'Generating response',         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
                 ];
                 return (
                   <motion.div

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 import pandas as pd
 import json
@@ -1033,6 +1034,34 @@ class QuestionProcessor:
 # ─────────────────────────────────────────────────────────────────────────────
 # Format answers
 # ─────────────────────────────────────────────────────────────────────────────
+def _build_llm_user_message(question: str, result: dict, df) -> str:
+    data_summary = ""
+    sample_text  = ""
+    if df is not None:
+        data_summary = f"{df.shape[0]} rows, {df.shape[1]} columns"
+        sample_text  = "\n".join(
+            ", ".join(f"{k}: {v}" for k, v in row.items())
+            for row in df.head(5).to_dict(orient="records")
+        )
+    context_block = {
+        "result_type":    result.get("type", ""),
+        "prediction_mode": result.get("mode", "") if result.get("type") == "PREDICTION" else "",
+        "analysis_mode":   result.get("mode", "") if result.get("type") == "ANALYSIS"   else "",
+        "target_column":  result.get("target_column", ""),
+        "target_class":   result.get("target_class", ""),
+        "prediction":     str(result.get("prediction", "")),
+        "confidence":     float(result.get("confidence") or 0.0),
+        "raw_result":     result.get("raw_result", ""),
+        "summary":        result.get("summary", {}),
+        "predicted_as":   result.get("predicted_as", {}),
+        "shap_values":    result.get("shap_values", []),
+        "lime_values":    result.get("lime_values", []),
+        "shap_aggregate": result.get("shap_aggregate", []),
+        "results":        result.get("results", []),
+    }
+    return f"""User question:\n{question}\n\nResult type:\n{result.get("type","")}\n\nContext:\n{json.dumps(context_block, indent=2)}\n\nDataset summary:\n{data_summary}\n\nSample data:\n{sample_text}"""
+
+
 async def _format_answer(question: str, result: dict, df: pd.DataFrame) -> str:
     if result.get("type") in ("UNCLEAR", "HISTORY_EXPLANATION"):
         return result.get("answer", "")
@@ -1237,45 +1266,97 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
     else:
         raise HTTPException(status_code=500, detail=f"Unexpected question type: {question_type}")
 
-    # Update conversation history cache — keep last 4 Q&A pairs
+    # Update conversation history cache so the classifier has context for follow-up questions
     history = chat_history_cache.get(chat_id, [])
     history.append({"question": question, "answer": result})
     chat_history_cache[chat_id] = history[-3:]
 
-    formatted_answer = await _format_answer(question, result, df)
+    # ── Streaming response via Server-Sent Events (SSE) ───────────────────────
+    # Instead of waiting for GPT to finish before sending anything, we stream:
+    #   1. metadata event  — sent immediately after ML/SHAP finishes
+    #   2. token events    — one per GPT word as they arrive (user sees text appearing)
+    #   3. done event      — signals completion + carries response_id for ratings
+    # The frontend reads these events and updates the message in real time.
+    async def generate():
 
-    # Persist the Q&A pair to the DB.
-    # UNCLEAR has no LLM step — its answer is the clarification prompt in result["answer"].
-    # Every other type gets the GPT-formatted string.
-    answer_to_save = result.get("answer", "") if question_type == "UNCLEAR" else formatted_answer
-    response_id: int | None = None
-    try:
-        query_ins = supabase.table("Query").insert({
-            "query_text": question,
-            "CHAT_ID": chat_id,
-        }).execute()
-        query_id = query_ins.data[0]["QUERY_ID"]
+        # ── Event 1: metadata ────────────────────────────────────────────────
+        # Send all structured pipeline data (type, prediction, SHAP, etc.) right away.
+        # The frontend uses this to render the XAI card before GPT has even started.
+        yield f"data: {json.dumps({'event': 'metadata', 'type': result.get('type'), 'mode': result.get('mode'), 'prediction': result.get('prediction'), 'confidence': result.get('confidence'), 'shap_values': result.get('shap_values', []), 'lime_values': result.get('lime_values', []), 'clarifications': result.get('clarifications'), 'answer': result.get('answer', '')})}\n\n"
 
-        # For local_single predictions, persist the XAI card data so it can be
-        # restored after logout — frontend reads explanation as JSON to rebuild xaiData.
-        explanation_to_save = ""
-        if result.get("type") == "PREDICTION" and result.get("mode") == "local_single":
-            shap_values = result.get("shap_values", [])
-            prediction  = result.get("prediction", "")
-            if shap_values:
-                shap_map = {entry["feature"]: entry["shap_value"] for entry in shap_values}
-                explanation_to_save = json.dumps({"prediction": prediction, "shapValues": shap_map})
+        # ── UNCLEAR / HISTORY_EXPLANATION: no GPT call needed ────────────────
+        # These types already have their answer in result["answer"] (the clarification
+        # prompt or history summary). Just save to DB and send done immediately.
+        if question_type in ("UNCLEAR", "HISTORY_EXPLANATION"):
+            answer_text = result.get("answer", "")
+            response_id = None
+            try:
+                q = supabase.table("Query").insert({"query_text": question, "CHAT_ID": chat_id}).execute()
+                r = supabase.table("Response").insert({"answer": answer_text, "explanation": "", "QUERY_ID": q.data[0]["QUERY_ID"]}).execute()
+                response_id = r.data[0]["RESPONSE_ID"]
+            except Exception as db_err:
+                print(f"[processQuestion] DB save failed: {db_err}")
+            yield f"data: {json.dumps({'event': 'done', 'response_id': response_id})}\n\n"
+            return
 
-        resp_ins = supabase.table("Response").insert({
-            "answer": answer_to_save,
-            "explanation": explanation_to_save,
-            "QUERY_ID": query_id,
-        }).execute()
-        response_id = resp_ins.data[0]["RESPONSE_ID"]
-    except Exception as db_err:
-        print(f"[processQuestion] DB save failed: {db_err}")
+        # ── Event 2: token stream (DATA_QUERY / PREDICTION / ANALYSIS) ───────
+        # Build the same GPT message that _format_answer would use, but call OpenAI
+        # with stream=True so we get tokens one by one instead of waiting for the full reply.
+        user_message = _build_llm_user_message(question, result, df)
+        full_answer  = ""
+        try:
+            stream = await openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user",   "content": user_message},
+                ],
+                max_tokens=400,
+                temperature=0.3,
+                stream=True,  # <-- this is the key change vs _format_answer
+            )
+            async for chunk in stream:
+                delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
+                full_answer += delta  # accumulate so we can save the full answer to DB later
+                if delta:
+                    # Send each word/token to the frontend as it arrives
+                    yield f"data: {json.dumps({'event': 'token', 'content': delta})}\n\n"
+        except Exception as stream_err:
+            # If GPT fails mid-stream, send an error event so the frontend can show a message
+            yield f"data: {json.dumps({'event': 'error', 'detail': str(stream_err)})}\n\n"
+            return
 
-    return {**result, "formatted_answer": formatted_answer, "response_id": response_id}
+        # ── Event 3: done ────────────────────────────────────────────────────
+        # GPT finished — now save the complete answer to DB and send response_id
+        # so the frontend can wire thumbs up/down ratings to the correct DB row.
+        response_id = None
+        try:
+            q = supabase.table("Query").insert({"query_text": question, "CHAT_ID": chat_id}).execute()
+            query_id = q.data[0]["QUERY_ID"]
+
+            # For local_single predictions, also save SHAP data in the explanation column
+            # so the XAI card can be reconstructed after logout/login.
+            explanation_to_save = ""
+            if result.get("type") == "PREDICTION" and result.get("mode") == "local_single":
+                shap_vals = result.get("shap_values", [])
+                if shap_vals:
+                    shap_map = {e["feature"]: e["shap_value"] for e in shap_vals}
+                    explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "shapValues": shap_map})
+
+            r = supabase.table("Response").insert({"answer": full_answer, "explanation": explanation_to_save, "QUERY_ID": query_id}).execute()
+            response_id = r.data[0]["RESPONSE_ID"]
+        except Exception as db_err:
+            print(f"[processQuestion] DB save failed: {db_err}")
+
+        yield f"data: {json.dumps({'event': 'done', 'response_id': response_id})}\n\n"
+
+    # Return a streaming HTTP response with text/event-stream content type.
+    # X-Accel-Buffering: no tells Railway's nginx proxy not to buffer the stream.
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 SYSTEM_PROMPT = """
 You are an AI assistant inside a program called Makeen.
