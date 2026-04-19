@@ -385,13 +385,10 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [selectedSampleDataset, setSelectedSampleDataset] = useState<string | null>(null);
   const [sampleSuggestedQuestions, setSampleSuggestedQuestions] = useState<string[]>([]);
-  // Upload modal step: 'file' = drop zone, 'loading' = uploading, 'columns' = pick target column
-  const [uploadStep, setUploadStep] = useState<'file' | 'loading' | 'columns'>('file');
-  const [availableColumns, setAvailableColumns] = useState<string[]>([]);
-  const [selectedColumn, setSelectedColumn] = useState<string>('');
+  // Upload modal step: 'file' = drop zone, 'loading' = uploading
+  const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [processingStage, setProcessingStage] = useState(0);
-  const [showColumnPicker, setShowColumnPicker] = useState(false);
   const [isDictating, setIsDictating] = useState(false);
   const [sendPulse, setSendPulse] = useState(false);
   const [feedbackModalMessageId, setFeedbackModalMessageId] = useState<string | null>(null);
@@ -430,7 +427,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const renameInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const columnPickerRef = useRef<HTMLDivElement>(null);
   // Set to true when handleFileUpload is called but addChatAPI hasn't resolved yet.
   // The useEffect below watches chats for backendId and auto-triggers upload when it arrives.
   const waitingForBackendIdRef = useRef(false);
@@ -598,11 +594,11 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     if (!chat?.backendId || !selectedFile || !session?.access_token) return;
     waitingForBackendIdRef.current = false;
     uploadFileAPI(session.access_token, selectedFile, chat.backendId)
-      .then((columns) => {
-        setAvailableColumns(columns);
-        setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, columns } : c));
-        setSelectedColumn(columns.length > 0 ? columns[columns.length - 1] : '');
-        setUploadStep('columns');
+      .then(() => {
+        setUploadStep('file');
+        setSelectedFile(null);
+        setShowUploadModal(false);
+        setToastMessage('File uploaded successfully!');
       })
       .catch((err) => {
         console.error('[uploadFile] Backend upload failed (delayed):', err);
@@ -612,18 +608,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         setToastMessage('File upload failed. Please try again.');
       });
   }, [chats]);
-
-  // Close column picker dropdown when clicking outside
-  useEffect(() => {
-    if (!showColumnPicker) return;
-    const handler = (e: MouseEvent) => {
-      if (columnPickerRef.current && !columnPickerRef.current.contains(e.target as Node)) {
-        setShowColumnPicker(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [showColumnPicker]);
 
   // Cycle through pipeline stages while processing
   useEffect(() => {
@@ -953,22 +937,17 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       }
     }
 
-    // Upload file to backend, then show column picker so user selects the target column.
-    // If no real file is selected (e.g. sample data fallback), skip to closing the modal.
     if (selectedFile && backendId !== undefined && session?.access_token) {
       setUploadStep('loading');
       uploadFileAPI(session.access_token, selectedFile, backendId)
-        .then((columns) => {
-          setAvailableColumns(columns);
-          // Save columns on the chat so they're available for mid-chat column switching
-          setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, columns } : c));
-          // Default selection: last column (most commonly the target in tabular datasets)
-          setSelectedColumn(columns.length > 0 ? columns[columns.length - 1] : '');
-          setUploadStep('columns');
+        .then(() => {
+          setUploadStep('file');
+          setSelectedFile(null);
+          setShowUploadModal(false);
+          setToastMessage('File uploaded successfully!');
         })
         .catch((err) => {
           console.error('[uploadFile] Backend upload failed:', err);
-          // Upload failed — close modal anyway so user isn't stuck
           setUploadStep('file');
           setShowUploadModal(false);
           setSelectedFile(null);
@@ -982,42 +961,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     }
   };
 
-  // Called when user picks a new target column from the mid-chat dropdown in the file bar.
-  // New messages will use the new column; old messages keep their original context (Option A).
-  const handleChangeColumn = (newColumn: string) => {
-    if (!activeChatId) return;
-    setShowColumnPicker(false);
-    setChats((prev) =>
-      prev.map((c) => (c.id === activeChatId ? { ...c, targetColumn: newColumn } : c))
-    );
-    const chat = chats.find((c) => c.id === activeChatId);
-    if (chat?.backendId !== undefined && session?.access_token) {
-      updateFileColumnAPI(session.access_token, chat.backendId, newColumn)
-        .catch((err) => console.error('[changeColumn] Failed to save to backend:', err));
-    }
-  };
-
-  // Called when user confirms their target column selection in step 2 of the upload modal.
-  // Saves the column locally and persists it to the DB so it survives logout/login.
-  const handleConfirmColumn = () => {
-    const chat = chats.find((c) => c.id === activeChatId);
-    if (selectedColumn && activeChatId) {
-      setChats((prev) =>
-        prev.map((c) => (c.id === activeChatId ? { ...c, targetColumn: selectedColumn } : c))
-      );
-      // Persist to DB so it's restored after logout — File table has a target_column column
-      if (chat?.backendId !== undefined && session?.access_token) {
-        updateFileColumnAPI(session.access_token, chat.backendId, selectedColumn)
-          .catch((err) => console.error('[updateFileColumn] Failed to save to backend:', err));
-      }
-    }
-    setUploadStep('file');
-    setAvailableColumns([]);
-    setSelectedColumn('');
-    setSelectedFile(null);
-    setShowUploadModal(false);
-    setToastMessage('File uploaded successfully!');
-  };
 
   const handleFileSelect = (file: File) => {
     const fileName = file.name.toLowerCase();
@@ -2411,7 +2354,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 {/* Modal Header — title changes per step */}
                 <div className="bg-[#2c2c2c] px-[20px] md:px-[24px] py-[14px] md:py-[16px] rounded-t-[8px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
                   <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] md:text-[18px] text-white">
-                    {uploadStep === 'columns' ? 'Select Target Column' : 'File Upload'}
+                    File Upload
                   </p>
                 </div>
 
@@ -2478,41 +2421,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </div>
                 )}
 
-                {/* ── Step 3: Column picker ── */}
-                {uploadStep === 'columns' && (
-                  <div className="px-[20px] md:px-[24px] py-[20px] md:py-[26px] flex flex-col gap-[16px]">
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">
-                      Choose the column you want the AI to predict or analyze. This is usually the last column in your dataset.
-                    </p>
-                    <select
-                      title="Target column"
-                      value={selectedColumn}
-                      onChange={(e) => setSelectedColumn(e.target.value)}
-                      className="bg-[#262626] border border-[#bebebe] text-white rounded-[8px] px-[14px] h-[44px] text-[15px] focus:outline-none focus:border-[#7760bd] cursor-pointer"
-                    >
-                      {availableColumns.map((col) => (
-                        <option key={col} value={col} className="bg-[#262626]">{col}</option>
-                      ))}
-                    </select>
-                    <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#888]">
-                      {availableColumns.length} column{availableColumns.length !== 1 ? 's' : ''} detected in your file
-                    </p>
-                  </div>
-                )}
-
-              {/* Modal Footer — button changes per step */}
+              {/* Modal Footer */}
               <div className="bg-[#2c2c2c] border-t border-black px-[20px] md:px-[24px] py-[10px] md:py-[12px] rounded-b-[8px] flex justify-end">
-                {uploadStep === 'columns' ? (
-                  <button
-                    onClick={handleConfirmColumn}
-                    disabled={!selectedColumn}
-                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
-                  >
-                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] md:text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
-                      Confirm
-                    </p>
-                  </button>
-                ) : (
                   <button
                     onClick={handleFileUpload}
                     disabled={uploadStep === 'loading'}
@@ -2522,7 +2432,6 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       Send
                     </p>
                   </button>
-                )}
               </div>
             </div>
             </div>
@@ -2553,65 +2462,6 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 </div>
               </button>
 
-              {/* Target column — clickable to change mid-chat (#13b) */}
-              {activeChat.targetColumn && (
-                <>
-                  <div className="w-[1px] h-[32px] bg-[#555] flex-shrink-0" />
-                  <div className="relative flex-shrink-0" ref={columnPickerRef}>
-                    <button
-                      type="button"
-                      onClick={() => activeChat.columns?.length ? setShowColumnPicker((v) => !v) : undefined}
-                      className={`flex flex-col items-end ${activeChat.columns?.length ? 'cursor-pointer hover:opacity-80' : 'cursor-default'} transition-opacity`}
-                      title={activeChat.columns?.length ? 'Change target column' : undefined}
-                    >
-                      <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] uppercase tracking-wide">Target Column</p>
-                      <div className="flex items-center gap-[4px]">
-                        <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">{activeChat.targetColumn}</p>
-                        {activeChat.columns?.length && (
-                          <svg
-                            className={`w-[12px] h-[12px] text-[#9e9e9e] transition-transform duration-200 ${showColumnPicker ? 'rotate-180' : ''}`}
-                            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-
-                    {/* Dropdown */}
-                    <AnimatePresence>
-                    {showColumnPicker && activeChat.columns && (
-                      <motion.div
-                        className="absolute right-0 top-[calc(100%+8px)] bg-[#2c2c2c] border border-[#444] rounded-[8px] shadow-xl z-50 min-w-[160px] max-h-[200px] overflow-y-auto"
-                        initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                        transition={{ duration: 0.15 }}
-                      >
-                        <p className="px-[12px] pt-[10px] pb-[6px] font-['Inter:Regular',sans-serif] text-[10px] text-[#666] uppercase tracking-wide">Select column</p>
-                        {activeChat.columns.map((col) => (
-                          <button
-                            type="button"
-                            key={col}
-                            onClick={() => handleChangeColumn(col)}
-                            className={`w-full text-left px-[12px] py-[8px] text-[13px] transition-colors hover:bg-[#3a3a3a] ${
-                              col === activeChat.targetColumn
-                                ? 'text-[#7760bd] font-semibold'
-                                : 'text-white font-normal'
-                            }`}
-                          >
-                            {col}
-                            {col === activeChat.targetColumn && (
-                              <span className="ml-[6px] text-[10px] text-[#7760bd]">✓</span>
-                            )}
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                    </AnimatePresence>
-                  </div>
-                </>
-              )}
             </div>
             </div>
 

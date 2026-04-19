@@ -2,8 +2,8 @@
 ║                     MAKEEN - TODO LIST                       ║
 ╚══════════════════════════════════════════════════════════════╝
 
-  CRITICAL PATH   #13 ✓ → #16 ✓ → #17 → #15 → #23 → #19b
-  #13 and #16 are DONE. Next: Rahaf builds #17 (SHAP/predict), then Reem wires #15 (LLM), then Lama wires frontend #23.
+  CRITICAL PATH   #13 ✓ → #16 ✓ → #17 ✓ → #15 ✓ → #23 ✓ → #19b
+  Pipeline is LIVE on Railway + Vercel. Most question types working. Remaining: #19b, #20b, deploy fixes, mobile test.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -61,24 +61,17 @@
   ┌─ CRITICAL PATH ────────────────────────────────────────────┐
 
   [x] 16. ML Model — /auth/train fully built (RandomForest, 80/20 split)                | Rahaf
-  [ ] 17. Question pipeline — Rahaf proposed unified /processQuestion endpoint           | Rahaf
-           Replaces separate /predict + /explain scaffolds
-           Classifier routes to: DATA_QUERY / PREDICTION / ANALYSIS / UNCLEAR
-           See Question_Processing_Problem.md for full design
-  [ ] 15. LLM — split into two stages:                                                   | Reem   [scaffold ready in llm.py]
-           Stage 1: POST /ask/query — receive user NL question, extract intent + relevant data summary
-           Stage 2: POST /ask/response — receive SHAP values + prediction, generate plain-English explanation
-           Reem's preference: keep stages separate for easier debugging and testing
-  [ ] 23. Wire Chat.tsx to real pipeline — replace fake setTimeout with real API calls  | Lama   [needs #17 + #15]
-           In sendMessage(): remove mock setTimeout, call /processQuestion with chat_id + question + target_column
-           On response: set message.content = answer, message.xaiData = shap_values, message.suggestions = suggestions
-           For UNCLEAR type: set message.suggestions[] — buttons already render, just populate the field
-           For PREDICTION/ANALYSIS: set message.xaiData — XAI card already renders, just populate the field
-           Also remove the mock test message added to seed data (4-msg-5) after confirming pipeline works
+  [x] 17. Question pipeline — unified /processQuestion endpoint                         | Rahaf ✓
+           Classifier routes to: DATA_QUERY / PREDICTION / ANALYSIS / UNCLEAR / HISTORY_EXPLANATION
+  [x] 15. LLM — GPT-4o-mini formats all responses via _format_answer()                  | Reem ✓
+  [x] 23. Wire Chat.tsx to real pipeline — sendMessage() calls /processQuestion          | Lama ✓
+           SHAP → xaiData, clarifications → suggestions, response_id → backendResponseId
+           Backend persists Q&A to Query/Response tables, returns response_id directly
   [x] 19. XAI results card — prediction badge + animated SHAP bar chart                | Lama
-  [ ] 19b. Wire real SHAP data into XAI card — replace mockXaiData with API response   | Lama   [needs #23]
-  [ ] 20b. Swap loading step labels/timings to match real pipeline stages               | Lama   [needs #23]
-  [ ] 24. Test /auth/parse and /auth/train with a real CSV file end-to-end              | Lama
+  [x] 19b. Wire real SHAP data into XAI card — xaiData built from API shap_values       | Lama ✓
+           XAI card shows for local_single predictions only; SHAP saved to DB explanation column so it restores after logout
+  [ ] 20b. Swap loading step labels/timings to match real pipeline stages               | Lama
+  [x] 24. Test /auth/parse and /auth/train with a real CSV file end-to-end              | done ✓ (stroke dataset)
 
   └────────────────────────────────────────────────────────────┘
 
@@ -121,10 +114,11 @@
   Owner: whole team
 
   [ ] L. Test app on mobile — check all screens are responsive, no broken layouts        | whole team
-  [ ] M. Launch site — deploy frontend + backend to a live URL accessible to public      | whole team
-        Frontend: Vercel (recommended — free, auto-deploys from GitHub)
-        Backend: Railway or Render (recommended — free tier, supports Python/FastAPI)
-        Update VITE_API_URL in frontend .env to point to deployed backend URL
+  [x] M. Launch site — deployed and live                                                 | done ✓
+        Frontend: https://makeen-topaz.vercel.app (Vercel, auto-deploys from GitHub)
+        Backend:  https://makeen-production.up.railway.app (Railway)
+        VITE_API_URL set in Vercel env vars pointing to Railway
+  [ ] M2. Verify latest Railway deploy — local_single prediction, error messages, XAI restore after logout
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -174,4 +168,10 @@
   [x] 8.  Delete single chat — with 8-second undo window
   [x] 9.  Delete all chats — clears DB and sidebar
   [x] 10. 3-chat limit — backend 400 + frontend disabled button + toast
+  [x] CORS fix — allow_credentials=False (wildcard origin + credentials=True is invalid)
+  [x] Railway deploy fix — set Root Directory to backend/, fixed import path in llm.py
+  [x] prediction_mode: None crash — .get() returning None bypassed default; fixed with `or "local_batch"`
+  [x] local_single timeout — LIME num_samples reduced to 200, wrapped in try/except so crash returns partial result
+  [x] Error display — frontend now shows backend detail message instead of generic "Something went wrong"
+  [x] XAI card persistence — SHAP data saved to Response.explanation column in DB; restored after logout/login
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
