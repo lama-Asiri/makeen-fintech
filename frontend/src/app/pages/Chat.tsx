@@ -1210,70 +1210,85 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     }
     if (!overrideContent) setInputValue('');
     setIsProcessing(true);
-    setShouldStopTyping(false); // Reset stop flag for new message
+    setShouldStopTyping(false);
 
-    // Simulate AI processing and response (~8s to let all 4 stages cycle through)
-    // TODO: replace this with the real LLM API call (TODO #15) once Reem builds it
-    processingTimeoutRef.current = setTimeout(() => {
-      const aiContent = activeChat?.fileAttachment
-        ? `Based on your data, I recommend increasing chocolate cake production — it has the highest demand and lowest stock levels.\n\nThe model predicts this product will sell out within 3 days unless restocked.`
-        : 'I can help you with that. Please upload a CSV or Excel file first to analyze the data.';
-
-      // Mock XAI data — replace with real pipeline response (TODO #15)
-      const mockXaiData: XaiData | undefined = activeChat?.fileAttachment ? {
-        prediction: 'High Demand',
-        shapValues: {
-          'Sales Velocity':  0.38,
-          'Stock Level':    -0.27,
-          'Price Point':     0.18,
-          'Seasonality':     0.11,
-          'Region':          0.06,
-        },
-      } : undefined;
-
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: aiContent,
-        timestamp: new Date(),
-        feedback: null,
-        xaiData: mockXaiData,
-      };
-      if (activeChat) {
-        setLatestAiMessageId(aiMessage.id); // Track for typewriter effect
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat.id === activeChatId ? { ...chat, messages: [...chat.messages, aiMessage] } : chat
-          )
-        );
-
-        // Save the user message + AI response to the DB so they persist across sessions.
-        // We save after the AI responds (not before) so we always store a complete Q&A pair.
-        // Changed: now reads the returned responseId and stores it on the assistant message
-        // so the thumbs up/down rating buttons can pass it to /auth/addRating.
-        if (session?.access_token && activeChat.backendId !== undefined) {
-          // Pass xaiData so it's saved as JSON in the explanation column and restored after login
-          saveMessageAPI(session.access_token, activeChat.backendId, userMessage.content, aiContent, aiMessage.xaiData)
-            .then(({ responseId }) => {
-              setChats((prev) =>
-                prev.map((chat) =>
-                  chat.id === activeChatId
-                    ? {
-                        ...chat,
-                        messages: chat.messages.map((msg) =>
-                          msg.id === aiMessage.id ? { ...msg, backendResponseId: responseId } : msg
-                        ),
-                      }
-                    : chat
-                )
-              );
-            })
-            .catch((err) => console.error('[saveMessage] Failed to save to backend:', err));
+    (async () => {
+      try {
+        if (!session?.access_token || activeChat?.backendId === undefined) {
+          throw new Error('No active session or chat');
         }
+
+        const apiUrl = import.meta.env.VITE_API_URL;
+        const res = await fetch(`${apiUrl}/processQuestion`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ chat_id: activeChat.backendId, question: content }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(errText);
+        }
+
+        const data = await res.json();
+
+        // UNCLEAR uses result.answer (clarification prompt); all others use GPT-formatted string
+        const aiContent: string = data.formatted_answer || data.answer || 'No response received.';
+
+        // Build XAI data for single-row predictions only
+        let xaiData: XaiData | undefined;
+        if (data.type === 'PREDICTION' && data.mode === 'local_single' && Array.isArray(data.shap_values)) {
+          const shapMap: Record<string, number> = {};
+          for (const entry of data.shap_values) {
+            shapMap[entry.feature] = entry.shap_value;
+          }
+          xaiData = { prediction: String(data.prediction ?? ''), shapValues: shapMap };
+        }
+
+        const aiMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: aiContent,
+          timestamp: new Date(),
+          feedback: null,
+          xaiData,
+          suggestions: data.type === 'UNCLEAR' ? data.clarifications : undefined,
+          backendResponseId: data.response_id ?? undefined,
+        };
+
+        if (activeChat) {
+          setLatestAiMessageId(aiMessage.id);
+          setChats((prevChats) =>
+            prevChats.map((chat) =>
+              chat.id === activeChatId ? { ...chat, messages: [...chat.messages, aiMessage] } : chat
+            )
+          );
+        }
+      } catch (err) {
+        console.error('[sendMessage] API call failed:', err);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: 'Something went wrong. Please try again.',
+          timestamp: new Date(),
+          feedback: null,
+        };
+        if (activeChat) {
+          setLatestAiMessageId(errorMessage.id);
+          setChats((prevChats) =>
+            prevChats.map((chat) =>
+              chat.id === activeChatId ? { ...chat, messages: [...chat.messages, errorMessage] } : chat
+            )
+          );
+        }
+      } finally {
+        setIsProcessing(false);
+        processingTimeoutRef.current = null;
       }
-      setIsProcessing(false);
-      processingTimeoutRef.current = null;
-    }, 8000);
+    })();
   };
 
   const stopGeneration = () => {

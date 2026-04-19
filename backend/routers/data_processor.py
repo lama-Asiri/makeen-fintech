@@ -1238,7 +1238,29 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
     chat_history_cache[chat_id] = history[-3:]
 
     formatted_answer = await _format_answer(question, result, df)
-    return {**result, "formatted_answer": formatted_answer}
+
+    # Persist the Q&A pair to the DB.
+    # UNCLEAR has no LLM step — its answer is the clarification prompt in result["answer"].
+    # Every other type gets the GPT-formatted string.
+    answer_to_save = result.get("answer", "") if question_type == "UNCLEAR" else formatted_answer
+    response_id: int | None = None
+    try:
+        query_ins = supabase.table("Query").insert({
+            "query_text": question,
+            "CHAT_ID": chat_id,
+        }).execute()
+        query_id = query_ins.data[0]["QUERY_ID"]
+
+        resp_ins = supabase.table("Response").insert({
+            "answer": answer_to_save,
+            "explanation": "",
+            "QUERY_ID": query_id,
+        }).execute()
+        response_id = resp_ins.data[0]["RESPONSE_ID"]
+    except Exception as db_err:
+        print(f"[processQuestion] DB save failed: {db_err}")
+
+    return {**result, "formatted_answer": formatted_answer, "response_id": response_id}
 
 SYSTEM_PROMPT = """
 You are an AI assistant inside a program called Makeen.

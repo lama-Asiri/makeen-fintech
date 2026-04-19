@@ -1190,4 +1190,4 @@ async def test_process_question(body: ProcessQuestionRequest):
     _chat_history_cache[chat_id] = history[-3:]
 
     formatted_answer = await _format_answer(question, result, df)
-    return {**result, "formatted_answer": formatted_answer}
+    return {**result, "formatted_answer": formatted_answer, "response_id": None}
