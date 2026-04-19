@@ -1175,7 +1175,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
             model_cache = trained_models[chat_id]
             processor   = QuestionProcessor(data_cache, model_cache)
 
-        prediction_mode = classification.get("prediction_mode", "local_batch")
+        prediction_mode = classification.get("prediction_mode") or "local_batch"
 
         if prediction_mode == "local_single":
             id_column      = classification.get("id_column")
