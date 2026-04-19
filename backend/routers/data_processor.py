@@ -567,7 +567,7 @@ def explain_lime_local_single(chat_id: int) -> list:
     exp = explainer.explain_instance(
         row_df.iloc[0].values,
         model.predict_proba if task_type == "classification" else model.predict,
-        num_samples=500,
+        num_samples=200,
     )
 
     # 4. Format result
