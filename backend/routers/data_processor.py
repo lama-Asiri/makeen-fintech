@@ -1256,9 +1256,19 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         }).execute()
         query_id = query_ins.data[0]["QUERY_ID"]
 
+        # For local_single predictions, persist the XAI card data so it can be
+        # restored after logout — frontend reads explanation as JSON to rebuild xaiData.
+        explanation_to_save = ""
+        if result.get("type") == "PREDICTION" and result.get("mode") == "local_single":
+            shap_values = result.get("shap_values", [])
+            prediction  = result.get("prediction", "")
+            if shap_values:
+                shap_map = {entry["feature"]: entry["shap_value"] for entry in shap_values}
+                explanation_to_save = json.dumps({"prediction": prediction, "shapValues": shap_map})
+
         resp_ins = supabase.table("Response").insert({
             "answer": answer_to_save,
-            "explanation": "",
+            "explanation": explanation_to_save,
             "QUERY_ID": query_id,
         }).execute()
         response_id = resp_ins.data[0]["RESPONSE_ID"]
