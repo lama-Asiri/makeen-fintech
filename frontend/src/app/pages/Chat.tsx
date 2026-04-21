@@ -440,11 +440,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     }
   }, [entryMode, entryGreetingShown]);
 
-  // Debug: Monitor keyboard shortcuts modal state
-  useEffect(() => {
-    console.log('[DEBUG] showKeyboardShortcuts state changed to:', showKeyboardShortcuts);
-  }, [showKeyboardShortcuts]);
-
   // Get active chat (check pending new chat first)
   const activeChat = pendingNewChat && pendingNewChat.id === activeChatId 
     ? pendingNewChat 
@@ -766,9 +761,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       // Ctrl/⌘ + /: Show keyboard shortcuts (works with / or ?)
       if (cmdOrCtrl && (e.key === '/' || e.key === '?')) {
         e.preventDefault();
-        console.log('[DEBUG] Keyboard shortcut Ctrl+/ pressed');
         setShowKeyboardShortcuts(true);
-        console.log('[DEBUG] setShowKeyboardShortcuts(true) executed from shortcut');
         return;
       }
 
@@ -902,7 +895,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     // CASE: No chat exists yet (first-page state — no pendingNewChat, no activeChat).
     // Create a chat now, await backendId, then proceed with upload.
     if (selectedFile && session?.access_token && backendId === undefined && !pendingNewChat && !activeChat) {
-      console.log('[DEBUG upload] → taking first-page path (no chat exists yet)');
       setUploadStep('loading');
       const newChatId = Date.now().toString();
       const chatNumbers = chats
@@ -3699,7 +3691,6 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             const { error } = await supabase.storage
               .from('user-files')
               .upload(path, blob, { upsert: true, contentType: blob.type });
-            console.log('[AVATAR] storage upload error:', error?.message ?? 'none');
             if (!error) {
               const { data } = supabase.storage.from('user-files').getPublicUrl(path);
               finalAvatarUrl = `${data.publicUrl}?t=${Date.now()}`;
@@ -3739,11 +3730,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           setShowSettingsModal(true);
         }}
         onTermsClick={() => setShowTermsAndPolicies(true)}
-        onKeyboardShortcutsClick={() => {
-          console.log('[DEBUG] onKeyboardShortcutsClick callback called');
-          setShowKeyboardShortcuts(true);
-          console.log('[DEBUG] setShowKeyboardShortcuts(true) executed');
-        }}
+        onKeyboardShortcutsClick={() => setShowKeyboardShortcuts(true)}
         onReportBugClick={() => setShowReportBugModal(true)}
         onHelpCenterClick={() => setShowHelpCenter(true)}
         onLogoutClick={() => setShowLogoutModal(true)}
@@ -3764,10 +3751,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* Keyboard Shortcuts Modal */}
       <KeyboardShortcutsModal
         isOpen={showKeyboardShortcuts}
-        onClose={() => {
-          console.log('[DEBUG] Keyboard shortcuts modal closing');
-          setShowKeyboardShortcuts(false);
-        }}
+        onClose={() => setShowKeyboardShortcuts(false)}
       />
 
       {/* Report Bug Modal */}

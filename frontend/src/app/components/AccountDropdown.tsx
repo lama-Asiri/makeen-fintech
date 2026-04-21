@@ -270,8 +270,6 @@ export function AccountDropdown({
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('[DEBUG] Terms & policies clicked');
-              
               // Close submenu and dropdown first
               setShowHelpSubmenu(false);
               onClose();
@@ -321,15 +319,12 @@ export function AccountDropdown({
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('[DEBUG] Keyboard shortcuts menu item clicked');
-              
               // Close submenu and dropdown first
               setShowHelpSubmenu(false);
               onClose();
-              
+
               // Use requestAnimationFrame to ensure state updates after close
               requestAnimationFrame(() => {
-                console.log('[DEBUG] Opening keyboard shortcuts modal');
                 if (onKeyboardShortcutsClick) {
                   onKeyboardShortcutsClick();
                 }

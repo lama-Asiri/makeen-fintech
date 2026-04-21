@@ -1101,6 +1101,8 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
 
     if not question:
         raise HTTPException(status_code=400, detail="Question cannot be empty")
+    if len(question) > 500:
+        raise HTTPException(status_code=400, detail="Question is too long. Please keep it under 500 characters.")
 
     # 1. verify chat belongs to this user
     try:

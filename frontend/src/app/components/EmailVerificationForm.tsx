@@ -47,7 +47,6 @@ export function EmailVerificationForm({ onBack, onVerify, email }: EmailVerifica
     setIsLoading(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log('Verifying code:', otp);
     setIsLoading(false);
     
     // Navigate to Reset Password immediately

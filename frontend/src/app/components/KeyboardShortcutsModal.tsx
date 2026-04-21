@@ -9,11 +9,6 @@ interface KeyboardShortcutsModalProps {
 export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
 
-  // Debug: Log when modal renders with isOpen prop
-  useEffect(() => {
-    console.log('[DEBUG] KeyboardShortcutsModal rendered with isOpen:', isOpen);
-  }, [isOpen]);
-
   // Detect platform for correct modifier key display
   const isMac = useMemo(() => {
     return typeof navigator !== 'undefined' && navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -33,12 +28,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
     { action: 'Stop generating', keys: 'Esc' },
   ], [mod]);
 
-  if (!isOpen) {
-    console.log('[DEBUG] KeyboardShortcutsModal not rendering (isOpen is false)');
-    return null;
-  }
-
-  console.log('[DEBUG] KeyboardShortcutsModal rendering modal UI');
+  if (!isOpen) return null;
 
   return (
     <>

@@ -20,16 +20,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const recoveryInProgress = useRef(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(() => {
     const recovery = initialHash.includes('type=recovery');
-    console.log('[AUTH] Init — initialHash:', initialHash, '| isRecoveryMode:', recovery);
     return recovery;
   });
 
   useEffect(() => {
     const recovery = initialHash.includes('type=recovery');
-    console.log('[AUTH] useEffect — initialHash recovery check:', recovery);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[AUTH] getSession —', session ? `user: ${session.user.email}` : 'no session', '| skipping setUser:', recovery);
       if (!recovery) {
         setSession(session);
         setUser(session?.user ?? null);
@@ -38,15 +35,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[AUTH] onAuthStateChange — event:', event, '| user:', session?.user?.email ?? 'none');
       if (event === 'PASSWORD_RECOVERY') {
-        console.log('[AUTH] PASSWORD_RECOVERY detected — setting recoveryMode=true');
         recoveryInProgress.current = true;
         setIsRecoveryMode(true);
         return;
       }
       if (recoveryInProgress.current && (event === 'INITIAL_SESSION' || event === 'USER_UPDATED')) {
-        console.log('[AUTH] Ignoring', event, 'during recovery');
         if (event === 'USER_UPDATED') {
           recoveryInProgress.current = false;
           setIsRecoveryMode(false);

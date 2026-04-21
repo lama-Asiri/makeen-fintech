@@ -42,18 +42,11 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
     const params = new URLSearchParams(hash.replace('#', ''));
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
-    console.log('[RESET] hash present:', !!hash, '| accessToken:', !!accessToken, '| refreshToken:', !!refreshToken);
-
     if (accessToken && refreshToken) {
-      const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-      console.log('[RESET] setSession error:', sessionError?.message ?? 'none');
+      await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
     }
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    console.log('[RESET] session before updateUser:', sessionData.session ? sessionData.session.user.email : 'NO SESSION');
-
     const { error } = await supabase.auth.updateUser({ password: data.password });
-    console.log('[RESET] updateUser error:', error?.message ?? 'none');
 
     if (error) {
       setErrorMessage(error.message);

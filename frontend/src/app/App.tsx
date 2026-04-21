@@ -23,14 +23,11 @@ function MainApp() {
 
   // Restore session on refresh, but not during password recovery
   useEffect(() => {
-    console.log('[APP] useEffect — loading:', loading, '| user:', user?.email ?? 'null', '| isRecoveryMode:', isRecoveryMode, '| currentScreen:', currentScreen);
     if (isRecoveryMode) {
-      console.log('[APP] Recovery mode active — navigating to resetPassword');
       setCurrentScreen('resetPassword');
       return;
     }
     if (!loading && user) {
-      console.log('[APP] User logged in — navigating to chat');
       setCurrentScreen('chat');
     }
   }, [loading, user, isRecoveryMode]);

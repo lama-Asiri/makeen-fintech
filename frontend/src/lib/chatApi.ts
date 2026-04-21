@@ -104,18 +104,6 @@ export async function getMessagesAPI(token: string, chatId: number): Promise<Bac
   return data.messages as BackendMessage[];
 }
 
-// Save the user's chosen target column to the File table in the DB.
-// Called after the user confirms their column selection in the upload modal step 2.
-// Needed so the column is restored after logout (localStorage is cleared on logout).
-export async function updateFileColumnAPI(token: string, chatId: number, targetColumn: string): Promise<void> {
-  const res = await fetch(`${BASE}/auth/updateFileColumn`, {
-    method: 'PATCH',
-    headers: authHeaders(token),
-    body: JSON.stringify({ chat_id: chatId, target_column: targetColumn }),
-  });
-  if (!res.ok) throw new Error(await res.text());
-}
-
 // Rename a chat in the DB — called when the user confirms a rename in the sidebar.
 export async function renameChatAPI(token: string, chatId: number, newTitle: string): Promise<void> {
   const res = await fetch(`${BASE}/auth/renameChat`, {
