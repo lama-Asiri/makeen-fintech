@@ -23,7 +23,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, updateFileColumnAPI } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI } from '@/lib/chatApi';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -179,6 +179,7 @@ interface Message {
   xaiData?: XaiData; // populated by real pipeline; mock data used until #15 is wired
   backendResponseId?: number; // RESPONSE_ID from DB — stored after saveMessageAPI so /auth/addRating can reference it
   suggestions?: string[]; // populated when backend returns UNCLEAR — shown as clickable buttons
+  stopped?: boolean; // true when user hit Stop mid-stream
 }
 
 interface FileAttachment {
@@ -387,7 +388,6 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [sampleSuggestedQuestions, setSampleSuggestedQuestions] = useState<string[]>([]);
   // Upload modal step: 'file' = drop zone, 'loading' = uploading
   const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [processingStage, setProcessingStage] = useState(0);
   const [isDictating, setIsDictating] = useState(false);
   const [sendPulse, setSendPulse] = useState(false);
@@ -416,6 +416,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [showChatHistoryBanner, setShowChatHistoryBanner] = useState(!loadChatHistoryFromLocalStorage());
   const [highlightSaveChatHistory, setHighlightSaveChatHistory] = useState(false);
   const [latestAiMessageId, setLatestAiMessageId] = useState<string | null>(null);
+  const [streamedMessageIds, setStreamedMessageIds] = useState<Set<string>>(new Set());
   const [isTyping, setIsTyping] = useState(false);
   const [shouldStopTyping, setShouldStopTyping] = useState(false);
   const userCardRef = useRef<HTMLButtonElement>(null);
@@ -423,7 +424,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const regeneratingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -518,6 +519,12 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   useEffect(() => {
     saveToLocalStorage(chats, activeChatId);
   }, [chats, activeChatId]);
+
+  // Clear streamed message IDs when switching chats — they're only needed to suppress
+  // TypewriterText re-animation and are irrelevant once the chat is out of view.
+  useEffect(() => {
+    setStreamedMessageIds(new Set());
+  }, [activeChatId]);
 
   // When the user switches to a chat, load its messages from the DB.
   // This ensures messages persist across page refreshes and different devices.
@@ -634,7 +641,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [activeChat?.messages, isProcessing, isRegenerating]);
+  }, [activeChat?.messages, isProcessing, isProcessing]);
 
   // Toast auto-hide is now handled by the Toast component itself
 
@@ -665,7 +672,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       if (isTyping && !alwaysAllowedShortcuts) {
         // Still handle Escape for stopping generation
         if (e.key === 'Escape') {
-          if (isProcessing || isRegenerating || isTyping) {
+          if (isProcessing || isTyping) {
             e.preventDefault();
             stopGeneration();
             setToastMessage('Stopped generating');
@@ -678,7 +685,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       if (e.key === 'Escape') {
         e.preventDefault();
         // Priority 1: Stop generation if streaming
-        if (isProcessing || isRegenerating || isTyping) {
+        if (isProcessing || isTyping) {
           stopGeneration();
           setToastMessage('Stopped generating');
           return;
@@ -830,7 +837,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     };
   }, [
     isProcessing,
-    isRegenerating,
+    isProcessing,
     showKeyboardShortcuts,
     showSettingsModal,
     showTermsModal,
@@ -1133,7 +1140,9 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
-  const sendMessage = (overrideContent?: string) => {
+  // skipUserMessage: true when called from handleConfirmEdit — the edited user
+  // message is already in the chat, so we skip adding it again.
+  const sendMessage = (overrideContent?: string, options?: { skipUserMessage?: boolean }) => {
     const content = overrideContent ?? inputValue;
     if (content.trim() === '' || isProcessing) return;
     if (content.trim().length > 500) {
@@ -1141,21 +1150,22 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       return;
     }
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: content,
-      timestamp: new Date(),
-    };
-
-    if (activeChat) {
-      setChats((prevChats) =>
-        prevChats.map((chat) =>
-          chat.id === activeChatId ? { ...chat, messages: [...chat.messages, userMessage], lastUsedAt: new Date() } : chat
-        )
-      );
+    if (!options?.skipUserMessage) {
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        role: 'user',
+        content: content,
+        timestamp: new Date(),
+      };
+      if (activeChat) {
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat.id === activeChatId ? { ...chat, messages: [...chat.messages, userMessage], lastUsedAt: new Date() } : chat
+          )
+        );
+      }
+      if (!overrideContent) setInputValue('');
     }
-    if (!overrideContent) setInputValue('');
     setIsProcessing(true);
     setShouldStopTyping(false);
 
@@ -1163,12 +1173,16 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       // Capture the active chat ID now — it won't change during the stream
       const chatId = activeChatId;
 
+      let aiMessageId: string | null = null;
+
       try {
         if (!session?.access_token || activeChat?.backendId === undefined) {
           throw new Error('No active session or chat');
         }
 
         const apiUrl = import.meta.env.VITE_API_URL;
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         const res = await fetch(`${apiUrl}/processQuestion`, {
           method: 'POST',
           headers: {
@@ -1176,6 +1190,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ chat_id: activeChat.backendId, question: content }),
+          signal: controller.signal,
         });
 
         // Non-2xx response: parse the FastAPI detail message and show it in chat
@@ -1193,7 +1208,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
         // ── Create an empty placeholder message right away ───────────────────
         // The user sees the message bubble appear immediately while tokens stream in.
-        const aiMessageId = (Date.now() + 1).toString();
+        aiMessageId = (Date.now() + 1).toString();
         const placeholder: Message = {
           id: aiMessageId,
           role: 'assistant',
@@ -1242,6 +1257,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             } else if (event.event === 'token') {
               // Append the incoming word to the placeholder message content
               const token = event.content as string;
+              // Mark as streamed so TypewriterText is skipped after streaming ends
+              if (aiMessageId) setStreamedMessageIds((prev) => new Set(prev).add(aiMessageId!));
               setChats((prev) =>
                 prev.map((c) =>
                   c.id === chatId
@@ -1301,8 +1318,21 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         }
 
       } catch (err) {
+        // Abort is intentional (user clicked Stop) — mark the partial message as stopped
+        if (err instanceof Error && err.name === 'AbortError') {
+          if (aiMessageId) {
+            const stoppedId = aiMessageId;
+            setChats((prev) =>
+              prev.map((c) =>
+                c.id === chatId
+                  ? { ...c, messages: c.messages.map((m) => m.id === stoppedId ? { ...m, stopped: true } : m) }
+                  : c
+              )
+            );
+          }
+          return;
+        }
         console.error('[sendMessage] API call failed:', err);
-        // Show the error as a chat message (content is the backend detail or generic fallback)
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
@@ -1319,6 +1349,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           );
         }
       } finally {
+        abortControllerRef.current = null;
         setIsProcessing(false);
         processingTimeoutRef.current = null;
       }
@@ -1326,22 +1357,19 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   };
 
   const stopGeneration = () => {
-    // Clear processing timeout
+    // Cancel the in-flight network request
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
+    // Clear any processing timeout
     if (processingTimeoutRef.current) {
       clearTimeout(processingTimeoutRef.current);
       processingTimeoutRef.current = null;
-      setIsProcessing(false);
     }
-    // Clear regenerating timeout
-    if (regeneratingTimeoutRef.current) {
-      clearTimeout(regeneratingTimeoutRef.current);
-      regeneratingTimeoutRef.current = null;
-      setIsRegenerating(false);
-    }
+    setIsProcessing(false);
     // Stop typewriter effect
     if (isTyping) {
       setShouldStopTyping(true);
-      setTimeout(() => setShouldStopTyping(false), 100); // Reset after a brief moment
+      setTimeout(() => setShouldStopTyping(false), 100);
     }
   };
 
@@ -1492,57 +1520,25 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const handleRetryMessage = (messageId: string) => {
     if (!activeChat) return;
 
-    // Cancel any active streaming/processing
-    setIsProcessing(false);
-    setIsRegenerating(false);
-
-    // Find the assistant message to regenerate
+    // Find the assistant message to retry
     const messageIndex = activeChat.messages.findIndex((msg) => msg.id === messageId);
-    if (messageIndex >= 0) {
-      // Find the previous user message
-      const previousUserMessage = messageIndex > 0 ? activeChat.messages[messageIndex - 1] : null;
-      if (previousUserMessage && previousUserMessage.role === 'user') {
-        // Truncate all messages after (and including) the target assistant message
-        // This is ChatGPT-like behavior - remove everything after this point
-        const truncatedMessages = activeChat.messages.slice(0, messageIndex);
-        
-        // Update chat with truncated messages (UI reflects immediately)
-        setChats((prevChats) =>
-          prevChats.map((chat) => {
-            if (chat.id === activeChatId) {
-              return {
-                ...chat,
-                messages: truncatedMessages,
-              };
-            }
-            return chat;
-          })
-        );
+    if (messageIndex < 0) return;
 
-        // Now regenerate the response
-        setIsRegenerating(true);
-        setShouldStopTyping(false); // Reset stop flag for new message
-        regeneratingTimeoutRef.current = setTimeout(() => {
-          const aiMessage: Message = {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: activeChat?.fileAttachment
-              ? `Increase chocolate cake production because it's selling the fastest and running out the most often.\n\nBased on Column A (showing high demand), Column B (showing low production cost), it's recommended to increase chocolate cake production.`
-              : 'I can help you with that. Please upload a CSV or Excel file first to analyze the data.',
-            timestamp: new Date(),
-            feedback: null,
-          };
-          setLatestAiMessageId(aiMessage.id); // Track for typewriter effect
-          setChats((prevChats) =>
-            prevChats.map((chat) =>
-              chat.id === activeChatId ? { ...chat, messages: [...chat.messages, aiMessage], lastUsedAt: new Date() } : chat
-            )
-          );
-          setIsRegenerating(false);
-          regeneratingTimeoutRef.current = null;
-        }, 2000);
-      }
-    }
+    // The user message that triggered this AI response is the one before it
+    const previousUserMessage = messageIndex > 0 ? activeChat.messages[messageIndex - 1] : null;
+    if (!previousUserMessage || previousUserMessage.role !== 'user') return;
+
+    // Remove the old AI response (and everything after it) so the real pipeline
+    // can append a fresh one via sendMessage
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === activeChatId ? { ...chat, messages: activeChat.messages.slice(0, messageIndex) } : chat
+      )
+    );
+
+    // Re-send the same user question through the real streaming pipeline.
+    // skipUserMessage: true — the user bubble is already in the truncated messages above.
+    sendMessage(previousUserMessage.content, { skipUserMessage: true });
   };
 
   const handleDeleteChat = (chat: Chat) => {
@@ -1964,63 +1960,13 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
     setEditMessageValue('');
     setToastMessage('Message updated');
 
-    // Start regeneration if the edited message wasn't the last message
+    // If the edited message wasn't the last one, re-run it through the real pipeline.
+    // skipUserMessage: true because the edited user bubble is already in updatedMessages.
     if (messageIndex < activeChat.messages.length - 1) {
-      setIsRegenerating(true);
-      setShouldStopTyping(false); // Reset stop flag for new message
-
-      // Simulate regeneration delay
-      regeneratingTimeoutRef.current = setTimeout(() => {
-        // Generate new assistant response based on the edited message
-        const newAssistantMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: generateResponseBasedOnMessage(editMessageValue, activeChat.fileAttachment),
-          timestamp: new Date(),
-          feedback: null,
-        };
-
-        // Add the regenerated message
-        setLatestAiMessageId(newAssistantMessage.id); // Track for typewriter effect
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat.id === activeChatId
-              ? {
-                  ...chat,
-                  messages: [...updatedMessages, newAssistantMessage],
-                  lastUsedAt: new Date(),
-                }
-              : chat
-          )
-        );
-
-        setIsRegenerating(false);
-        regeneratingTimeoutRef.current = null;
-      }, 1500);
+      sendMessage(editMessageValue, { skipUserMessage: true });
     }
   };
 
-  // Generate a demo response based on message content
-  const generateResponseBasedOnMessage = (userMessage: string, fileAttachment: FileAttachment | null): string => {
-    const lowerMsg = userMessage.toLowerCase();
-    
-    // If no file is attached, prompt for upload
-    if (!fileAttachment) {
-      return 'I can help you with that. Please upload a CSV or Excel file first so I can analyze the data and provide specific insights.';
-    }
-    
-    if (lowerMsg.includes('forecast') || lowerMsg.includes('predict')) {
-      return `Based on the uploaded data, I've analyzed the trends and patterns. Here are the key forecasting insights:\n\n1. **Growth Trajectory**: The data shows a consistent upward trend with seasonal variations.\n2. **Key Metrics**: Peak performance is observed during specific periods.\n3. **Recommendations**: Consider adjusting resource allocation based on these patterns.\n\nWould you like me to dive deeper into any specific aspect?`;
-    } else if (lowerMsg.includes('production') || lowerMsg.includes('manufacturing')) {
-      return `After analyzing the production data, here are my recommendations:\n\n1. **Efficiency Opportunities**: Several optimization points were identified in the workflow.\n2. **Resource Allocation**: Current distribution can be improved for better output.\n3. **Cost Analysis**: Potential savings identified in material usage.\n\nShall I provide a detailed breakdown of any particular area?`;
-    } else if (lowerMsg.includes('sales') || lowerMsg.includes('revenue')) {
-      return `I've examined the sales data and here's what stands out:\n\n1. **Top Performers**: Identified products/categories with highest revenue.\n2. **Growth Areas**: Emerging opportunities for expansion.\n3. **Action Items**: Strategic recommendations to maximize sales potential.\n\nLet me know if you'd like more detailed analytics on specific segments.`;
-    } else if (lowerMsg.includes('analyze') || lowerMsg.includes('analysis')) {
-      return `I've completed the analysis of your data. Here are the key findings:\n\n1. **Data Quality**: The dataset is comprehensive with ${Math.floor(Math.random() * 500) + 100} relevant records.\n2. **Main Insights**: Several significant patterns and correlations identified.\n3. **Next Steps**: Recommendations for actionable strategies based on the findings.\n\nWhat specific aspect would you like to explore further?`;
-    } else {
-      return `Thank you for your question. Based on the data you've provided:\n\n1. I've processed the information and identified key patterns.\n2. The analysis reveals several important insights relevant to your query.\n3. I can provide more detailed breakdowns of specific areas if needed.\n\nFeel free to ask for clarification or deeper analysis on any particular point.`;
-    }
-  };
 
   return (
     <>
@@ -2657,16 +2603,16 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             {/* Edit */}
                             <button
                               onClick={() => {
-                                if (!isRegenerating) {
+                                if (!isProcessing) {
                                   setEditingMessageId(message.id);
                                   setEditMessageValue(message.content);
                                 }
                               }}
                               className={`p-[4px] rounded-[6px] transition-colors ${
-                                isRegenerating ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#333] cursor-pointer'
+                                isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#333] cursor-pointer'
                               }`}
-                              title={isRegenerating ? 'Cannot edit while regenerating' : 'Edit'}
-                              disabled={isRegenerating}
+                              title={isProcessing ? 'Cannot edit while regenerating' : 'Edit'}
+                              disabled={isProcessing}
                             >
                               <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 18 18" stroke="#B0B0B0" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l-1.261-1.261a2.5 2.5 0 00-3.536 0l-9.5 9.5a1 1 0 00-.293.707V16.5h3.067a1 1 0 00.707-.293l9.5-9.5a2.5 2.5 0 000-3.536z" />
@@ -2685,15 +2631,24 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#fffcfe] whitespace-pre-line"
                           style={{ fontVariationSettings: "'wdth' 100" }}
                         >
-                          <TypewriterText
-                            text={message.content}
-                            messageId={message.id}
-                            isLatest={message.id === latestAiMessageId}
-                            onTypingStart={() => setIsTyping(true)}
-                            onTypingComplete={() => setIsTyping(false)}
-                            shouldStop={shouldStopTyping}
-                          />
+                          {streamedMessageIds.has(message.id) ? (
+                            // Message was delivered via SSE streaming — content appeared
+                            // progressively so TypewriterText would just re-animate it.
+                            message.content
+                          ) : (
+                            <TypewriterText
+                              text={message.content}
+                              messageId={message.id}
+                              isLatest={message.id === latestAiMessageId}
+                              onTypingStart={() => setIsTyping(true)}
+                              onTypingComplete={() => setIsTyping(false)}
+                              shouldStop={shouldStopTyping}
+                            />
+                          )}
                         </p>
+                        {message.stopped && (
+                          <p className="mt-[6px] text-[12px] text-[#888] italic">Generation stopped</p>
+                        )}
                       </div>
 
                       {/* UNCLEAR suggestions — shown when backend couldn't classify the question */}
@@ -2984,7 +2939,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
               {/* Regenerating Indicator */}
               <AnimatePresence>
-              {isRegenerating && (
+              {isProcessing && (
                 <motion.div 
                   className="mb-[24px] flex flex-col items-start"
                   initial={{ opacity: 0, y: 20 }}
@@ -3146,12 +3101,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && !isProcessing && !isRegenerating) {
+                        if (e.key === 'Enter' && !e.shiftKey && !isProcessing && !isProcessing) {
                           e.preventDefault();
                           sendMessage();
                         }
                       }}
-                      disabled={isProcessing || isRegenerating}
+                      disabled={isProcessing}
                     />
                     
                     {/* Bottom Section: Fixed Control Bar */}
@@ -3173,13 +3128,13 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       </button>
                       <button
                         className={`bg-[#7760bd] rounded-[8px] px-[28px] py-[12px] transition-all cursor-pointer ${
-                          isProcessing || isRegenerating || isTyping
+                          isProcessing || isTyping
                             ? 'hover:bg-[#8870cd]'
                             : 'hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105'
                         }`}
-                        onClick={(isProcessing || isRegenerating || isTyping) ? stopGeneration : () => sendMessage()}
+                        onClick={(isProcessing || isTyping) ? stopGeneration : () => sendMessage()}
                       >
-                        {(isProcessing || isRegenerating || isTyping) ? (
+                        {(isProcessing || isTyping) ? (
                           /* Stop Icon - White Square */
                           <svg className="w-[16px] h-[16px]" viewBox="0 0 16 16" fill="none">
                             <rect x="2" y="2" width="12" height="12" rx="2" fill="white" />

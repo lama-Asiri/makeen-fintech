@@ -5,11 +5,6 @@ import os
 import io
 import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
-from lime.lime_tabular import LimeTabularExplainer
-
-#for test LIME endpoint
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.preprocessing import LabelEncoder
 
 router = APIRouter(prefix="/auth")
 
