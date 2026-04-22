@@ -95,8 +95,12 @@
 
   [x] F. Google OAuth — wired via Supabase. Apple stays "Coming Soon"                  | Lama
   [x] G. Rating table — UNIQUE constraint on RESPONSE_ID added in Supabase             | Lama
-  [ ] H. Settings Personalization tab — all options locked, decide what to activate    | Lama
-  [ ] I. AuthLayout stat boxes — confirm numbers are realistic, not placeholders        | whole team
+  [x] H. Settings Personalization tab — all options intentionally locked as "Coming Soon"| Lama
+           Decision: pipeline is fixed (GPT prompt, SHAP/LIME settings hardcoded in backend).
+           Activating UI preferences that silently do nothing would be misleading UX.
+           Light theme, accent colours, tone/length/depth all require backend or theming work.
+  [x] I. AuthLayout stat boxes — confirmed realistic, no changes needed                 | whole team
+           Boxes show "SHAP + LIME / XAI Methods" and "24/7 / Availability" — both factual.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

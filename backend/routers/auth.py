@@ -6,6 +6,8 @@ import io
 import pandas as pd
 from core.supabase_client import supabase, SUPABASE_SERVICE_KEY
 
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://makeen-topaz.vercel.app")
+
 router = APIRouter(prefix="/auth")
 
 # holds cleaned data after /parse runs
@@ -90,11 +92,14 @@ def _get_user_id(authorization: str | None) -> str:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Unauthorized")
     token = authorization.split(" ")[1]
+    # Reset to service role before get_user — guards against a prior request leaving
+    # the shared postgrest client in user-token context under concurrent load.
+    supabase.postgrest.auth(SUPABASE_SERVICE_KEY)
     try:
         user = supabase.auth.get_user(token)
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid token")
-    # Reset PostgREST to service role — get_user() may switch auth context to user token
+    # Reset again after get_user() — the SDK may flip auth context to the user token.
     supabase.postgrest.auth(SUPABASE_SERVICE_KEY)
     return str(user.user.id)
 
@@ -131,7 +136,7 @@ async def forgot_password(body: ForgotPasswordRequest):
     try:
         supabase.auth.reset_password_email(
             body.email,
-            options={"redirect_to": "http://localhost:5173"}
+            options={"redirect_to": FRONTEND_URL}
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

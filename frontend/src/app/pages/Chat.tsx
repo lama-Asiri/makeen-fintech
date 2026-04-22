@@ -637,7 +637,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [activeChat?.messages, isProcessing, isProcessing]);
+  }, [activeChat?.messages, isProcessing]);
 
   // Toast auto-hide is now handled by the Toast component itself
 
