@@ -3094,14 +3094,25 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && !isProcessing && !isProcessing) {
+                        if (e.key === 'Enter' && !e.shiftKey && !isProcessing) {
                           e.preventDefault();
                           sendMessage();
                         }
                       }}
                       disabled={isProcessing}
                     />
-                    
+
+                    {/* Character counter — only visible when user has typed something */}
+                    {inputValue.length > 0 && (
+                      <p className={`text-right text-[11px] font-['Inter:Regular',sans-serif] transition-colors ${
+                        inputValue.length > 450
+                          ? inputValue.length >= 500 ? 'text-red-400' : 'text-yellow-400'
+                          : 'text-[#666]'
+                      }`}>
+                        {inputValue.length} / 500
+                      </p>
+                    )}
+
                     {/* Bottom Section: Fixed Control Bar */}
                     <div className="flex gap-[12px] items-center justify-end relative z-10">
                       {/* Dictate Button */}
@@ -3219,6 +3230,24 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
                 Undo
               </p>
+            </button>
+            <button
+              onClick={() => {
+                if (!pendingDelete) return;
+                clearTimeout(pendingDelete.timer);
+                setShowDeleteToast(false);
+                if (session?.access_token && pendingDelete.chat.backendId !== undefined) {
+                  deleteChatAPI(session.access_token, pendingDelete.chat.backendId)
+                    .catch((err) => console.error('[deleteChat] Backend delete failed:', err));
+                }
+                setPendingDelete(null);
+              }}
+              className="text-[#999] hover:text-white transition-colors cursor-pointer p-[2px]"
+              aria-label="Dismiss"
+            >
+              <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
         </div>
