@@ -1043,6 +1043,15 @@ def _build_llm_user_message(question: str, result: dict, df) -> str:
             ", ".join(f"{k}: {v}" for k, v in row.items())
             for row in df.head(5).to_dict(orient="records")
         )
+
+    # Truncate large per-row lists before sending to GPT — a dataset with thousands
+    # of rows produces enormous SHAP/results arrays that blow past token limits.
+    # GPT only needs a representative sample to explain patterns, not every row.
+    MAX_ROWS = 20
+    raw_result = result.get("raw_result", "")
+    if isinstance(raw_result, str) and len(raw_result) > 2000:
+        raw_result = raw_result[:2000] + "\n... (truncated)"
+
     context_block = {
         "result_type":    result.get("type", ""),
         "prediction_mode": result.get("mode", "") if result.get("type") == "PREDICTION" else "",
@@ -1051,13 +1060,13 @@ def _build_llm_user_message(question: str, result: dict, df) -> str:
         "target_class":   result.get("target_class", ""),
         "prediction":     str(result.get("prediction", "")),
         "confidence":     float(result.get("confidence") or 0.0),
-        "raw_result":     result.get("raw_result", ""),
+        "raw_result":     raw_result,
         "summary":        result.get("summary", {}),
         "predicted_as":   result.get("predicted_as", {}),
-        "shap_values":    result.get("shap_values", []),
-        "lime_values":    result.get("lime_values", []),
-        "shap_aggregate": result.get("shap_aggregate", []),
-        "results":        result.get("results", []),
+        "shap_values":    (result.get("shap_values") or [])[:MAX_ROWS],
+        "lime_values":    (result.get("lime_values") or [])[:MAX_ROWS],
+        "shap_aggregate": (result.get("shap_aggregate") or [])[:MAX_ROWS],
+        "results":        (result.get("results") or [])[:MAX_ROWS],
     }
     return f"""User question:\n{question}\n\nResult type:\n{result.get("type","")}\n\nContext:\n{json.dumps(context_block, indent=2)}\n\nDataset summary:\n{data_summary}\n\nSample data:\n{sample_text}"""
 
