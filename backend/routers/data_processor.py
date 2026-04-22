@@ -708,7 +708,7 @@ target_column rules:
 """
 
 class QuestionClassifier:
-    def classify(self, question: str, df_context: dict, recent_history: list[dict] | None = None) -> dict:
+    async def classify(self, question: str, df_context: dict, recent_history: list[dict] | None = None) -> dict:
         columns_str = ", ".join(df_context["columns"])
         target_str  = df_context["target_column"]
         sample_str  = "\n".join(
@@ -740,7 +740,7 @@ class QuestionClassifier:
         )
 
         try:
-            response = openai_client.chat.completions.create(
+            response = await openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": CLASSIFIER_SYSTEM_PROMPT},
@@ -822,7 +822,7 @@ class QuestionProcessor:
         self.model_cache = model_cache
 
     # ── Handler 1: DATA_QUERY ─────────────────────────────────────────────────
-    def handle_data_query(self, question: str, df: pd.DataFrame, df_context: dict) -> dict:
+    async def handle_data_query(self, question: str, df: pd.DataFrame, df_context: dict) -> dict:
         columns_str = ", ".join(df_context["columns"])
         sample_str  = "\n".join(
             "  " + ", ".join(f"{k}: {v}" for k, v in row.items())
@@ -836,7 +836,7 @@ class QuestionProcessor:
             question=question,
         )
         try:
-            code_resp = openai_client.chat.completions.create(
+            code_resp = await openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": code_prompt}],
                 max_tokens=150,
@@ -962,7 +962,7 @@ class QuestionProcessor:
         }
 
     # ── Handler 4: HISTORY_EXPLANATION ───────────────────────────────────────
-    def handle_history_explanation(self, question: str, chat_id: int, history_mode: str) -> dict:
+    async def handle_history_explanation(self, question: str, chat_id: int, history_mode: str) -> dict:
         if history_mode == "last":
             history = chat_history_cache.get(chat_id, [])
         else:  # "full" — specific reference, load everything from DB
@@ -1007,7 +1007,7 @@ class QuestionProcessor:
         messages.append({"role": "user", "content": question})
 
         try:
-            response = openai_client.chat.completions.create(
+            response = await openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages,
                 max_tokens=300,
@@ -1162,14 +1162,14 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
 
     # 5. classify the question — pass recent history so it can detect follow-ups accurately
     classifier     = QuestionClassifier()
-    classification = classifier.classify(question, df_context, chat_history_cache.get(chat_id, []))
+    classification = await classifier.classify(question, df_context, chat_history_cache.get(chat_id, []))
     question_type  = classification["type"]
 
     # 6. route to the right handler
     processor = QuestionProcessor(data_cache, model_cache)
 
     if question_type == "HISTORY_EXPLANATION":
-        result = processor.handle_history_explanation(
+        result = await processor.handle_history_explanation(
             question,
             chat_id,
             classification.get("history_mode") or "last",
@@ -1179,7 +1179,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         result = processor.handle_unclear(classification["clarifications"], classification.get("unclear_answer"))
 
     elif question_type == "DATA_QUERY":
-        result = processor.handle_data_query(question, df, df_context)
+        result = await processor.handle_data_query(question, df, df_context)
 
     elif question_type == "PREDICTION":
         inferred_target = classification.get("target_column")
@@ -1496,8 +1496,8 @@ Execution rules:
 
 Output only the final explanation.
 """
-def get_llm_response(system_prompt: str, user_message: str) -> str:
-    response = openai_client.chat.completions.create(
+async def get_llm_response(system_prompt: str, user_message: str) -> str:
+    response = await openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
@@ -1580,4 +1580,4 @@ Sample data:
 {sample_text}
 """
 
-    return get_llm_response(SYSTEM_PROMPT, user_message)
+    return await get_llm_response(SYSTEM_PROMPT, user_message)

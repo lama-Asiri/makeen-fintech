@@ -363,6 +363,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [activeChatId, setActiveChatId] = useState<string | null>(initialState.activeChatId);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(
     initialState.chats.length === 0 || initialState.activeChatId === null
   );
@@ -1159,6 +1160,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
       if (!overrideContent) setInputValue('');
     }
     setIsProcessing(true);
+    setIsRegenerating(!!options?.skipUserMessage);
     setShouldStopTyping(false);
 
     (async () => {
@@ -2751,9 +2753,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           </button>
                         </Tooltip>
 
-                        {/* Retry/Regenerate Button - Only show for last assistant message */}
-                        {(() => {
-                          // Find the last assistant message index
+                        {/* Retry/Regenerate Button - Only show for last assistant message, not while processing */}
+                        {!isProcessing && (() => {
                           const lastAssistantIndex = activeChat.messages.map((m, i) => ({ m, i })).reverse().find(({ m }) => m.role === 'assistant')?.i;
                           return lastAssistantIndex === index;
                         })() && (
@@ -2857,9 +2858,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 </motion.div>
               ))}
 
-              {/* Processing Indicator */}
+              {/* Processing Indicator — only for new messages, not regeneration */}
               <AnimatePresence>
-              {isProcessing && (() => {
+              {isProcessing && !isRegenerating && (() => {
                 const stages = [
                   { label: 'Understanding your question', icon: 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
                   { label: 'Analysing your data',         icon: 'M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2h-2' },
@@ -2929,9 +2930,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               })()}
               </AnimatePresence>
 
-              {/* Regenerating Indicator */}
+              {/* Regenerating Indicator — only shown when regenerating, not for new messages */}
               <AnimatePresence>
-              {isProcessing && (
+              {isProcessing && isRegenerating && (
                 <motion.div 
                   className="mb-[24px] flex flex-col items-start"
                   initial={{ opacity: 0, y: 20 }}
