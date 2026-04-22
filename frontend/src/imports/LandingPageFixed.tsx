@@ -648,8 +648,8 @@ function TeamSection() {
   const team = [
     { name: "Lama Asiri", role: "Full Stack Developer", description: "Manages both frontend and backend, ensuring seamless integration and a smooth user experience.", image: imgEllipse1700, linkedin: "https://www.linkedin.com/in/lamak2asiri" },
     { name: "Shahad Alsomali", role: "Frontend Developer", description: "Designs the user interface and experience, ensuring the platform is intuitive and visually appealing.", image: imgEllipse1701, linkedin: "https://www.linkedin.com/in/shahad-w-alsomali-11509b247" },
-    { name: "Reem Alhijris", role: "AI/ML Engineer", description: "Develops and optimizes AI models, ensures explainability, and handles the core machine learning logic.", image: imgEllipse1702, linkedin: "https://www.linkedin.com/in/reem-alhijris" },
-    { name: "Rahaf AlMalki", role: "Backend Developer", description: "Ensures the models run correctly, handles data processing, and keeps the backend stable and functional.", image: imgEllipse1703, linkedin: "https://www.linkedin.com/in/rahafalmalkics" }
+    { name: "Reem Alhijris", role: "Backend Developer", description: "Ensures the models run correctly, handles data processing, and keeps the backend stable and functional.", image: imgEllipse1702, linkedin: "https://www.linkedin.com/in/reem-alhijris" },
+    { name: "Rahaf AlMalki", role: "AI/ML Engineer", description: "Develops and optimizes AI models, ensures explainability, and handles the core machine learning logic.", image: imgEllipse1703, linkedin: "https://www.linkedin.com/in/rahafalmalkics" }
   ];
 
   return (
