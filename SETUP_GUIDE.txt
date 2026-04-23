@@ -1,22 +1,40 @@
 MAKEEN — SETUP GUIDE
 ====================
-Run this once on your machine to get the project working locally.
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LIVE DEPLOYMENT — NO SETUP REQUIRED TO USE THE APP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The application is fully deployed and accessible online.
+No installation is required to use it.
+
+  Frontend (app):   https://makeen-topaz.vercel.app
+  Backend (API):    https://makeen-production.up.railway.app
+  API Docs:         https://makeen-production.up.railway.app/docs
+  Supabase:         https://supabase.com/dashboard
+
+The steps below are only needed if you want to run the project
+locally for development or to execute the test suite.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOCAL DEVELOPMENT SETUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
 STEP 1 — INSTALL REQUIRED SOFTWARE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────────────
 
 Install these if you don't have them already:
 
-  [ ] Python 3.11+         https://www.python.org/downloads/
+  [ ] Python 3.11+          https://www.python.org/downloads/
       - During install: check "Add Python to PATH"
 
-  [ ] Node.js 18+          https://nodejs.org/
+  [ ] Node.js 18+           https://nodejs.org/
       - Download the LTS version
 
-  [ ] Git                  https://git-scm.com/downloads
-      - Needed to clone and push code
+  [ ] Git                   https://git-scm.com/downloads
 
   [ ] VS Code (recommended) https://code.visualstudio.com/
 
@@ -27,17 +45,15 @@ To verify everything is installed, open a terminal and run:
   git --version
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 2 — CLONE THE PROJECT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+──────────────────────────
 
   git clone https://github.com/lama-Asiri/Makeen.git
   cd Makeen
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 3 — BACKEND SETUP (Python / FastAPI)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+─────────────────────────────────────────
 
 Open a terminal inside the backend/ folder:
 
@@ -50,11 +66,11 @@ Open a terminal inside the backend/ folder:
   Windows:   venv\Scripts\activate
   Mac/Linux: source venv/bin/activate
 
-  # Install dependencies
+  # Install all dependencies (FastAPI, ML libraries, test tools)
   pip install -r requirements.txt
 
-  # Install the AI/ML libraries (needed for the XAI pipeline) - still not done for most of us
-  pip install pandas openpyxl scikit-learn shap openai
+  NOTE: shap and scikit-learn contain compiled C extensions.
+  Installation may take 1–3 minutes — this is normal.
 
 
 --- BACKEND .env FILE ---
@@ -63,28 +79,31 @@ Create a file called  backend/.env  and fill in the values below.
 Ask Lama for the actual keys — do NOT share them publicly.
 
   SUPABASE_URL=https://your-project.supabase.co
-  SUPABASE_KEY=your-service-role-key
+  SUPABASE_SERVICE_KEY=your-service-role-key
   OPENAI_API_KEY=your-openai-api-key
+  FRONTEND_URL=https://makeen-topaz.vercel.app
+
+  Where to find each value:
+    SUPABASE_URL         → Supabase dashboard → Project Settings → API → Project URL
+    SUPABASE_SERVICE_KEY → Supabase dashboard → Project Settings → API → service_role secret
+    OPENAI_API_KEY       → platform.openai.com → API keys
+    FRONTEND_URL         → use https://makeen-topaz.vercel.app (deployed frontend)
 
 
---- RUN THE BACKEND ---
+--- RUN THE BACKEND LOCALLY ---
 
-  # Make sure venv is activated, then:
   uvicorn app:app --reload
 
-  Backend will be running at: http://localhost:8000
-  API docs available at:      http://localhost:8000/docs
+  Local backend will be running at: http://localhost:8000
+  API docs available at:            http://localhost:8000/docs
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 4 — FRONTEND SETUP (React / Vite)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+───────────────────────────────────────
 
 Open a NEW terminal inside the frontend/ folder:
 
   cd frontend
-
-  # Install dependencies
   npm install
 
 
@@ -92,21 +111,29 @@ Open a NEW terminal inside the frontend/ folder:
 
 Create a file called  frontend/.env  and fill in the values below:
 
-  VITE_API_URL=http://localhost:8000
   VITE_SUPABASE_URL=https://your-project.supabase.co
   VITE_SUPABASE_ANON_KEY=your-anon-key
+  VITE_API_URL=https://makeen-production.up.railway.app
+
+  Where to find each value:
+    VITE_SUPABASE_URL      → Supabase dashboard → Project Settings → API → Project URL
+    VITE_SUPABASE_ANON_KEY → Supabase dashboard → Project Settings → API → anon public key
+    VITE_API_URL           → https://makeen-production.up.railway.app (deployed backend)
+                             or http://localhost:8000 if running backend locally
+
+  IMPORTANT: Only variables prefixed with VITE_ are visible in the browser.
+  Never put the service_role key or any secret in the frontend .env.
 
 
---- RUN THE FRONTEND ---
+--- RUN THE FRONTEND LOCALLY ---
 
   npm run dev
 
-  Frontend will be running at: http://localhost:5173
+  Local frontend will be running at: http://localhost:5173
 
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STEP 5 — RUNNING THE FULL PROJECT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 5 — RUNNING THE FULL PROJECT LOCALLY
+──────────────────────────────────────────
 
 You need TWO terminals open at the same time:
 
@@ -123,11 +150,78 @@ Then open your browser at: http://localhost:5173
 
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RUNNING THE TEST SUITE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The project has 148 automated tests split across backend and frontend.
+Tests run fully offline — no API keys or internet connection required.
+
+
+--- BACKEND TESTS (85 tests) ---
+
+  The backend tests use pytest. Because pytest is installed globally
+  (not inside the venv), use python -m pytest instead of pytest directly.
+
+  cd backend
+  python -m pytest
+
+  To see each test name:
+    python -m pytest -v
+
+  To run a specific file:
+    python -m pytest tests/unit/test_data_processing.py -v
+    python -m pytest tests/integration/test_auth_endpoints.py -v
+
+  Expected result: 85 passed, 0 failed
+
+
+--- FRONTEND TESTS (63 tests) ---
+
+  cd frontend
+  npm test
+
+  To run in watch mode (re-runs on file save, useful while developing):
+    npm run test:watch
+
+  Expected result: 63 passed across 5 files, 0 failed
+
+
+--- TEST FOLDER STRUCTURE ---
+
+  backend/tests/
+  ├── conftest.py                        # Shared fixtures (mocked Supabase + OpenAI)
+  ├── unit/
+  │   ├── test_data_processing.py        # _clean_dataframe — 18 tests
+  │   ├── test_ml_pipeline.py            # _run_train — 11 tests
+  │   ├── test_classifier.py             # QuestionClassifier — 9 tests
+  │   └── test_llm_message.py            # _build_llm_user_message — 11 tests
+  └── integration/
+      ├── test_auth_endpoints.py         # /auth/* endpoints — 29 tests
+      └── test_process_question.py       # /processQuestion — 7 tests
+
+  frontend/src/__tests__/
+  ├── setup.ts                           # Vitest global setup
+  ├── unit/
+  │   ├── chatApi.test.ts                # API wrapper functions — 19 tests
+  │   └── utils.test.ts                  # cn() utility — 7 tests
+  └── components/
+      ├── Toast.test.tsx                 # Toast component — 8 tests
+      ├── FeedbackModal.test.tsx         # FeedbackModal component — 16 tests
+      └── LoginForm.test.tsx             # LoginForm component — 13 tests
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 COMMON ERRORS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  "ModuleNotFoundError"
+  "ModuleNotFoundError: No module named 'shap'"
+  → Run: pip install shap scikit-learn lime
+
+  "ModuleNotFoundError" for anything else
   → venv is not activated. Run: venv\Scripts\activate
+
+  "pytest is not recognized"
+  → Use python -m pytest instead
 
   "python is not recognized"
   → Python was not added to PATH during install. Reinstall and check the box.
@@ -135,45 +229,53 @@ COMMON ERRORS
   "npm is not recognized"
   → Node.js is not installed. Download from nodejs.org
 
+  "Cannot find module 'vitest/config'"
+  → Run: npm install   (inside the frontend/ folder)
+
   "CORS error" in browser
-  → Backend is not running. Start it in Terminal 1.
+  → Backend is not running, or VITE_API_URL points to the wrong address.
 
   "Invalid API key"
-  → .env file is missing or has wrong values. Check with Lama.
+  → backend/.env is missing or has wrong values. Check with Lama.
 
-  "Cannot find module" in frontend
-  → Run npm install again inside the frontend/ folder.
+  SUPABASE_URL or SUPABASE_SERVICE_KEY is None
+  → The key must be named SUPABASE_SERVICE_KEY (not SUPABASE_KEY).
+
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 MISSING FILES — must be shared manually by Lama
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 These files are blocked by .gitignore and will NOT come from GitHub.
-You must receive them directly from Lama (WhatsApp/Discord — never email or GitHub).
+You must receive them directly from Lama.
 
   backend/.env
   ├── SUPABASE_URL
   ├── SUPABASE_SERVICE_KEY
-  ├── DATABASE_URL
-  └── OPENAI_API_KEY            ← added once team picks LLM provider
+  ├── OPENAI_API_KEY
+  └── FRONTEND_URL
 
   frontend/.env
   ├── VITE_SUPABASE_URL
   ├── VITE_SUPABASE_ANON_KEY
-  └── VITE_API_URL=http://localhost:8000
+  └── VITE_API_URL
 
   Supabase access
   └── Ask Reem to invite you from: Supabase dashboard → Settings → Team
       Without this you cannot see the tables, storage buckets, or logs.
 
 
-
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 QUICK REFERENCE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Frontend         http://localhost:5173
-  Backend          http://localhost:8000
-  API Docs         http://localhost:8000/docs
+  Live Frontend    https://makeen-topaz.vercel.app
+  Live Backend     https://makeen-production.up.railway.app
+  API Docs         https://makeen-production.up.railway.app/docs
   Supabase         https://supabase.com/dashboard
+
+  Local Frontend   http://localhost:5173
+  Local Backend    http://localhost:8000
+
+  Run backend tests:   python -m pytest -v        (inside backend/)
+  Run frontend tests:  npm test                   (inside frontend/)
