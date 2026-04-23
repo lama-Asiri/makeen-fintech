@@ -9,3 +9,7 @@ openai
 scikit-learn
 shap
 lime
+pytest
+pytest-asyncio
+httpx
+pytest-mock

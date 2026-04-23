@@ -65,7 +65,7 @@ def _run_train(chat_id: int, target_column: str) -> dict:
 
     # 2. encode categorical features in X
     encoders = {}
-    for col in X.select_dtypes(include=["object"]).columns:
+    for col in X.select_dtypes(include=["object", "str"]).columns:
         n_unique = X[col].nunique()
         if n_unique == 2:
             le = LabelEncoder()

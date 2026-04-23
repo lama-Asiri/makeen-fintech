@@ -528,10 +528,10 @@ def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, l
     df = df.drop_duplicates(keep='first')
     df = df.dropna(axis=1, thresh=len(df) * 0.4)
 
-    for col in df.select_dtypes(include=['object']).columns:
+    for col in df.select_dtypes(include=['object', 'str']).columns:
         df[col] = df[col].astype(str).str.strip()
 
-    for col in df.select_dtypes(include=['object']).columns:
+    for col in df.select_dtypes(include=['object', 'str']).columns:
         if col in id_columns:
             continue
         try:
@@ -546,10 +546,10 @@ def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, l
             continue
         if df[col].isnull().any():
             if pd.api.types.is_numeric_dtype(df[col]):
-                df[col].fillna(df[col].median(), inplace=True)
+                df[col] = df[col].fillna(df[col].median())
             else:
                 mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
-                df[col].fillna(mode_val, inplace=True)
+                df[col] = df[col].fillna(mode_val)
 
     return df, id_columns
 
