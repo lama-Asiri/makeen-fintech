@@ -140,7 +140,7 @@ VITE_API_URL=https://makeen-production.up.railway.app
 |------|------|
 | Lama Asiri | Full-Stack & Project Lead |
 | Reem Alhijris | Backend Developer |
-| Rahaf AlMalki | AI/ML Engineer |
+| Rahaf Almalki | AI/ML Engineer |
 | Shahad Alsomali | UI/UX Designer |
 
 ---
