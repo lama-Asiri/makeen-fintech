@@ -2548,9 +2548,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <>
                           <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] overflow-x-hidden">
                             <p
-                              className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-white"
-                              style={{ 
+                              className="font-['Roboto:Regular',sans-serif] leading-[1.6] text-white"
+                              style={{
                                 fontVariationSettings: "'wdth' 100",
+                                fontSize: 'var(--chat-font-size)',
                                 whiteSpace: 'pre-wrap',
                                 overflowWrap: 'anywhere',
                                 wordBreak: 'break-word'
@@ -2622,8 +2623,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <div className="flex flex-col items-start">
                       <div className="max-w-[700px]">
                         <p
-                          className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#fffcfe] whitespace-pre-line"
-                          style={{ fontVariationSettings: "'wdth' 100" }}
+                          className="font-['Roboto:Regular',sans-serif] leading-[1.6] text-[#fffcfe] whitespace-pre-line"
+                          style={{ fontVariationSettings: "'wdth' 100", fontSize: 'var(--chat-font-size)' }}
                         >
                           {streamedMessageIds.has(message.id) ? (
                             // Message was delivered via SSE streaming — content appeared

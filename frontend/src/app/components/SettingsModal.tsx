@@ -39,6 +39,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
   const [analysisDepth, setAnalysisDepth] = useState('Balanced');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [language, setLanguage] = useState('English');
+  const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(
+    () => (localStorage.getItem('fontSizePreference') as 'small' | 'medium' | 'large') || 'medium'
+  );
+
+  const applyFontSize = (size: 'small' | 'medium' | 'large') => {
+    setFontSize(size);
+    localStorage.setItem('fontSizePreference', size);
+    document.documentElement.setAttribute('data-font-size', size);
+  };
   
   // Security section navigation state
   const [securityView, setSecurityView] = useState<'overview' | 'changePassword'>('overview');
@@ -750,6 +759,29 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             {/* Personalization Tab Content */}
             {activeTab === 'personalization' && (
               <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
+
+                {/* 0) Font Size */}
+                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[4px]" style={{ fontVariationSettings: "'wdth' 100" }}>Font Size</p>
+                  <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mb-[16px]">Controls the size of message text across the chat.</p>
+                  <div className="flex gap-[10px]">
+                    {(['small', 'medium', 'large'] as const).map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => applyFontSize(size)}
+                        className={`flex-1 py-[10px] rounded-[8px] border transition-all cursor-pointer flex flex-col items-center gap-[6px] ${
+                          fontSize === size
+                            ? 'bg-[#7760bd]/20 border-[#7760bd] text-white'
+                            : 'bg-transparent border-white/10 text-[#999] hover:border-white/30 hover:text-white'
+                        }`}
+                      >
+                        <span style={{ fontSize: size === 'small' ? '12px' : size === 'medium' ? '15px' : '19px' }}>Aa</span>
+                        <span className="text-[11px] capitalize font-['Roboto:Medium',sans-serif]">{size}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* 1) Theme / Appearance */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                   <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Theme / Appearance</p>

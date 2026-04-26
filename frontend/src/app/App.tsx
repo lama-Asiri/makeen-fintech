@@ -21,6 +21,12 @@ function MainApp() {
   const [userEmail] = useState<string>('');
   const [entryMode, setEntryMode] = useState<'login' | 'signup' | null>(null);
 
+  // Apply saved font size preference on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('fontSizePreference') || 'medium';
+    document.documentElement.setAttribute('data-font-size', saved);
+  }, []);
+
   // Restore session on refresh, but not during password recovery
   useEffect(() => {
     if (isRecoveryMode) {

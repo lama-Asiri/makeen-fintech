@@ -2,6 +2,33 @@
 @import './tailwind.css';
 @import './theme.css';
 
+/* ── Font size CSS variables ─────────────────────────────────────────────────
+   Default (medium). Overridden by data-font-size attribute set in App.tsx.
+   --chat-font-size : AI/user message body text
+   --ui-font-size   : sidebar, labels, secondary UI text
+   ─────────────────────────────────────────────────────────────────────────── */
+html {
+  --chat-font-size: 16px;
+  --ui-font-size:   14px;
+}
+
+html[data-font-size="small"] {
+  --chat-font-size: 13px;
+  --ui-font-size:   12px;
+}
+
+html[data-font-size="large"] {
+  --chat-font-size: 19px;
+  --ui-font-size:   16px;
+}
+
+/* Responsive scale — shrinks slightly on smaller screens */
+@media (max-width: 768px) {
+  html                        { --chat-font-size: 14px; --ui-font-size: 12px; }
+  html[data-font-size="small"]{ --chat-font-size: 12px; --ui-font-size: 11px; }
+  html[data-font-size="large"]{ --chat-font-size: 17px; --ui-font-size: 14px; }
+}
+
 /* Hide scrollbar while keeping scroll behaviour */
 .scrollbar-hide {
   -ms-overflow-style: none;
