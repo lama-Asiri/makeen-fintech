@@ -511,6 +511,9 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
             // otherwise fall back to DB File join (source of truth after logout).
             fileAttachment: local?.fileAttachment ?? (bc.File ? { name: bc.File.name, type: bc.File.filetype as 'csv' | 'xlsx' } : null),
             targetColumn: local?.targetColumn ?? bc.File?.target_column ?? undefined,
+            datasetInfo: local?.datasetInfo,
+            trainingMetrics: local?.trainingMetrics,
+            rawFeatureDefaults: local?.rawFeatureDefaults,
             isPersisted: true,
           };
         });
