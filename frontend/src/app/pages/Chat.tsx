@@ -166,6 +166,7 @@ interface ChatPageProps {
 
 interface XaiData {
   prediction: string;
+  confidence?: number | null;
   shapValues: Record<string, number>; // feature → SHAP value (positive = pushes toward prediction)
 }
 
@@ -414,6 +415,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [whatIfResult, setWhatIfResult] = useState<{ prediction: string; confidence: number | null; shapValues: Record<string, number> } | null>(null);
   const [isWhatIfLoading, setIsWhatIfLoading] = useState(false);
   const [whatIfError, setWhatIfError] = useState<string | null>(null);
+  const [whatIfOriginalPrediction, setWhatIfOriginalPrediction] = useState<{ prediction: string; confidence: number | null } | null>(null);
   const [sendPulse, setSendPulse] = useState(false);
   const [feedbackModalMessageId, setFeedbackModalMessageId] = useState<string | null>(null);
   const feedbackWasSubmittedRef = useRef(false); // true when modal closed via Submit, false when closed via X
@@ -1323,7 +1325,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               if (metadata.type === 'PREDICTION' && metadata.mode === 'local_single' && Array.isArray(shapValues) && shapValues.length > 0) {
                 const shapMap: Record<string, number> = {};
                 for (const entry of shapValues) shapMap[entry.feature] = entry.shap_value;
-                xaiData = { prediction: String(metadata.prediction ?? ''), shapValues: shapMap };
+                xaiData = { prediction: String(metadata.prediction ?? ''), confidence: metadata.confidence as number | null, shapValues: shapMap };
               }
 
               // Extract training metrics if backend trained a new model this request
@@ -2818,7 +2820,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           transition={{ duration: 0.4, delay: 0.3, ease: 'easeOut' }}
                         >
                           {/* Header */}
-                          <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between">
+                          <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between gap-[8px] flex-wrap">
                             <div className="flex items-center gap-[8px]">
                               <svg className="w-[16px] h-[16px] text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
@@ -2826,11 +2828,20 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               </svg>
                               <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">XAI Explanation</p>
                             </div>
-                            {/* Prediction badge */}
-                            <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px]">
-                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[11px] text-[#7760bd]">
-                                {message.xaiData.prediction}
-                              </p>
+                            <div className="flex items-center gap-[6px] flex-wrap justify-end">
+                              {message.xaiData.confidence !== null && message.xaiData.confidence !== undefined && message.xaiData.confidence < 60 && (
+                                <div className="flex items-center gap-[4px] bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-full px-[8px] py-[2px]">
+                                  <svg className="w-[10px] h-[10px] text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                  </svg>
+                                  <p className="text-[10px] text-[#f59e0b]">Low confidence — treat with caution</p>
+                                </div>
+                              )}
+                              <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px]">
+                                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[11px] text-[#7760bd]">
+                                  {message.xaiData.prediction}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
@@ -2846,7 +2857,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   const pct = (Math.abs(value) / maxAbs) * 100;
                                   const positive = value >= 0;
                                   return (
-                                    <div key={feature} className="flex items-center gap-[10px] mb-[8px] last:mb-0">
+                                    <div key={feature} title={`${feature} ${positive ? 'pushed toward' : 'pushed against'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] mb-[8px] last:mb-0 cursor-default">
                                       <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
                                       <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                         <motion.div
@@ -2876,6 +2887,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             {activeChat.rawFeatureDefaults && (
                               <button
                                 onClick={() => {
+                                  const lastXaiMsg = activeChat.messages.slice().reverse().find((m) => m.xaiData);
+                                  setWhatIfOriginalPrediction(lastXaiMsg?.xaiData
+                                    ? { prediction: lastXaiMsg.xaiData.prediction, confidence: lastXaiMsg.xaiData.confidence ?? null }
+                                    : null);
                                   setWhatIfValues({ ...activeChat.rawFeatureDefaults! });
                                   setWhatIfResult(null);
                                   setWhatIfError(null);
@@ -3991,20 +4006,38 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             {/* Result Panel */}
             {whatIfResult && (
               <div className="mx-[24px] mb-[12px] bg-[#1a1a1a] rounded-[10px] border border-[#3a3a3a] p-[16px]">
-                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Simulation Result</p>
-                <div className="flex gap-[20px] mb-[14px] flex-wrap">
-                  <div className="flex flex-col gap-[4px]">
-                    <p className="text-[11px] text-[#666]">Prediction</p>
-                    <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[12px] py-[4px] inline-block">
-                      <p className="font-semibold text-[13px] text-[#7760bd]">{whatIfResult.prediction}</p>
-                    </div>
-                  </div>
-                  {whatIfResult.confidence !== null && (
-                    <div className="flex flex-col gap-[4px]">
-                      <p className="text-[11px] text-[#666]">Confidence</p>
-                      <p className="font-semibold text-[20px] text-white">{whatIfResult.confidence.toFixed(1)}%</p>
+                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Counterfactual Result</p>
+                <div className="flex gap-[12px] mb-[14px]">
+                  {/* Before */}
+                  {whatIfOriginalPrediction && (
+                    <div className="flex-1 bg-[#252525] border border-[#3a3a3a] rounded-[8px] p-[10px]">
+                      <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[6px]">Before</p>
+                      <div className="bg-[#3a3a3a]/60 border border-[#555]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
+                        <p className="font-semibold text-[12px] text-[#999]">{whatIfOriginalPrediction.prediction}</p>
+                      </div>
+                      {whatIfOriginalPrediction.confidence !== null && (
+                        <p className="text-[11px] text-[#555]">{whatIfOriginalPrediction.confidence.toFixed(1)}%</p>
+                      )}
                     </div>
                   )}
+                  {/* Arrow */}
+                  {whatIfOriginalPrediction && (
+                    <div className="flex items-center text-[#555]">
+                      <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </div>
+                  )}
+                  {/* After */}
+                  <div className="flex-1 bg-[#252525] border border-[#7760bd]/30 rounded-[8px] p-[10px]">
+                    <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[6px]">{whatIfOriginalPrediction ? 'After' : 'Prediction'}</p>
+                    <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
+                      <p className="font-semibold text-[12px] text-[#7760bd]">{whatIfResult.prediction}</p>
+                    </div>
+                    {whatIfResult.confidence !== null && (
+                      <p className="text-[11px] text-[#9e9e9e]">{whatIfResult.confidence.toFixed(1)}%</p>
+                    )}
+                  </div>
                 </div>
                 <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[8px]">Key Drivers</p>
                 {(() => {
