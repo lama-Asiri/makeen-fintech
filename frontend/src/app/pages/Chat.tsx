@@ -546,11 +546,19 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           // AI response (Response is an array from the join)
           const response = Array.isArray(q.Response) ? q.Response[0] : q.Response;
           if (response) {
-            // Restore xaiData from the explanation field (saved as JSON string when the message was first created)
-            // Restore backendResponseId so thumbs up/down ratings work after login
+            // Restore xaiData / suggestions from the explanation field (saved as JSON on first create).
+            // Restore backendResponseId so thumbs up/down ratings work after login.
             let xaiData: XaiData | undefined;
+            let suggestions: string[] | undefined;
             try {
-              if (response.explanation) xaiData = JSON.parse(response.explanation);
+              if (response.explanation) {
+                const parsed = JSON.parse(response.explanation);
+                if (Array.isArray(parsed.clarifications)) {
+                  suggestions = parsed.clarifications;
+                } else {
+                  xaiData = parsed;
+                }
+              }
             } catch {
               xaiData = undefined;
             }
@@ -560,6 +568,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               content: response.answer,
               timestamp: new Date(response.created_at),
               xaiData,
+              suggestions,
               backendResponseId: response.RESPONSE_ID,
             });
           }
@@ -2462,8 +2471,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           </div>
         )}
 
-        {/* Chat Interface (shown when file is uploaded) */}
-        {!showUploadModal && activeChat?.fileAttachment && (
+        {/* Chat Interface (shown when file is uploaded, or when messages already exist) */}
+        {!showUploadModal && activeChat && (activeChat.fileAttachment || activeChat.messages.length > 0) && (
           <div className="h-full flex flex-col p-[16px] md:p-[40px]">
             {/* File bar — max width capped, right-aligned, shrinks on small screens */}
             <div className="mb-[24px] flex justify-end">
@@ -2548,10 +2557,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <>
                           <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] overflow-x-hidden">
                             <p
-                              className="font-['Roboto:Regular',sans-serif] leading-[1.6] text-white"
+                              className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-white"
                               style={{
                                 fontVariationSettings: "'wdth' 100",
-                                fontSize: 'var(--chat-font-size)',
                                 whiteSpace: 'pre-wrap',
                                 overflowWrap: 'anywhere',
                                 wordBreak: 'break-word'
@@ -2623,8 +2631,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <div className="flex flex-col items-start">
                       <div className="max-w-[700px]">
                         <p
-                          className="font-['Roboto:Regular',sans-serif] leading-[1.6] text-[#fffcfe] whitespace-pre-line"
-                          style={{ fontVariationSettings: "'wdth' 100", fontSize: 'var(--chat-font-size)' }}
+                          className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#fffcfe] whitespace-pre-line"
+                          style={{ fontVariationSettings: "'wdth' 100" }}
                         >
                           {streamedMessageIds.has(message.id) ? (
                             // Message was delivered via SSE streaming — content appeared
@@ -2656,7 +2664,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                 setInputValue('');
                                 sendMessage(suggestion);
                               }}
-                              className="text-left px-[16px] py-[10px] rounded-[10px] border border-[#7760bd]/40 text-[14px] text-[#ccc] hover:bg-[#7760bd]/15 hover:border-[#7760bd]/70 hover:text-white transition-all"
+                              className="text-left px-[16px] py-[10px] rounded-[10px] border border-[#7760bd]/40 text-[#ccc] hover:bg-[#7760bd]/15 hover:border-[#7760bd]/70 hover:text-white transition-all"
+                              style={{ fontSize: 'var(--ui-font-size)' }}
                             >
                               {suggestion}
                             </button>

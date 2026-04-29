@@ -1277,10 +1277,13 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         # prompt or history summary). Just save to DB and send done immediately.
         if question_type in ("UNCLEAR", "HISTORY_EXPLANATION"):
             answer_text = result.get("answer", "")
+            clarifications = result.get("clarifications") or []
+            # Persist clarifications in the explanation field so they survive a page reload
+            explanation_json = json.dumps({"clarifications": clarifications}) if clarifications else ""
             response_id = None
             try:
                 q = supabase.table("Query").insert({"query_text": question, "CHAT_ID": chat_id}).execute()
-                r = supabase.table("Response").insert({"answer": answer_text, "explanation": "", "QUERY_ID": q.data[0]["QUERY_ID"]}).execute()
+                r = supabase.table("Response").insert({"answer": answer_text, "explanation": explanation_json, "QUERY_ID": q.data[0]["QUERY_ID"]}).execute()
                 response_id = r.data[0]["RESPONSE_ID"]
             except Exception as db_err:
                 print(f"[processQuestion] DB save failed: {db_err}")

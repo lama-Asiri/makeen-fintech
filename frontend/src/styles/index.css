@@ -2,32 +2,13 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* ── Font size CSS variables ─────────────────────────────────────────────────
-   Default (medium). Overridden by data-font-size attribute set in App.tsx.
-   --chat-font-size : AI/user message body text
-   --ui-font-size   : sidebar, labels, secondary UI text
+/* ── Font size scaling via CSS zoom ──────────────────────────────────────────
+   zoom on #root scales EVERYTHING proportionally — all text, icons, spacing,
+   modals, sidebar, dropdowns — without touching individual elements.
+   Controlled by data-font-size attribute set in App.tsx from localStorage.
    ─────────────────────────────────────────────────────────────────────────── */
-html {
-  --chat-font-size: 16px;
-  --ui-font-size:   14px;
-}
-
-html[data-font-size="small"] {
-  --chat-font-size: 13px;
-  --ui-font-size:   12px;
-}
-
-html[data-font-size="large"] {
-  --chat-font-size: 19px;
-  --ui-font-size:   16px;
-}
-
-/* Responsive scale — shrinks slightly on smaller screens */
-@media (max-width: 768px) {
-  html                        { --chat-font-size: 14px; --ui-font-size: 12px; }
-  html[data-font-size="small"]{ --chat-font-size: 12px; --ui-font-size: 11px; }
-  html[data-font-size="large"]{ --chat-font-size: 17px; --ui-font-size: 14px; }
-}
+html[data-font-size="small"] #root { zoom: 0.85; }
+html[data-font-size="large"] #root { zoom: 1.15; }
 
 /* Hide scrollbar while keeping scroll behaviour */
 .scrollbar-hide {
