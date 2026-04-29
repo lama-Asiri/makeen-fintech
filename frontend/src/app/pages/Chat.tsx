@@ -23,7 +23,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI } from '@/lib/chatApi';
 
 // Typewriter effect component for AI responses
 function TypewriterText({ 
@@ -169,6 +169,19 @@ interface XaiData {
   shapValues: Record<string, number>; // feature → SHAP value (positive = pushes toward prediction)
 }
 
+interface DatasetInfo {
+  rows: number;
+  columns: string[];
+  idColumns: string[];
+}
+
+interface TrainingMetrics {
+  taskType: 'classification' | 'regression';
+  metricKey: 'accuracy' | 'r2_score';
+  metricValue: number;
+  topFeatures: { name: string; importance: number }[];
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -200,6 +213,9 @@ interface Chat {
   shareId?: string;
   isPersisted?: boolean; // Track if chat should be saved to localStorage
   backendId?: number;   // CHAT_ID returned by the backend DB — used for delete/rename API calls
+  datasetInfo?: DatasetInfo;
+  trainingMetrics?: TrainingMetrics;
+  rawFeatureDefaults?: Record<string, string | number>;
 }
 
 const MAX_CHATS = 3; // Backend enforces this limit — matches POST /auth/addChat constraint
@@ -391,6 +407,11 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
   const [processingStage, setProcessingStage] = useState(0);
   const [isDictating, setIsDictating] = useState(false);
+  const [showWhatIfModal, setShowWhatIfModal] = useState(false);
+  const [whatIfValues, setWhatIfValues] = useState<Record<string, string | number>>({});
+  const [whatIfResult, setWhatIfResult] = useState<{ prediction: string; confidence: number | null; shapValues: Record<string, number> } | null>(null);
+  const [isWhatIfLoading, setIsWhatIfLoading] = useState(false);
+  const [whatIfError, setWhatIfError] = useState<string | null>(null);
   const [sendPulse, setSendPulse] = useState(false);
   const [feedbackModalMessageId, setFeedbackModalMessageId] = useState<string | null>(null);
   const feedbackWasSubmittedRef = useRef(false); // true when modal closed via Submit, false when closed via X
@@ -605,8 +626,18 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     const chat = chats.find((c) => c.id === activeChatId);
     if (!chat?.backendId || !selectedFile || !session?.access_token) return;
     waitingForBackendIdRef.current = false;
-    uploadFileAPI(session.access_token, selectedFile, chat.backendId)
-      .then(() => {
+    const delayedBackendId = chat.backendId;
+    const delayedChatId = chat.id;
+    uploadFileAPI(session.access_token, selectedFile, delayedBackendId)
+      .then(async () => {
+        try {
+          const parseResult = await parseFileAPI(session.access_token!, delayedBackendId);
+          setChats((prev) => prev.map((c) =>
+            c.id === delayedChatId
+              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
+              : c
+          ));
+        } catch (e) { console.warn('[parse] skipped:', e); }
         setUploadStep('file');
         setSelectedFile(null);
         setShowUploadModal(false);
@@ -949,7 +980,15 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     if (selectedFile && backendId !== undefined && session?.access_token) {
       setUploadStep('loading');
       uploadFileAPI(session.access_token, selectedFile, backendId)
-        .then(() => {
+        .then(async () => {
+          try {
+            const parseResult = await parseFileAPI(session.access_token!, backendId!);
+            setChats((prev) => prev.map((c) =>
+              c.id === activeChatId
+                ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
+                : c
+            ));
+          } catch (e) { console.warn('[parse] skipped:', e); }
           setUploadStep('file');
           setSelectedFile(null);
           setShowUploadModal(false);
@@ -1282,6 +1321,18 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                 xaiData = { prediction: String(metadata.prediction ?? ''), shapValues: shapMap };
               }
 
+              // Extract training metrics if backend trained a new model this request
+              const tm = metadata.training_metrics as { task_type: string; metric_key: string; metric_value: number; top_features: { name: string; importance: number }[] } | null | undefined;
+              const newTrainingMetrics: TrainingMetrics | undefined = tm ? {
+                taskType:    tm.task_type as 'classification' | 'regression',
+                metricKey:   tm.metric_key as 'accuracy' | 'r2_score',
+                metricValue: tm.metric_value,
+                topFeatures: tm.top_features,
+              } : undefined;
+
+              // Extract raw feature defaults for What-If modal pre-filling
+              const rawDefaults = metadata.raw_feature_defaults as Record<string, string | number> | null | undefined;
+
               // For UNCLEAR, the content comes from metadata.answer (no tokens were streamed)
               const isUnclear = metadata.type === 'UNCLEAR' || metadata.type === 'HISTORY_EXPLANATION';
 
@@ -1290,6 +1341,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                   c.id === chatId
                     ? {
                         ...c,
+                        ...(newTrainingMetrics ? { trainingMetrics: newTrainingMetrics } : {}),
+                        ...(rawDefaults ? { rawFeatureDefaults: rawDefaults } : {}),
                         messages: c.messages.map((m) =>
                           m.id === aiMessageId
                             ? {
@@ -2474,8 +2527,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         {/* Chat Interface (shown when file is uploaded, or when messages already exist) */}
         {!showUploadModal && activeChat && (activeChat.fileAttachment || activeChat.messages.length > 0) && (
           <div className="h-full flex flex-col p-[16px] md:p-[40px]">
-            {/* File bar — max width capped, right-aligned, shrinks on small screens */}
-            <div className="mb-[24px] flex justify-end">
+            {/* File bar — only shown when file info is available */}
+            {activeChat.fileAttachment && <div className="mb-[24px] flex justify-end">
             <div className="w-full max-w-[480px] bg-[#333] border border-[#555] rounded-[8px] px-[16px] py-[12px] flex items-center gap-[12px] shadow-lg">
               {/* File icon + name — clicking opens file preview */}
               <button
@@ -2496,8 +2549,105 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               </button>
 
             </div>
-            </div>
+            </div>}
 
+
+            {/* Dataset Overview Card */}
+            {activeChat.datasetInfo && (
+              <motion.div
+                className="mb-[24px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
+                <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center gap-[8px]">
+                  <svg className="w-[15px] h-[15px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
+                  </svg>
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">Dataset Overview</p>
+                </div>
+                <div className="px-[20px] py-[14px] flex gap-[28px]">
+                  <div className="flex flex-col gap-[2px]">
+                    <p className="text-[10px] text-[#666] uppercase tracking-wide">Rows</p>
+                    <p className="text-[20px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p>
+                  </div>
+                  <div className="flex flex-col gap-[2px]">
+                    <p className="text-[10px] text-[#666] uppercase tracking-wide">Columns</p>
+                    <p className="text-[20px] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p>
+                  </div>
+                </div>
+                <div className="px-[20px] pb-[14px]">
+                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[8px]">Features</p>
+                  <div className="flex flex-wrap gap-[6px]">
+                    {activeChat.datasetInfo.columns.map((col) => (
+                      <span
+                        key={col}
+                        className={`px-[8px] py-[2px] rounded-full text-[11px] border ${
+                          activeChat.datasetInfo!.idColumns.includes(col)
+                            ? 'bg-[#2a2a2a] border-[#444] text-[#666]'
+                            : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'
+                        }`}
+                      >
+                        {col}{activeChat.datasetInfo!.idColumns.includes(col) ? ' (ID)' : ''}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Model Performance Card */}
+            {activeChat.trainingMetrics && (
+              <motion.div
+                className="mb-[24px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
+              >
+                <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between">
+                  <div className="flex items-center gap-[8px]">
+                    <svg className="w-[15px] h-[15px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">Model Performance</p>
+                  </div>
+                  <div className="bg-[#08B839]/15 border border-[#08B839]/40 rounded-full px-[10px] py-[3px]">
+                    <p className="font-semibold text-[11px] text-[#08B839]">
+                      {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'}{' '}
+                      {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
+                    </p>
+                  </div>
+                </div>
+                <div className="px-[20px] py-[14px]">
+                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Top Features by Importance</p>
+                  {(() => {
+                    const features = activeChat.trainingMetrics!.topFeatures;
+                    const maxImp = Math.max(...features.map((f) => f.importance));
+                    return features.map((f) => (
+                      <div key={f.name} className="flex items-center gap-[10px] mb-[8px] last:mb-0">
+                        <p className="text-[12px] text-[#9e9e9e] w-[120px] flex-shrink-0 truncate text-right">{f.name}</p>
+                        <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-[#7760bd]"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(f.importance / maxImp) * 100}%` }}
+                            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-[#7760bd] w-[36px] flex-shrink-0 text-right">
+                          {(f.importance * 100).toFixed(1)}%
+                        </p>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="px-[20px] py-[8px] border-t border-[#3a3a3a]">
+                  <p className="text-[11px] text-[#555]">
+                    {activeChat.trainingMetrics.taskType === 'classification' ? 'Classification' : 'Regression'} · RandomForest trained on your dataset
+                  </p>
+                </div>
+              </motion.div>
+            )}
 
             {/* Chat Messages Area */}
             <div className="flex-1 overflow-y-auto pr-[4px] md:pr-[8px]" ref={chatContainerRef}>
@@ -2730,11 +2880,26 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           </div>
 
                           {/* Footer */}
-                          <div className="px-[20px] py-[8px] border-t border-[#3a3a3a] flex items-center gap-[6px]">
-                            <svg className="w-[12px] h-[12px] text-[#555]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#555]">Powered by SHAP — purple bars push toward prediction, red bars push against</p>
+                          <div className="px-[20px] py-[8px] border-t border-[#3a3a3a] flex items-center justify-between gap-[6px]">
+                            <div className="flex items-center gap-[6px]">
+                              <svg className="w-[12px] h-[12px] text-[#555]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#555]">Powered by SHAP — purple bars push toward prediction, red bars push against</p>
+                            </div>
+                            {activeChat.rawFeatureDefaults && (
+                              <button
+                                onClick={() => {
+                                  setWhatIfValues({ ...activeChat.rawFeatureDefaults! });
+                                  setWhatIfResult(null);
+                                  setWhatIfError(null);
+                                  setShowWhatIfModal(true);
+                                }}
+                                className="flex-shrink-0 text-[11px] text-[#7760bd] hover:text-[#9e82e0] border border-[#7760bd]/40 hover:border-[#7760bd]/70 rounded-full px-[10px] py-[2px] transition-all cursor-pointer"
+                              >
+                                Try What-If
+                              </button>
+                            )}
                           </div>
                         </motion.div>
                       )}
@@ -3800,6 +3965,128 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         onClose={() => setShowReportBugModal(false)}
         onSuccess={() => setToastMessage('Bug report sent successfully')}
       />
+
+      {/* What-If Analysis Modal */}
+      {showWhatIfModal && activeChat?.rawFeatureDefaults && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-[16px]">
+          <div className="bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] w-full max-w-[560px] max-h-[90vh] flex flex-col shadow-2xl">
+
+            {/* Header */}
+            <div className="px-[24px] py-[16px] border-b border-[#3a3a3a] flex items-center justify-between">
+              <div>
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">What-If Analysis</p>
+                <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#666] mt-[2px]">Adjust feature values to simulate a new prediction</p>
+              </div>
+              <button onClick={() => setShowWhatIfModal(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
+                <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
+                  <path d="M12 4L4 12M4 4L12 12" stroke="#B0B0B0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Scrollable Feature Inputs */}
+            <div className="flex-1 overflow-y-auto px-[24px] py-[16px] flex flex-col gap-[10px]">
+              {Object.entries(whatIfValues).map(([feature, value]) => (
+                <div key={feature} className="flex items-center gap-[12px]">
+                  <label className="font-['Inter:Regular',sans-serif] text-[13px] text-[#ccc] w-[140px] flex-shrink-0 truncate text-right">{feature}</label>
+                  <input
+                    type={typeof value === 'number' ? 'number' : 'text'}
+                    value={String(value)}
+                    onChange={(e) => setWhatIfValues((prev) => ({
+                      ...prev,
+                      [feature]: typeof value === 'number' ? (parseFloat(e.target.value) || 0) : e.target.value,
+                    }))}
+                    className="flex-1 bg-[#1a1a1a] border border-[#444] rounded-[6px] px-[10px] py-[6px] font-['Inter:Regular',sans-serif] text-[13px] text-white outline-none focus:border-[#7760bd] transition-colors"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Result Panel */}
+            {whatIfResult && (
+              <div className="mx-[24px] mb-[12px] bg-[#1a1a1a] rounded-[10px] border border-[#3a3a3a] p-[16px]">
+                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Simulation Result</p>
+                <div className="flex gap-[20px] mb-[14px] flex-wrap">
+                  <div className="flex flex-col gap-[4px]">
+                    <p className="text-[11px] text-[#666]">Prediction</p>
+                    <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[12px] py-[4px] inline-block">
+                      <p className="font-semibold text-[13px] text-[#7760bd]">{whatIfResult.prediction}</p>
+                    </div>
+                  </div>
+                  {whatIfResult.confidence !== null && (
+                    <div className="flex flex-col gap-[4px]">
+                      <p className="text-[11px] text-[#666]">Confidence</p>
+                      <p className="font-semibold text-[20px] text-white">{whatIfResult.confidence.toFixed(1)}%</p>
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[8px]">Key Drivers</p>
+                {(() => {
+                  const entries = Object.entries(whatIfResult.shapValues).slice(0, 5);
+                  const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)), 0.0001);
+                  return entries.map(([feat, val]) => {
+                    const pct = (Math.abs(val) / maxAbs) * 100;
+                    const positive = val >= 0;
+                    return (
+                      <div key={feat} className="flex items-center gap-[10px] mb-[6px]">
+                        <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#9e9e9e] w-[100px] flex-shrink-0 truncate text-right">{feat}</p>
+                        <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                          />
+                        </div>
+                        <p className={`font-['Inter:Regular',sans-serif] text-[10px] w-[34px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                          {positive ? '+' : ''}{val.toFixed(2)}
+                        </p>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            )}
+
+            {/* Error */}
+            {whatIfError && (
+              <p className="mx-[24px] mb-[8px] font-['Inter:Regular',sans-serif] text-[12px] text-[#e05a5a]">{whatIfError}</p>
+            )}
+
+            {/* Footer */}
+            <div className="px-[24px] py-[14px] border-t border-[#3a3a3a] flex justify-end gap-[10px]">
+              <button
+                onClick={() => setShowWhatIfModal(false)}
+                className="px-[16px] h-[36px] rounded-[8px] border border-[#555] font-['Inter:Regular',sans-serif] text-[13px] text-[#ccc] hover:bg-[#333] transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                disabled={isWhatIfLoading}
+                onClick={async () => {
+                  if (!session?.access_token || !activeChat?.backendId) return;
+                  setIsWhatIfLoading(true);
+                  setWhatIfError(null);
+                  try {
+                    const result = await whatIfAPI(session.access_token, activeChat.backendId, whatIfValues);
+                    const shapMap: Record<string, number> = {};
+                    for (const e of result.shap_values) shapMap[e.feature] = e.shap_value;
+                    setWhatIfResult({ prediction: result.prediction, confidence: result.confidence, shapValues: shapMap });
+                  } catch (err) {
+                    setWhatIfError(err instanceof Error ? err.message : 'Simulation failed. Please try again.');
+                  } finally {
+                    setIsWhatIfLoading(false);
+                  }
+                }}
+                className="bg-[#7760bd] disabled:opacity-50 px-[20px] h-[36px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] text-[13px] text-white hover:bg-[#8870cd] transition-all flex items-center gap-[8px] cursor-pointer"
+              >
+                {isWhatIfLoading && <div className="w-[12px] h-[12px] border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Run Simulation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );

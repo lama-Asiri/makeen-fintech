@@ -1153,6 +1153,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
 
     # 6. route to the right handler
     processor = QuestionProcessor(data_cache, model_cache)
+    training_metrics = None  # populated if _run_train fires during this request
 
     if question_type == "HISTORY_EXPLANATION":
         result = await processor.handle_history_explanation(
@@ -1184,7 +1185,14 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
                     detail=f"Column '{inferred_target}' not found. Available columns: {', '.join(df.columns)}",
                 )
             try:
-                _run_train(chat_id, inferred_target)
+                train_result = _run_train(chat_id, inferred_target)
+                metric_key = "accuracy" if train_result["task_type"] == "classification" else "r2_score"
+                training_metrics = {
+                    "task_type":    train_result["task_type"],
+                    "metric_key":   metric_key,
+                    "metric_value": round(train_result[metric_key], 4),
+                    "top_features": [{"name": n, "importance": round(i, 4)} for n, i in train_result["top_features"]],
+                }
             except HTTPException:
                 raise
             except Exception as e:
@@ -1241,7 +1249,14 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
                     detail=f"Column '{inferred_target}' not found. Available columns: {', '.join(df.columns)}",
                 )
             try:
-                _run_train(chat_id, inferred_target)
+                train_result = _run_train(chat_id, inferred_target)
+                metric_key = "accuracy" if train_result["task_type"] == "classification" else "r2_score"
+                training_metrics = {
+                    "task_type":    train_result["task_type"],
+                    "metric_key":   metric_key,
+                    "metric_value": round(train_result[metric_key], 4),
+                    "top_features": [{"name": n, "importance": round(i, 4)} for n, i in train_result["top_features"]],
+                }
             except HTTPException:
                 raise
             except Exception as e:
@@ -1270,7 +1285,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         # ── Event 1: metadata ────────────────────────────────────────────────
         # Send all structured pipeline data (type, prediction, SHAP, etc.) right away.
         # The frontend uses this to render the XAI card before GPT has even started.
-        yield f"data: {json.dumps({'event': 'metadata', 'type': result.get('type'), 'mode': result.get('mode'), 'prediction': result.get('prediction'), 'confidence': result.get('confidence'), 'shap_values': result.get('shap_values', []), 'lime_values': result.get('lime_values', []), 'clarifications': result.get('clarifications'), 'answer': result.get('answer', '')})}\n\n"
+        yield f"data: {json.dumps({'event': 'metadata', 'type': result.get('type'), 'mode': result.get('mode'), 'prediction': result.get('prediction'), 'confidence': result.get('confidence'), 'shap_values': result.get('shap_values', []), 'lime_values': result.get('lime_values', []), 'clarifications': result.get('clarifications'), 'answer': result.get('answer', ''), 'training_metrics': training_metrics, 'raw_feature_defaults': (trained_models.get(chat_id) or {}).get('raw_feature_defaults', None)})}\n\n"
 
         # ── UNCLEAR / HISTORY_EXPLANATION: no GPT call needed ────────────────
         # These types already have their answer in result["answer"] (the clarification
@@ -1348,6 +1363,50 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+class WhatIfRequest(BaseModel):
+    chat_id: int
+    feature_values: dict
+
+
+@router.post("/whatif")
+async def whatif(body: WhatIfRequest, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+    chat_id = body.chat_id
+
+    try:
+        chat_check = (
+            supabase.table("Chat")
+            .select("CHAT_ID")
+            .eq("CHAT_ID", chat_id)
+            .eq("USER_ID", user_id)
+            .single()
+            .execute()
+        )
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+
+    if chat_id not in trained_models:
+        raise HTTPException(status_code=400, detail="No model trained yet. Ask a prediction question first.")
+
+    try:
+        pred = predict_local_single(chat_id, None, None, body.feature_values)
+        shap_result = explain_shap_local_single(chat_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"What-If analysis failed: {e}")
+
+    return {
+        "prediction":  pred["prediction"],
+        "confidence":  pred["confidence"],
+        "shap_values": shap_result,
+    }
+
 
 SYSTEM_PROMPT = """
 You are an AI assistant inside a program called Makeen.

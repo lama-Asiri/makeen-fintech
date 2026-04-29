@@ -131,6 +131,43 @@ export async function uploadFileAPI(token: string, file: File, chatId: number): 
   return data.columns as string[];
 }
 
+export interface ParseResult {
+  rows: number;
+  columns: string[];
+  id_columns: string[];
+}
+
+export async function parseFileAPI(token: string, chatId: number): Promise<ParseResult> {
+  const res = await fetch(`${BASE}/auth/parse`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ chat_id: chatId }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return { rows: data.rows, columns: data.columns, id_columns: data.id_columns };
+}
+
+export interface WhatIfResult {
+  prediction: string;
+  confidence: number | null;
+  shap_values: { feature: string; shap_value: number }[];
+}
+
+export async function whatIfAPI(
+  token: string,
+  chatId: number,
+  featureValues: Record<string, string | number>
+): Promise<WhatIfResult> {
+  const res = await fetch(`${BASE}/whatif`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify({ chat_id: chatId, feature_values: featureValues }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export interface BackendMessage {
   QUERY_ID: number;
   query_text: string;

@@ -21,8 +21,8 @@
 
   [x] D. Decide LIME usage — computed automatically alongside SHAP for local_single (num_samples=200)
 
-  [ ] E. Manual testing — each person tests their own section once built
-        Owner: whole team 
+  [x] E. Manual testing — each person tests their own section once built
+        Owner: whole team
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -115,7 +115,7 @@
   SECTION 8 — DEPLOYMENT & LAUNCH
   Owner: whole team
 
-  [ ] L. Test app on mobile — check all screens are responsive, no broken layouts        | whole team
+  [x] L. Test app on mobile — check all screens are responsive, no broken layouts        | whole team
   [x] M. Launch site — deployed and live                                                 | done ✓
         Frontend: https://makeen-topaz.vercel.app (Vercel, auto-deploys from GitHub)
         Backend:  https://makeen-production.up.railway.app (Railway)
