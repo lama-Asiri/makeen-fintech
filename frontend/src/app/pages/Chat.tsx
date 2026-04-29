@@ -407,6 +407,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
   const [processingStage, setProcessingStage] = useState(0);
   const [isDictating, setIsDictating] = useState(false);
+  const [isDatasetCardExpanded, setIsDatasetCardExpanded] = useState(false);
+  const [isModelCardExpanded, setIsModelCardExpanded] = useState(false);
   const [showWhatIfModal, setShowWhatIfModal] = useState(false);
   const [whatIfValues, setWhatIfValues] = useState<Record<string, string | number>>({});
   const [whatIfResult, setWhatIfResult] = useState<{ prediction: string; confidence: number | null; shapValues: Record<string, number> } | null>(null);
@@ -2527,10 +2529,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         {/* Chat Interface (shown when file is uploaded, or when messages already exist) */}
         {!showUploadModal && activeChat && (activeChat.fileAttachment || activeChat.messages.length > 0) && (
           <div className="h-full flex flex-col p-[16px] md:p-[40px]">
-            {/* File bar — only shown when file info is available */}
-            {activeChat.fileAttachment && <div className="mb-[24px] flex justify-end">
+            {/* File bar */}
+            {activeChat.fileAttachment && <div className="mb-[16px] flex justify-end">
             <div className="w-full max-w-[480px] bg-[#333] border border-[#555] rounded-[8px] px-[16px] py-[12px] flex items-center gap-[12px] shadow-lg">
-              {/* File icon + name — clicking opens file preview */}
               <button
                 onClick={() => setShowFilePreview(true)}
                 className="flex gap-[12px] items-center flex-1 min-w-0 hover:opacity-80 transition-opacity"
@@ -2547,106 +2548,88 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
                 </div>
               </button>
-
             </div>
             </div>}
 
-
-            {/* Dataset Overview Card */}
+            {/* Dataset Overview Card — expandable, appears after upload */}
             {activeChat.datasetInfo && (
-              <motion.div
-                className="mb-[24px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
-              >
-                <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center gap-[8px]">
-                  <svg className="w-[15px] h-[15px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
-                  </svg>
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">Dataset Overview</p>
+              <div className="mb-[10px] flex justify-end">
+                <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[8px] overflow-hidden">
+                  {/* Header */}
+                  <button
+                    onClick={() => setIsDatasetCardExpanded((v) => !v)}
+                    className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#333] transition-colors cursor-pointer"
+                  >
+                    <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
+                    </svg>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Dataset Overview</p>
+                    <span className="text-[11px] text-[#555]">{activeChat.datasetInfo.rows.toLocaleString()} rows · {activeChat.datasetInfo.columns.length} cols</span>
+                    <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isDatasetCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+                  </button>
+                  {/* Expandable body */}
+                  {isDatasetCardExpanded && (
+                    <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
+                      <div className="flex gap-[20px] mb-[12px]">
+                        <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>
+                        <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Columns</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
+                      </div>
+                      <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[7px]">Features</p>
+                      <div className="flex flex-wrap gap-[5px]">
+                        {activeChat.datasetInfo.columns.map((col) => (
+                          <span key={col} className={`px-[7px] py-[2px] rounded-full text-[11px] border ${activeChat.datasetInfo!.idColumns.includes(col) ? 'bg-[#2a2a2a] border-[#444] text-[#555]' : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'}`}>
+                            {col}{activeChat.datasetInfo!.idColumns.includes(col) ? ' (ID)' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="px-[20px] py-[14px] flex gap-[28px]">
-                  <div className="flex flex-col gap-[2px]">
-                    <p className="text-[10px] text-[#666] uppercase tracking-wide">Rows</p>
-                    <p className="text-[20px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p>
-                  </div>
-                  <div className="flex flex-col gap-[2px]">
-                    <p className="text-[10px] text-[#666] uppercase tracking-wide">Columns</p>
-                    <p className="text-[20px] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p>
-                  </div>
-                </div>
-                <div className="px-[20px] pb-[14px]">
-                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[8px]">Features</p>
-                  <div className="flex flex-wrap gap-[6px]">
-                    {activeChat.datasetInfo.columns.map((col) => (
-                      <span
-                        key={col}
-                        className={`px-[8px] py-[2px] rounded-full text-[11px] border ${
-                          activeChat.datasetInfo!.idColumns.includes(col)
-                            ? 'bg-[#2a2a2a] border-[#444] text-[#666]'
-                            : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'
-                        }`}
-                      >
-                        {col}{activeChat.datasetInfo!.idColumns.includes(col) ? ' (ID)' : ''}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
+              </div>
             )}
 
-            {/* Model Performance Card */}
+            {/* Model Performance Card — expandable, appears after first training */}
             {activeChat.trainingMetrics && (
-              <motion.div
-                className="mb-[24px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1, ease: 'easeOut' }}
-              >
-                <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between">
-                  <div className="flex items-center gap-[8px]">
-                    <svg className="w-[15px] h-[15px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+              <div className="mb-[16px] flex justify-end">
+                <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[8px] overflow-hidden">
+                  {/* Header */}
+                  <button
+                    onClick={() => setIsModelCardExpanded((v) => !v)}
+                    className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#333] transition-colors cursor-pointer"
+                  >
+                    <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
-                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">Model Performance</p>
-                  </div>
-                  <div className="bg-[#08B839]/15 border border-[#08B839]/40 rounded-full px-[10px] py-[3px]">
-                    <p className="font-semibold text-[11px] text-[#08B839]">
-                      {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'}{' '}
-                      {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
-                    </p>
-                  </div>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Model Performance</p>
+                    <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[11px] text-[#08B839] font-semibold">
+                      {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'} {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
+                    </span>
+                    <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isModelCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+                  </button>
+                  {/* Expandable body */}
+                  {isModelCardExpanded && (
+                    <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
+                      <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[10px]">Top Features by Importance</p>
+                      {(() => {
+                        const features = activeChat.trainingMetrics!.topFeatures;
+                        const maxImp = Math.max(...features.map((f) => f.importance), 0.0001);
+                        return features.map((f) => (
+                          <div key={f.name} className="flex items-center gap-[10px] mb-[7px] last:mb-0">
+                            <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
+                            <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                              <motion.div className="h-full rounded-full bg-[#7760bd]" initial={{ width: 0 }} animate={{ width: `${(f.importance / maxImp) * 100}%` }} transition={{ duration: 0.5, ease: 'easeOut' }} />
+                            </div>
+                            <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] w-[32px] flex-shrink-0 text-right">{(f.importance * 100).toFixed(1)}%</p>
+                          </div>
+                        ));
+                      })()}
+                      <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#444] mt-[10px]">
+                        {activeChat.trainingMetrics.taskType === 'classification' ? 'Classification' : 'Regression'} · RandomForest
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <div className="px-[20px] py-[14px]">
-                  <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Top Features by Importance</p>
-                  {(() => {
-                    const features = activeChat.trainingMetrics!.topFeatures;
-                    const maxImp = Math.max(...features.map((f) => f.importance));
-                    return features.map((f) => (
-                      <div key={f.name} className="flex items-center gap-[10px] mb-[8px] last:mb-0">
-                        <p className="text-[12px] text-[#9e9e9e] w-[120px] flex-shrink-0 truncate text-right">{f.name}</p>
-                        <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
-                          <motion.div
-                            className="h-full rounded-full bg-[#7760bd]"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${(f.importance / maxImp) * 100}%` }}
-                            transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
-                          />
-                        </div>
-                        <p className="text-[11px] text-[#7760bd] w-[36px] flex-shrink-0 text-right">
-                          {(f.importance * 100).toFixed(1)}%
-                        </p>
-                      </div>
-                    ));
-                  })()}
-                </div>
-                <div className="px-[20px] py-[8px] border-t border-[#3a3a3a]">
-                  <p className="text-[11px] text-[#555]">
-                    {activeChat.trainingMetrics.taskType === 'classification' ? 'Classification' : 'Regression'} · RandomForest trained on your dataset
-                  </p>
-                </div>
-              </motion.div>
+              </div>
             )}
 
             {/* Chat Messages Area */}
