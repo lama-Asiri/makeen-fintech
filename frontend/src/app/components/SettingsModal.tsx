@@ -37,7 +37,6 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
   const [autoSummarize, setAutoSummarize] = useState(false);
   const [askBeforeUse, setAskBeforeUse] = useState(false);
   const [analysisDepth, setAnalysisDepth] = useState('Balanced');
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [language, setLanguage] = useState('English');
   const [fontSize, setFontSize] = useState<'small' | 'medium' | 'large'>(
     () => (localStorage.getItem('fontSizePreference') as 'small' | 'medium' | 'large') || 'medium'
@@ -438,30 +437,6 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                       lockedOptions={['Arabic']}
                       onLockedClick={() => setComingSoonMessage('Coming soon')}
                     />
-                  </div>
-                </div>
-
-                {/* Notifications Card */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <div className="flex items-center justify-between gap-[16px]">
-                    <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Enable Notifications</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Receive updates and alerts</p>
-                    </div>
-                    <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
-                      <input 
-                        type="checkbox" 
-                        className="sr-only peer" 
-                        checked={notificationsEnabled}
-                        onChange={(e) => {
-                          const newValue = e.target.checked;
-                          setNotificationsEnabled(newValue);
-                          setComingSoonMessage(newValue ? 'Notification on' : 'Notification off');
-                        }}
-                      />
-                      <span className="absolute inset-0 bg-[#555] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
-                      <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-white rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
-                    </label>
                   </div>
                 </div>
 
@@ -1046,9 +1021,10 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
               <button
                 onClick={() => {
                   setShowClearCacheConfirm(false);
+                  localStorage.removeItem('makeen_chats');
+                  localStorage.removeItem('makeen_active_chat_id');
                   setClearCacheSuccess(true);
-                  // Clear cache logic here
-                  setTimeout(() => setClearCacheSuccess(false), 2500);
+                  setTimeout(() => window.location.reload(), 1000);
                 }}
                 className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] transition-all"
               >
