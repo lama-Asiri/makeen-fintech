@@ -174,6 +174,7 @@ interface DatasetInfo {
   rows: number;
   columns: string[];
   idColumns: string[];
+  previewRows: string[][];
 }
 
 interface TrainingMetrics {
@@ -644,7 +645,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           const parseResult = await parseFileAPI(token, delayedBackendId);
           setChats((prev) => prev.map((c) =>
             c.id === delayedChatId
-              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
+              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns, previewRows: parseResult.preview_rows } }
               : c
           ));
         } catch (e) { console.warn('[parse] skipped:', e); }
@@ -997,7 +998,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           const parseResult = await parseFileAPI(token, backendId!);
           setChats((prev) => prev.map((c) =>
             c.id === activeChatId
-              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
+              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns, previewRows: parseResult.preview_rows } }
               : c
           ));
         } catch (e) { console.warn('[parse] skipped:', e); }
@@ -3653,8 +3654,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         const matchedSample = attachment
           ? SAMPLE_DATASETS.find((d) => d.filename === attachment.name)
           : null;
-        const previewColumns = matchedSample?.columns ?? datasetInfo?.columns ?? [];
-        const previewRows = matchedSample?.previewRows ?? [];
+        const previewColumns = datasetInfo?.columns ?? matchedSample?.columns ?? [];
+        const previewRows = datasetInfo?.previewRows?.length ? datasetInfo.previewRows : (matchedSample?.previewRows ?? []);
         return (
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-[16px]"

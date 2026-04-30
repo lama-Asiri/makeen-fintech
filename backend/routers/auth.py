@@ -551,6 +551,13 @@ def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, l
                 mode_val = df[col].mode()[0] if len(df[col].mode()) > 0 else "UNKNOWN"
                 df[col] = df[col].fillna(mode_val)
 
+    # Convert datetime columns to Unix seconds (int) so RandomForest can use them
+    for col in df.select_dtypes(include=['datetime64', 'datetimetz']).columns:
+        try:
+            df[col] = df[col].astype('int64') // 10 ** 9
+        except Exception:
+            df[col] = df[col].apply(lambda x: int(x.timestamp()) if pd.notna(x) else 0)
+
     return df, id_columns
 
 
@@ -609,12 +616,14 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         "id_columns": id_columns,
     }
 
+    preview = df.head(5).fillna("").astype(str)
     return {
-        "message":    "File parsed and ready",
-        "rows":       len(df),
-        "columns":    df.columns.tolist(),
-        "id_columns": id_columns,
-        "note":       "ID columns kept for row lookups; columns with >60% missing data removed",
+        "message":     "File parsed and ready",
+        "rows":        len(df),
+        "columns":     df.columns.tolist(),
+        "id_columns":  id_columns,
+        "preview_rows": preview.values.tolist(),
+        "note":        "ID columns kept for row lookups; columns with >60% missing data removed",
     }
 
 # Rating allowed categories

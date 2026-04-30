@@ -135,6 +135,7 @@ export interface ParseResult {
   rows: number;
   columns: string[];
   id_columns: string[];
+  preview_rows: string[][];
 }
 
 export async function parseFileAPI(token: string, chatId: number): Promise<ParseResult> {
@@ -145,7 +146,7 @@ export async function parseFileAPI(token: string, chatId: number): Promise<Parse
   });
   if (!res.ok) throw new Error(await res.text());
   const data = await res.json();
-  return { rows: data.rows, columns: data.columns, id_columns: data.id_columns };
+  return { rows: data.rows, columns: data.columns, id_columns: data.id_columns, preview_rows: data.preview_rows ?? [] };
 }
 
 export interface WhatIfResult {
