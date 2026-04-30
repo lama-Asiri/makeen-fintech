@@ -635,10 +635,13 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     waitingForBackendIdRef.current = false;
     const delayedBackendId = chat.backendId;
     const delayedChatId = chat.id;
-    uploadFileAPI(session.access_token, selectedFile, delayedBackendId)
-      .then(async () => {
+    (async () => {
+      const { data: { session: fresh } } = await supabase.auth.getSession();
+      const token = fresh?.access_token ?? session?.access_token ?? '';
+      try {
+        await uploadFileAPI(token, selectedFile, delayedBackendId);
         try {
-          const parseResult = await parseFileAPI(session.access_token!, delayedBackendId);
+          const parseResult = await parseFileAPI(token, delayedBackendId);
           setChats((prev) => prev.map((c) =>
             c.id === delayedChatId
               ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
@@ -649,14 +652,14 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         setSelectedFile(null);
         setShowUploadModal(false);
         setToastMessage('File uploaded successfully!');
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error('[uploadFile] Backend upload failed (delayed):', err);
         setUploadStep('file');
         setShowUploadModal(false);
         setSelectedFile(null);
         setToastMessage('File upload failed. Please try again.');
-      });
+      }
+    })();
   }, [chats]);
 
   // Cycle through pipeline stages while processing
@@ -986,28 +989,29 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
     if (selectedFile && backendId !== undefined && session?.access_token) {
       setUploadStep('loading');
-      uploadFileAPI(session.access_token, selectedFile, backendId)
-        .then(async () => {
-          try {
-            const parseResult = await parseFileAPI(session.access_token!, backendId!);
-            setChats((prev) => prev.map((c) =>
-              c.id === activeChatId
-                ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
-                : c
-            ));
-          } catch (e) { console.warn('[parse] skipped:', e); }
-          setUploadStep('file');
-          setSelectedFile(null);
-          setShowUploadModal(false);
-          setToastMessage('File uploaded successfully!');
-        })
-        .catch((err) => {
-          console.error('[uploadFile] Backend upload failed:', err);
-          setUploadStep('file');
-          setShowUploadModal(false);
-          setSelectedFile(null);
-          setToastMessage('File upload failed. Please try again.');
-        });
+      const { data: { session: fresh } } = await supabase.auth.getSession();
+      const token = fresh?.access_token ?? session.access_token;
+      try {
+        await uploadFileAPI(token, selectedFile, backendId);
+        try {
+          const parseResult = await parseFileAPI(token, backendId!);
+          setChats((prev) => prev.map((c) =>
+            c.id === activeChatId
+              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns } }
+              : c
+          ));
+        } catch (e) { console.warn('[parse] skipped:', e); }
+        setUploadStep('file');
+        setSelectedFile(null);
+        setShowUploadModal(false);
+        setToastMessage('File uploaded successfully!');
+      } catch (err) {
+        console.error('[uploadFile] Backend upload failed:', err);
+        setUploadStep('file');
+        setShowUploadModal(false);
+        setSelectedFile(null);
+        setToastMessage('File upload failed. Please try again.');
+      }
     } else {
       // No real file — close modal immediately (sample data fallback)
       setSelectedFile(null);
@@ -1230,12 +1234,14 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         }
 
         const apiUrl = import.meta.env.VITE_API_URL;
+        const { data: { session: fresh } } = await supabase.auth.getSession();
+        const token = fresh?.access_token ?? session.access_token;
         const controller = new AbortController();
         abortControllerRef.current = controller;
         const res = await fetch(`${apiUrl}/processQuestion`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ chat_id: activeChat.backendId, question: content }),
