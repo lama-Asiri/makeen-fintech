@@ -1115,15 +1115,13 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
                 supabase.table("File")
                 .select("path, filetype")
                 .eq("CHAT_ID", chat_id)
-                .single()
+                .maybe_single()
                 .execute()
             )
-            if not file_result.data:
-                raise HTTPException(status_code=400, detail="No file found for this chat. Please upload a file first.")
-        except HTTPException:
-            raise
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"File lookup failed: {e}")
+        if not file_result or not file_result.data:
+            raise HTTPException(status_code=400, detail="No file found for this chat. Please upload your file again.")
 
         try:
             file_bytes = supabase.storage.from_("user-files").download(file_result.data["path"])

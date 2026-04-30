@@ -590,16 +590,14 @@ async def parse_file(body: ParseRequest, authorization: str = Header(None)):
         file_result = supabase.table("File") \
             .select("path, filetype") \
             .eq("CHAT_ID", chat_id) \
-            .single() \
+            .maybe_single() \
             .execute()
-        if not file_result.data:
-            raise HTTPException(status_code=404, detail="No file found for this chat")
-        file_path = file_result.data["path"]
-        file_type = file_result.data["filetype"]
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"File lookup failed: {e}")
+    if not file_result or not file_result.data:
+        raise HTTPException(status_code=404, detail="No file found for this chat")
+    file_path = file_result.data["path"]
+    file_type = file_result.data["filetype"]
 
     # 3. download from storage
     try:

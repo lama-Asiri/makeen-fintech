@@ -1341,9 +1341,9 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               if (metadata.type === 'PREDICTION' && metadata.mode === 'local_single' && Array.isArray(shapValues) && shapValues.length > 0) {
                 const shapMap: Record<string, number> = {};
                 for (const entry of shapValues) shapMap[entry.feature] = entry.shap_value;
-                const limeRaw = metadata.lime_values as { feature: string; lime_value: number }[] | undefined;
+                const limeRaw = metadata.lime_values as { feature: string; impact: number }[] | undefined;
                 const limeMap: Record<string, number> = {};
-                if (Array.isArray(limeRaw)) for (const entry of limeRaw) limeMap[entry.feature] = entry.lime_value;
+                if (Array.isArray(limeRaw)) for (const entry of limeRaw) limeMap[entry.feature] = entry.impact;
                 xaiData = { prediction: String(metadata.prediction ?? ''), confidence: metadata.confidence as number | null, shapValues: shapMap, limeValues: Object.keys(limeMap).length > 0 ? limeMap : undefined };
               }
 
