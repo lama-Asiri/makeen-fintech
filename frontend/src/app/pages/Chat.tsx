@@ -3646,69 +3646,110 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       )}
 
       {/* File Preview Modal */}
-      {showFilePreview && (
-        <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
-          onClick={() => setShowFilePreview(false)}
-        >
+      {showFilePreview && (() => {
+        const attachment = activeChat?.fileAttachment;
+        const datasetInfo = activeChat?.datasetInfo;
+        // Match to a sample dataset by filename so we can show preview rows
+        const matchedSample = attachment
+          ? SAMPLE_DATASETS.find((d) => d.filename === attachment.name)
+          : null;
+        const previewColumns = matchedSample?.columns ?? datasetInfo?.columns ?? [];
+        const previewRows = matchedSample?.previewRows ?? [];
+        return (
           <div
-            className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[600px] max-w-[90vw] border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-[16px]"
+            onClick={() => setShowFilePreview(false)}
           >
-            {/* Header */}
-            <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white">
-                {activeChat?.fileAttachment ? 'File Preview (Demo)' : 'Sample Template Preview'}
-              </h2>
-            </div>
+            <div
+              className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[680px] max-w-[95vw] max-h-[90vh] flex flex-col border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="px-[28px] pt-[24px] pb-[16px] border-b border-[#333] flex items-center justify-between flex-shrink-0">
+                <div>
+                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[20px] text-white">File Preview</h2>
+                  {datasetInfo && (
+                    <p className="text-[12px] text-[#666] mt-[2px]">{datasetInfo.rows.toLocaleString()} rows · {datasetInfo.columns.length} columns</p>
+                  )}
+                </div>
+                <button onClick={() => setShowFilePreview(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
+                  <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
+                    <path d="M12 4L4 12M4 4L12 12" stroke="#B0B0B0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
+                </button>
+              </div>
 
-            {/* File Info */}
-            <div className="px-[32px] py-[24px]">
-              <div className="bg-[#2c2c2c] rounded-[12px] p-[20px] mb-[20px]">
-                <div className="flex items-start gap-[12px]">
-                  <svg className="w-[32px] h-[32px] flex-shrink-0" fill="none" viewBox="0 0 24 24">
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto px-[28px] py-[20px] flex flex-col gap-[16px]">
+                {/* File info row */}
+                <div className="flex items-center gap-[12px] bg-[#2c2c2c] rounded-[10px] p-[14px]">
+                  <svg className="w-[28px] h-[28px] flex-shrink-0" fill="none" viewBox="0 0 24 24">
                     <path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9l-7-7z" stroke="#08B839" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     <path d="M13 2v7h7" stroke="#08B839" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  <div className="flex-1">
-                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white mb-[4px]">
-                      {activeChat?.fileAttachment ? activeChat.fileAttachment.name : 'Sample_Template.csv'}
-                    </p>
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] text-[#9e9e9e]">
-                      Type: {activeChat?.fileAttachment ? activeChat.fileAttachment.type.toUpperCase() : 'CSV'}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-[14px] text-white truncate">{attachment?.name ?? 'Sample_Template.csv'}</p>
+                    <p className="text-[12px] text-[#666]">{attachment?.type?.toUpperCase() ?? 'CSV'}{attachment?.size ? ` · ${(attachment.size / 1024).toFixed(1)} KB` : ''}</p>
                   </div>
                 </div>
+
+                {/* Data table — shown when we have columns */}
+                {previewColumns.length > 0 && (
+                  <div>
+                    <p className="text-[11px] text-[#555] uppercase tracking-wide mb-[10px]">
+                      {previewRows.length > 0 ? 'Sample Rows' : 'Columns'}
+                    </p>
+                    <div className="overflow-x-auto rounded-[8px] border border-[#333]">
+                      <table className="w-full text-left border-collapse" style={{ minWidth: `${previewColumns.length * 100}px` }}>
+                        <thead>
+                          <tr className="bg-[#252525]">
+                            {previewColumns.map((col) => (
+                              <th key={col} className="px-[12px] py-[8px] text-[11px] font-semibold text-[#9e9e9e] uppercase tracking-wide border-b border-[#333] whitespace-nowrap">
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        {previewRows.length > 0 && (
+                          <tbody>
+                            {previewRows.map((row, ri) => (
+                              <tr key={ri} className="border-b border-[#2a2a2a] hover:bg-[#232323] transition-colors">
+                                {row.map((cell, ci) => (
+                                  <td key={ci} className="px-[12px] py-[7px] text-[12px] text-[#ccc] whitespace-nowrap">{cell}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        )}
+                      </table>
+                    </div>
+                    {previewRows.length > 0 && datasetInfo && (
+                      <p className="text-[11px] text-[#444] mt-[6px]">Showing 5 of {datasetInfo.rows.toLocaleString()} rows</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Fallback if no column info yet */}
+                {previewColumns.length === 0 && (
+                  <div className="bg-[#2c2c2c] rounded-[10px] p-[24px] flex items-center justify-center min-h-[120px]">
+                    <p className="text-[13px] text-[#555]">Column information not available yet — ask a question to begin analysis.</p>
+                  </div>
+                )}
               </div>
 
-              {/* Preview Area */}
-              <div className="bg-[#2c2c2c] rounded-[12px] p-[24px] min-h-[200px] flex items-center justify-center">
-                <div className="text-center">
-                  <svg className="w-[48px] h-[48px] mx-auto mb-[12px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <p className="font-['Inter:Regular',sans-serif] text-[14px] text-[#9e9e9e] leading-[20px]">
-                    Preview will be available when<br />backend is connected.
-                  </p>
-                </div>
+              {/* Footer */}
+              <div className="px-[28px] pb-[20px] pt-[12px] border-t border-[#333] flex justify-end flex-shrink-0">
+                <button
+                  onClick={() => setShowFilePreview(false)}
+                  className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[20px] py-[8px] transition-colors cursor-pointer"
+                >
+                  <p className="font-semibold text-[13px] text-white">Close</p>
+                </button>
               </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-[32px] pb-[32px] flex justify-end">
-              <button
-                onClick={() => setShowFilePreview(false)}
-                className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
-              >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
-                  Close
-                </p>
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Sample Dataset Preview Modal */}
       {selectedSampleDataset && (() => {
