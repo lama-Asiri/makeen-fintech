@@ -1283,7 +1283,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         # ── Event 1: metadata ────────────────────────────────────────────────
         # Send all structured pipeline data (type, prediction, SHAP, etc.) right away.
         # The frontend uses this to render the XAI card before GPT has even started.
-        yield f"data: {json.dumps({'event': 'metadata', 'type': result.get('type'), 'mode': result.get('mode'), 'prediction': result.get('prediction'), 'confidence': result.get('confidence'), 'shap_values': result.get('shap_values', []), 'lime_values': result.get('lime_values', []), 'clarifications': result.get('clarifications'), 'answer': result.get('answer', ''), 'training_metrics': training_metrics, 'raw_feature_defaults': (trained_models.get(chat_id) or {}).get('raw_feature_defaults', None)})}\n\n"
+        yield f"data: {json.dumps({'event': 'metadata', 'type': result.get('type'), 'mode': result.get('mode'), 'prediction': result.get('prediction'), 'confidence': result.get('confidence'), 'shap_values': result.get('shap_values', []), 'shap_aggregate': result.get('shap_aggregate', []), 'lime_values': result.get('lime_values', []), 'clarifications': result.get('clarifications'), 'answer': result.get('answer', ''), 'training_metrics': training_metrics, 'raw_feature_defaults': (trained_models.get(chat_id) or {}).get('raw_feature_defaults', None)})}\n\n"
 
         # ── UNCLEAR / HISTORY_EXPLANATION: no GPT call needed ────────────────
         # These types already have their answer in result["answer"] (the clarification
@@ -1343,9 +1343,9 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
             explanation_to_save = ""
             pred_mode = result.get("mode", "")
             if result.get("type") == "PREDICTION" and pred_mode in ("local_single", "local_batch"):
-                shap_vals = result.get("shap_values", [])
-                if shap_vals:
-                    shap_map = {e["feature"]: e["shap_value"] for e in shap_vals}
+                shap_source = result.get("shap_values") if pred_mode == "local_single" else result.get("shap_aggregate")
+                if shap_source:
+                    shap_map = {e["feature"]: e["shap_value"] for e in shap_source}
                     explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "mode": pred_mode, "shapValues": shap_map})
 
             r = supabase.table("Response").insert({"answer": full_answer, "explanation": explanation_to_save, "QUERY_ID": query_id}).execute()

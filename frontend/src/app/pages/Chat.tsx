@@ -1346,11 +1346,14 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
               // Build XAI data if this was a local_single prediction with SHAP values
               let xaiData: XaiData | undefined;
-              const shapValues = metadata.shap_values as { feature: string; shap_value: number }[] | undefined;
               const mode = metadata.mode as string | undefined;
-              if (metadata.type === 'PREDICTION' && (mode === 'local_single' || mode === 'local_batch') && Array.isArray(shapValues) && shapValues.length > 0) {
+              // local_single uses shap_values; local_batch uses shap_aggregate
+              const shapRaw = (mode === 'local_batch'
+                ? metadata.shap_aggregate
+                : metadata.shap_values) as { feature: string; shap_value: number }[] | undefined;
+              if (metadata.type === 'PREDICTION' && (mode === 'local_single' || mode === 'local_batch') && Array.isArray(shapRaw) && shapRaw.length > 0) {
                 const shapMap: Record<string, number> = {};
-                for (const entry of shapValues) shapMap[entry.feature] = entry.shap_value;
+                for (const entry of shapRaw) shapMap[entry.feature] = entry.shap_value;
                 const limeRaw = mode === 'local_single' ? metadata.lime_values as { feature: string; impact: number }[] | undefined : undefined;
                 const limeMap: Record<string, number> = {};
                 if (Array.isArray(limeRaw)) for (const entry of limeRaw) limeMap[entry.feature] = entry.impact;
@@ -1379,6 +1382,11 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                         ...c,
                         ...(newTrainingMetrics ? { trainingMetrics: newTrainingMetrics } : {}),
                         ...(rawDefaults ? { rawFeatureDefaults: rawDefaults } : {}),
+                        // Fallback: if parseFileAPI failed and datasetInfo is missing,
+                        // populate columns from rawFeatureDefaults so the card still shows
+                        ...(!c.datasetInfo && rawDefaults ? {
+                          datasetInfo: { rows: 0, columns: Object.keys(rawDefaults), idColumns: [], previewRows: [] }
+                        } : {}),
                         messages: c.messages.map((m) =>
                           m.id === aiMessageId
                             ? {
@@ -2601,13 +2609,13 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
                       </svg>
                       <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Dataset Overview</p>
-                      <span className="text-[11px] text-[#555]">{activeChat.datasetInfo.rows.toLocaleString()} rows · {activeChat.datasetInfo.columns.length} cols</span>
+                      <span className="text-[11px] text-[#555]">{activeChat.datasetInfo.rows > 0 ? `${activeChat.datasetInfo.rows.toLocaleString()} rows · ` : ''}{activeChat.datasetInfo.columns.length} cols</span>
                       <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isDatasetCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
                     </button>
                     {isDatasetCardExpanded && (
                       <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
                         <div className="flex gap-[20px] mb-[12px]">
-                          <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>
+                          {activeChat.datasetInfo.rows > 0 && <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>}
                           <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Columns</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
                         </div>
                         <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[7px]">Features</p>
