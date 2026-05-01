@@ -2678,8 +2678,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Model Performance</p>
                       <Tooltip
                         text={activeChat.trainingMetrics.metricKey === 'accuracy'
-                          ? `Accuracy — how often the model predicts correctly. ${(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}% means it got that fraction of predictions right. 90%+ is strong.`
-                          : `R² — how much of the variation in the target the model can explain. ${(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}% means the features have limited predictive power for this target. Low R² is normal when behaviour is influenced by factors not in the dataset.`}
+                          ? 'Accuracy: how often the model predicts correctly. 90–100% excellent · 70–90% good · 50–70% fair · below 50% poor.'
+                          : 'R²: how much of the variation in the target the model explains. 80–100% excellent · 50–80% good · 20–50% fair · below 20% means the target is hard to predict from these features.'}
                         position="top"
                       >
                         <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[11px] text-[#08B839] font-semibold cursor-help">
