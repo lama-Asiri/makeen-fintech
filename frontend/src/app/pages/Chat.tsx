@@ -418,6 +418,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   const [sampleSuggestedQuestions, setSampleSuggestedQuestions] = useState<string[]>([]);
   // Upload modal step: 'file' = drop zone, 'loading' = uploading
   const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [processingStage, setProcessingStage] = useState(0);
   const [isDictating, setIsDictating] = useState(false);
   const [isDatasetCardExpanded, setIsDatasetCardExpanded] = useState(false);
@@ -669,14 +670,13 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         } catch (e) { console.warn('[parse] skipped:', e); }
         setUploadStep('file');
         setSelectedFile(null);
-        setShowUploadModal(false);
+        setShowUploadModal(false); setUploadError(null);
         setToastMessage('File uploaded successfully!');
       } catch (err) {
         console.error('[uploadFile] Backend upload failed (delayed):', err);
         setUploadStep('file');
-        setShowUploadModal(false);
-        setSelectedFile(null);
-        setToastMessage('File upload failed. Please try again.');
+        setShowUploadModal(true);
+        setUploadError(parseUploadError(err));
       }
     })();
   }, [chats]);
@@ -918,6 +918,20 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     showReportBugModal,
   ]);
 
+  const parseUploadError = (err: unknown): string => {
+    try {
+      const msg = err instanceof Error ? err.message : String(err);
+      const parsed = JSON.parse(msg);
+      const detail = parsed.detail ?? msg;
+      if (typeof detail === 'string' && detail.includes('exp')) return 'Your session expired. Please refresh the page and try again.';
+      if (typeof detail === 'string' && detail.includes('10 MB')) return 'File exceeds the 10 MB size limit. Please use a smaller file.';
+      if (typeof detail === 'string' && detail.includes('Unauthorized')) return 'Authentication error. Please refresh the page and try again.';
+      return typeof detail === 'string' ? detail : msg;
+    } catch {
+      return err instanceof Error ? err.message : 'Upload failed. Please try again.';
+    }
+  };
+
   const handleFileUpload = async () => {
     if (!selectedFile && !activeChat && !pendingNewChat) return;
 
@@ -1022,25 +1036,25 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         } catch (e) { console.warn('[parse] skipped:', e); }
         setUploadStep('file');
         setSelectedFile(null);
-        setShowUploadModal(false);
+        setShowUploadModal(false); setUploadError(null);
         setToastMessage('File uploaded successfully!');
       } catch (err) {
         console.error('[uploadFile] Backend upload failed:', err);
         setUploadStep('file');
-        setShowUploadModal(false);
-        setSelectedFile(null);
-        setToastMessage('File upload failed. Please try again.');
+        setShowUploadModal(true);
+        setUploadError(parseUploadError(err));
       }
     } else {
       // No real file — close modal immediately (sample data fallback)
       setSelectedFile(null);
-      setShowUploadModal(false);
+      setShowUploadModal(false); setUploadError(null);
       setToastMessage(`File "${fileAttachment.name}" uploaded successfully!`);
     }
   };
 
 
   const handleFileSelect = (file: File) => {
+    setUploadError(null);
     const fileName = file.name.toLowerCase();
     const validExtensions = ['.csv', '.xlsx'];
     const isValid = validExtensions.some((ext) => fileName.endsWith(ext));
@@ -2500,6 +2514,24 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       onChange={handleFileInputChange}
                       className="hidden"
                     />
+
+                    {/* Upload error banner */}
+                    {uploadError && (
+                      <div className="flex items-start gap-[10px] bg-[#e05a5a]/10 border border-[#e05a5a]/40 rounded-[8px] px-[14px] py-[12px]">
+                        <svg className="w-[16px] h-[16px] text-[#e05a5a] flex-shrink-0 mt-[1px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] font-semibold text-[#e05a5a] mb-[2px]">Upload failed</p>
+                          <p className="text-[12px] text-[#e05a5a]/80 leading-[1.4]">{uploadError}</p>
+                        </div>
+                        <button onClick={() => setUploadError(null)} className="text-[#e05a5a]/60 hover:text-[#e05a5a] transition-colors flex-shrink-0">
+                          <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 16 16">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
 
                     {/* Upload Drop Zone */}
                     <div
