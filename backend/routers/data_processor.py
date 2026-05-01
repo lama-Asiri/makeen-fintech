@@ -1341,11 +1341,12 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
             # For local_single predictions, also save SHAP data in the explanation column
             # so the XAI card can be reconstructed after logout/login.
             explanation_to_save = ""
-            if result.get("type") == "PREDICTION" and result.get("mode") == "local_single":
+            pred_mode = result.get("mode", "")
+            if result.get("type") == "PREDICTION" and pred_mode in ("local_single", "local_batch"):
                 shap_vals = result.get("shap_values", [])
                 if shap_vals:
                     shap_map = {e["feature"]: e["shap_value"] for e in shap_vals}
-                    explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "shapValues": shap_map})
+                    explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "mode": pred_mode, "shapValues": shap_map})
 
             r = supabase.table("Response").insert({"answer": full_answer, "explanation": explanation_to_save, "QUERY_ID": query_id}).execute()
             response_id = r.data[0]["RESPONSE_ID"]

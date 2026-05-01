@@ -175,6 +175,7 @@ interface ChatPageProps {
 interface XaiData {
   prediction: string;
   confidence?: number | null;
+  mode: 'local_single' | 'local_batch';
   shapValues: Record<string, number>;
   limeValues?: Record<string, number>;
 }
@@ -227,6 +228,7 @@ interface Chat {
   datasetInfo?: DatasetInfo;
   trainingMetrics?: TrainingMetrics;
   rawFeatureDefaults?: Record<string, string | number>;
+  suggestedQuestions?: string[];
 }
 
 const MAX_CHATS = 3; // Backend enforces this limit — matches POST /auth/addChat constraint
@@ -560,6 +562,12 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     setStreamedMessageIds(new Set());
   }, [activeChatId]);
 
+  // Restore suggested questions chip bar when switching chats.
+  useEffect(() => {
+    const chat = chats.find((c) => c.id === activeChatId);
+    setSampleSuggestedQuestions(chat?.suggestedQuestions ?? []);
+  }, [activeChatId]);
+
   // When the user switches to a chat, load its messages from the DB.
   // This ensures messages persist across page refreshes and different devices.
   // We skip loading if messages are already in memory (already loaded this session).
@@ -594,7 +602,8 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
                 if (Array.isArray(parsed.clarifications)) {
                   suggestions = parsed.clarifications;
                 } else {
-                  xaiData = parsed;
+                  // mode defaults to local_single for old saved records that predate this field
+                  xaiData = { ...parsed, mode: parsed.mode ?? 'local_single' };
                 }
               }
             } catch {
@@ -1338,13 +1347,14 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
               // Build XAI data if this was a local_single prediction with SHAP values
               let xaiData: XaiData | undefined;
               const shapValues = metadata.shap_values as { feature: string; shap_value: number }[] | undefined;
-              if (metadata.type === 'PREDICTION' && metadata.mode === 'local_single' && Array.isArray(shapValues) && shapValues.length > 0) {
+              const mode = metadata.mode as string | undefined;
+              if (metadata.type === 'PREDICTION' && (mode === 'local_single' || mode === 'local_batch') && Array.isArray(shapValues) && shapValues.length > 0) {
                 const shapMap: Record<string, number> = {};
                 for (const entry of shapValues) shapMap[entry.feature] = entry.shap_value;
-                const limeRaw = metadata.lime_values as { feature: string; impact: number }[] | undefined;
+                const limeRaw = mode === 'local_single' ? metadata.lime_values as { feature: string; impact: number }[] | undefined : undefined;
                 const limeMap: Record<string, number> = {};
                 if (Array.isArray(limeRaw)) for (const entry of limeRaw) limeMap[entry.feature] = entry.impact;
-                xaiData = { prediction: String(metadata.prediction ?? ''), confidence: metadata.confidence as number | null, shapValues: shapMap, limeValues: Object.keys(limeMap).length > 0 ? limeMap : undefined };
+                xaiData = { prediction: String(metadata.prediction ?? ''), confidence: metadata.confidence as number | null, mode: mode as 'local_single' | 'local_batch', shapValues: shapMap, limeValues: Object.keys(limeMap).length > 0 ? limeMap : undefined };
               }
 
               // Extract training metrics if backend trained a new model this request
@@ -2892,8 +2902,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             })()}
                           </div>
 
-                          {/* LIME Feature Importance Chart */}
-                          {message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
+                          {/* LIME Feature Importance Chart — local_single only */}
+                          {message.xaiData.mode === 'local_single' && message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
                             <div className="px-[20px] pb-[14px] border-t border-[#3a3a3a] pt-[14px]">
                               <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (LIME)</p>
                               {(() => {
@@ -3203,7 +3213,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSampleSuggestedQuestions([])}
+                  onClick={() => {
+                    setSampleSuggestedQuestions([]);
+                    setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, suggestedQuestions: [] } : c));
+                  }}
                   className="flex-shrink-0 text-[#555] hover:text-[#999] transition-colors"
                   title="Dismiss suggestions"
                 >
@@ -3876,6 +3889,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       const file = new File([blob], ds.filename, { type: 'text/csv' });
                       handleFileSelect(file);
                       setSampleSuggestedQuestions([...ds.suggestedQuestions]);
+                      setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, suggestedQuestions: [...ds.suggestedQuestions] } : c));
                       setSelectedSampleDataset(null);
                     } catch {
                       setToastMessage('Failed to load sample dataset. Please try again.');
