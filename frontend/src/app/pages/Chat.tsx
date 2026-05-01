@@ -2676,9 +2676,16 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
                       <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Model Performance</p>
-                      <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[11px] text-[#08B839] font-semibold">
-                        {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'} {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
-                      </span>
+                      <Tooltip
+                        text={activeChat.trainingMetrics.metricKey === 'accuracy'
+                          ? `Accuracy — how often the model predicts correctly. ${(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}% means it got that fraction of predictions right. 90%+ is strong.`
+                          : `R² — how much of the variation in the target the model can explain. ${(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}% means the features have limited predictive power for this target. Low R² is normal when behaviour is influenced by factors not in the dataset.`}
+                        position="top"
+                      >
+                        <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[11px] text-[#08B839] font-semibold cursor-help">
+                          {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'} {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
+                        </span>
+                      </Tooltip>
                       <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isModelCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
                     </button>
                     {isModelCardExpanded && (
