@@ -646,7 +646,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
     const delayedBackendId = chat.backendId;
     const delayedChatId = chat.id;
     (async () => {
-      const { data: { session: fresh } } = await supabase.auth.getSession();
+      const { data: { session: fresh } } = await supabase.auth.refreshSession();
       const token = fresh?.access_token ?? session?.access_token ?? '';
       try {
         await uploadFileAPI(token, selectedFile, delayedBackendId);
@@ -999,7 +999,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
 
     if (selectedFile && backendId !== undefined && session?.access_token) {
       setUploadStep('loading');
-      const { data: { session: fresh } } = await supabase.auth.getSession();
+      const { data: { session: fresh } } = await supabase.auth.refreshSession();
       const token = fresh?.access_token ?? session.access_token;
       try {
         await uploadFileAPI(token, selectedFile, backendId);
@@ -1244,7 +1244,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
         }
 
         const apiUrl = import.meta.env.VITE_API_URL;
-        const { data: { session: fresh } } = await supabase.auth.getSession();
+        const { data: { session: fresh } } = await supabase.auth.refreshSession();
         const token = fresh?.access_token ?? session.access_token;
         const controller = new AbortController();
         abortControllerRef.current = controller;
