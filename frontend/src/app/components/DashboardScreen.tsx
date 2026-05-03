@@ -23,14 +23,14 @@ export function DashboardScreen({ onLogout }: DashboardScreenProps) {
         </div>
 
         <h1
-          className="font-['Roboto:Bold',sans-serif] font-bold text-[40px] leading-[48px] text-[#fffcfe] mb-4"
+          className="font-['Roboto:Bold',sans-serif] font-bold text-[2.5rem] leading-[48px] text-[#fffcfe] mb-4"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
           Welcome to Dashboard!
         </h1>
 
         <p
-          className="font-['Roboto:Regular',sans-serif] font-normal text-[18px] leading-[28px] text-[#fffcfe] mb-8 opacity-80"
+          className="font-['Roboto:Regular',sans-serif] font-normal text-[1.125rem] leading-[28px] text-[#fffcfe] mb-8 opacity-80"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
           You have successfully logged in. This is a placeholder dashboard screen for the
@@ -39,7 +39,7 @@ export function DashboardScreen({ onLogout }: DashboardScreenProps) {
 
         <button
           onClick={onLogout}
-          className="bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4692] font-['Inter:Regular',sans-serif] font-normal text-[16px] leading-[20px] text-black px-[32px] py-[16px] rounded-[8px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#141414]"
+          className="bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4692] font-['Inter:Regular',sans-serif] font-normal text-[1rem] leading-[20px] text-black px-[32px] py-[16px] rounded-[8px] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#141414]"
         >
           Back to Login
         </button>

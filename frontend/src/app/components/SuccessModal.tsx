@@ -52,7 +52,7 @@ export function SuccessModal({ isOpen, onClose, onLogin }: SuccessModalProps) {
                 />
               </div>
               <p 
-                className="css-4hzbpn font-['Roboto:SemiBold',sans-serif] font-semibold leading-[32px] text-[#fffcfe] text-[24px] text-center"
+                className="css-4hzbpn font-['Roboto:SemiBold',sans-serif] font-semibold leading-[32px] text-[#fffcfe] text-[1.5rem] text-center"
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
                 Makeen
@@ -62,13 +62,13 @@ export function SuccessModal({ isOpen, onClose, onLogin }: SuccessModalProps) {
             {/* Title and Description */}
             <div className="flex flex-col items-center justify-center text-center w-full">
               <p 
-                className="css-4hzbpn font-['Roboto:SemiBold',sans-serif] font-semibold leading-[28px] text-white text-[20px]"
+                className="css-4hzbpn font-['Roboto:SemiBold',sans-serif] font-semibold leading-[28px] text-white text-[1.25rem]"
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
                 Successful password reset
               </p>
               <p 
-                className="css-4hzbpn font-['Roboto:Regular',sans-serif] font-normal leading-[24px] text-white text-[16px] mt-[8px]"
+                className="css-4hzbpn font-['Roboto:Regular',sans-serif] font-normal leading-[24px] text-white text-[1rem] mt-[8px]"
                 style={{ fontVariationSettings: "'wdth' 100" }}
               >
                 You can now use your new password to login to your account
@@ -81,7 +81,7 @@ export function SuccessModal({ isOpen, onClose, onLogin }: SuccessModalProps) {
             onClick={onLogin}
             className="bg-[#7760bd] flex h-[56px] items-center justify-center px-[24px] py-[16px] rounded-[8px] w-[344px] cursor-pointer transition-all duration-200 ease-in-out hover:bg-[#8b7dd8] hover:shadow-[0_8px_24px_rgba(119,96,189,0.4)] hover:scale-[1.01] active:bg-[#5b4692] focus:outline-none focus:ring-2 focus:ring-[#7760bd]/60 focus:ring-offset-2 focus:ring-offset-[#262626]"
           >
-            <p className="css-ew64yg font-['Inter:Regular',sans-serif] font-normal leading-[20px] text-[16px] text-black text-center">
+            <p className="css-ew64yg font-['Inter:Regular',sans-serif] font-normal leading-[20px] text-[1rem] text-black text-center">
               Login
             </p>
           </button>

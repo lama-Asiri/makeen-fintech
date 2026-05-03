@@ -305,10 +305,10 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
         <div className="relative max-w-[1000px] mx-auto px-[16px] md:px-[24px] py-[32px] md:py-[48px]">
           {/* Header */}
           <div className="mb-[40px] text-center">
-            <h1 className="font-['Roboto:Bold',sans-serif] font-bold text-[24px] md:text-[36px] text-[#fffcfe] mb-[12px]">
+            <h1 className="font-['Roboto:Bold',sans-serif] font-bold text-[1.5rem] md:text-[2.25rem] text-[#fffcfe] mb-[12px]">
               Help Center
             </h1>
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] md:text-[16px] text-[#999]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] md:text-[1rem] text-[#999]">
               Find answers, learn how to use the platform, or contact us.
             </p>
           </div>
@@ -343,12 +343,12 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search help articles…"
-                  className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[12px] pl-[48px] pr-[16px] py-[14px] font-['Roboto:Regular',sans-serif] text-[15px] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
+                  className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[12px] pl-[48px] pr-[16px] py-[14px] font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
                   ref={searchInputRef}
                 />
               </div>
             </div>
-            <p className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#666] mt-[8px] ml-[4px]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#666] mt-[8px] ml-[4px]">
               Try: upload CSV, explanation methods, exporting results…
             </p>
           </div>
@@ -361,7 +361,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                 <button
                   key={section.id}
                   onClick={() => handleChipClick(section.id)}
-                  className={`px-[16px] py-[8px] rounded-[8px] font-['Roboto:Medium',sans-serif] text-[14px] transition-all ${
+                  className={`px-[16px] py-[8px] rounded-[8px] font-['Roboto:Medium',sans-serif] text-[0.875rem] transition-all ${
                     isActive
                       ? 'bg-[rgba(119,96,189,0.2)] border border-[#7760bd] text-[#7760bd]'
                       : 'bg-[#1a1a1a] border border-[rgba(255,252,254,0.1)] text-[#999] hover:bg-[#242424] hover:text-[#fffcfe] hover:border-[rgba(255,252,254,0.2)]'
@@ -376,7 +376,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
           {/* Results Count */}
           {debouncedSearchQuery && (
             <div className="mb-[16px]">
-              <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999]">
+              <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999]">
                 Showing {totalResults} result{totalResults !== 1 ? 's' : ''}
               </p>
             </div>
@@ -385,16 +385,16 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
           {/* Empty State */}
           {debouncedSearchQuery && totalResults === 0 && (
             <div className="text-center py-[64px]">
-              <h3 className="font-['Roboto:Bold',sans-serif] font-bold text-[24px] text-[#fffcfe] mb-[12px]">
+              <h3 className="font-['Roboto:Bold',sans-serif] font-bold text-[1.5rem] text-[#fffcfe] mb-[12px]">
                 No results found
               </h3>
-              <p className="font-['Roboto:Regular',sans-serif] text-[15px] text-[#999] mb-[24px]">
+              <p className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#999] mb-[24px]">
                 Try different keywords or browse topics below.
               </p>
               <div className="flex items-center justify-center gap-[12px] flex-wrap">
                 <button
                   onClick={clearSearch}
-                  className="px-[24px] py-[12px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[15px] rounded-[8px] transition-all"
+                  className="px-[24px] py-[12px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[0.9375rem] rounded-[8px] transition-all"
                 >
                   Clear search
                 </button>
@@ -403,7 +403,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                     trackEvent('report_bug_opened', { source: 'help_center_empty_state' });
                     setIsReportBugOpen(true);
                   }}
-                  className="px-[24px] py-[12px] bg-[#2c2c2c] hover:bg-[#333] border border-[rgba(255,252,254,0.15)] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[15px] rounded-[8px] transition-all"
+                  className="px-[24px] py-[12px] bg-[#2c2c2c] hover:bg-[#333] border border-[rgba(255,252,254,0.15)] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[0.9375rem] rounded-[8px] transition-all"
                 >
                   Report a bug
                 </button>
@@ -413,7 +413,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                   trackEvent('contact_opened', { source: 'help_center_empty_state' });
                   setIsContactUsOpen(true);
                 }}
-                className="mt-[16px] font-['Roboto:Medium',sans-serif] text-[14px] text-[#7760bd] hover:text-[#6952a8] underline transition-colors"
+                className="mt-[16px] font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#7760bd] hover:text-[#6952a8] underline transition-colors"
               >
                 Contact us
               </button>
@@ -448,10 +448,10 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                       <div className="w-[40px] h-[40px] flex items-center justify-center bg-[#2c2c2c] rounded-[8px] flex-shrink-0">
                         <Icon className="w-[20px] h-[20px] text-[#7760bd]" />
                       </div>
-                      <h2 className="flex-1 text-left font-['Roboto:Medium',sans-serif] text-[18px] text-[#fffcfe]">
+                      <h2 className="flex-1 text-left font-['Roboto:Medium',sans-serif] text-[1.125rem] text-[#fffcfe]">
                         {section.title}
                         {debouncedSearchQuery && filteredItems.length > 0 && (
-                          <span className="ml-[8px] font-['Roboto:Regular',sans-serif] text-[14px] text-[#999]">
+                          <span className="ml-[8px] font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999]">
                             ({filteredItems.length})
                           </span>
                         )}
@@ -500,7 +500,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                               aria-expanded={isQuestionExpanded}
                               className="w-full px-[14px] md:px-[24px] py-[14px] md:py-[16px] flex items-center gap-[10px] hover:bg-[#242424] transition-all duration-150 group"
                             >
-                              <div className="flex-1 text-left font-['Roboto:Regular',sans-serif] text-[15px] text-[#e0e0e0]">
+                              <div className="flex-1 text-left font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#e0e0e0]">
                                 {debouncedSearchQuery 
                                   ? highlightMatch(item.question, debouncedSearchQuery.trim())
                                   : item.question
@@ -520,7 +520,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                             {/* Answer */}
                             {isQuestionExpanded && (
                               <div className="px-[14px] md:px-[24px] pb-[16px] animate-fadeIn">
-                                <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] leading-[1.6] overflow-wrap-anywhere break-words">
+                                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] leading-[1.6] overflow-wrap-anywhere break-words">
                                   {item.answer}
                                 </p>
                               </div>
@@ -537,10 +537,10 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
 
           {/* Still Need Help Section */}
           <div className="bg-gradient-to-br from-[#1a1a1a] to-[#2c2c2c] border border-[rgba(119,96,189,0.2)] rounded-[16px] p-[32px] text-center shadow-[0_4px_16px_rgba(0,0,0,0.4)]">
-            <h3 className="font-['Roboto:Bold',sans-serif] font-bold text-[24px] text-[#fffcfe] mb-[12px]">
+            <h3 className="font-['Roboto:Bold',sans-serif] font-bold text-[1.5rem] text-[#fffcfe] mb-[12px]">
               Still need help?
             </h3>
-            <p className="font-['Roboto:Regular',sans-serif] text-[15px] text-[#999] mb-[24px]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#999] mb-[24px]">
               If you didn't find what you need, contact us or report a bug.
             </p>
             <div className="flex items-center justify-center gap-[12px] flex-wrap">
@@ -549,7 +549,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                   trackEvent('contact_opened', { source: 'help_center_still_need_help' });
                   setIsContactUsOpen(true);
                 }}
-                className="px-[24px] py-[12px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[15px] rounded-[8px] transition-all"
+                className="px-[24px] py-[12px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[0.9375rem] rounded-[8px] transition-all"
               >
                 Contact us
               </button>
@@ -558,7 +558,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
                   trackEvent('report_bug_opened', { source: 'help_center_still_need_help' });
                   setIsReportBugOpen(true);
                 }}
-                className="px-[24px] py-[12px] bg-[#2c2c2c] hover:bg-[#333] border border-[rgba(255,252,254,0.15)] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[15px] rounded-[8px] transition-all"
+                className="px-[24px] py-[12px] bg-[#2c2c2c] hover:bg-[#333] border border-[rgba(255,252,254,0.15)] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[0.9375rem] rounded-[8px] transition-all"
               >
                 Report a bug
               </button>
@@ -569,7 +569,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
         {/* Toast Notification */}
         {toastMessage && (
           <div className="fixed bottom-[24px] left-1/2 -translate-x-1/2 bg-[#2c2c2c] border border-[rgba(255,252,254,0.1)] rounded-[12px] px-[20px] py-[14px] shadow-[0_4px_16px_rgba(0,0,0,0.4)] z-[102] animate-fadeIn">
-            <p className="font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe]">
+            <p className="font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe]">
               {toastMessage}
             </p>
           </div>

@@ -2,20 +2,12 @@
 @import './tailwind.css';
 @import './theme.css';
 
-/* ── Font size scaling via CSS zoom ──────────────────────────────────────────
-   zoom shrinks/grows #root, but we compensate width + min-height so the
-   zoomed result always fills exactly 100vw × 100vh — no black gaps, no scroll.
+/* ── Font-only size scaling ───────────────────────────────────────────────────
+   Changes the html base font-size so rem values scale proportionally.
+   Layout (px-based spacing, icons, dimensions) is unaffected.
    ─────────────────────────────────────────────────────────────────────────── */
-html[data-font-size="small"] #root {
-  zoom: 0.85;
-  width: calc(100vw / 0.85);
-  min-height: calc(100vh / 0.85);
-}
-html[data-font-size="large"] #root {
-  zoom: 1.15;
-  width: calc(100vw / 1.15);
-  min-height: calc(100vh / 1.15);
-}
+html[data-font-size="small"] { font-size: 13.6px; }  /* 16 × 0.85 */
+html[data-font-size="large"] { font-size: 18.4px; }  /* 16 × 1.15 */
 
 /* Hide scrollbar while keeping scroll behaviour */
 .scrollbar-hide {

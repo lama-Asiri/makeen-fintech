@@ -114,7 +114,7 @@ export function ColorSelect({ value, onChange, options, lockedOptions = [], onLo
               style={{ backgroundColor: selectedOption.value }}
             />
           )}
-          <span className="text-[14px] text-white font-['Roboto:Regular',sans-serif]">
+          <span className="text-[0.875rem] text-white font-['Roboto:Regular',sans-serif]">
             {value}
           </span>
         </div>
@@ -162,7 +162,7 @@ export function ColorSelect({ value, onChange, options, lockedOptions = [], onLo
                       className="w-[12px] h-[12px] rounded-full border border-white/[0.22] flex-shrink-0"
                       style={{ backgroundColor: option.value }}
                     />
-                    <span className={`text-[14px] font-['Roboto:Regular',sans-serif] ${
+                    <span className={`text-[0.875rem] font-['Roboto:Regular',sans-serif] ${
                       isSelected ? 'text-white' : 'text-[#ccc]'
                     }`}>
                       {option.label}
@@ -198,11 +198,11 @@ export function ColorSelect({ value, onChange, options, lockedOptions = [], onLo
                       className="w-[12px] h-[12px] rounded-full border border-white/[0.22] flex-shrink-0"
                       style={{ backgroundColor: option.value }}
                     />
-                    <span className="text-[14px] font-['Roboto:Regular',sans-serif] text-[#ccc]">
+                    <span className="text-[0.875rem] font-['Roboto:Regular',sans-serif] text-[#ccc]">
                       {option.label}
                     </span>
                   </div>
-                  <span className="text-[12px] font-['Roboto:Regular',sans-serif] text-[#7760bd]">Soon</span>
+                  <span className="text-[0.75rem] font-['Roboto:Regular',sans-serif] text-[#7760bd]">Soon</span>
                 </button>
               );
             })}

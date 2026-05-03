@@ -113,7 +113,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
       <div className="bg-[#262626] rounded-[16px] w-[480px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
         {/* Header */}
         <div className="px-[32px] pt-[28px] pb-[20px]">
-          <h2 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+          <h2 className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.5rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
             Edit profile
           </h2>
         </div>
@@ -167,7 +167,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
                     className="w-full px-[16px] py-[12px] flex items-center gap-[12px] text-left hover:bg-[#333] transition-colors"
                   >
                     <Camera className="w-[16px] h-[16px] text-[#fffcfe]" />
-                    <span className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Change photo</span>
+                    <span className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Change photo</span>
                   </button>
                   
                   {/* Remove photo - only show if avatar exists */}
@@ -180,7 +180,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
                       className="w-full px-[16px] py-[12px] flex items-center gap-[12px] text-left hover:bg-[#ff4d4f]/10 transition-colors border-t border-[rgba(255,252,254,0.1)]"
                     >
                       <Trash2 className="w-[16px] h-[16px] text-[#ff4d4f]" />
-                      <span className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#ff4d4f]">Remove photo</span>
+                      <span className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#ff4d4f]">Remove photo</span>
                     </button>
                   )}
                 </div>
@@ -192,7 +192,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
           <div className="flex flex-col gap-[20px]">
             {/* Display Name */}
             <div>
-              <label className="block font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#ccc] mb-[8px]">
+              <label className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#ccc] mb-[8px]">
                 Display name
               </label>
               <div className="relative">
@@ -202,7 +202,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
                   onChange={(e) => handleDisplayNameChange(e.target.value)}
                   onFocus={() => setIsNameFocused(true)}
                   onBlur={() => setIsNameFocused(false)}
-                  className="w-full bg-[#333] text-white rounded-[8px] px-[16px] py-[12px] pr-[44px] border border-[#555] focus:outline-none focus:border-[#7760bd] font-['Roboto:Regular',sans-serif] text-[16px]"
+                  className="w-full bg-[#333] text-white rounded-[8px] px-[16px] py-[12px] pr-[44px] border border-[#555] focus:outline-none focus:border-[#7760bd] font-['Roboto:Regular',sans-serif] text-[1rem]"
                   placeholder="Enter your display name"
                 />
                 <Pencil className={`absolute right-[14px] top-1/2 -translate-y-1/2 w-[16px] h-[16px] pointer-events-none transition-colors ${isNameFocused ? 'text-[#7760bd]' : 'text-[#999]'}`} />
@@ -211,10 +211,10 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
 
             {/* Email - Read Only */}
             <div>
-              <label className="block font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#ccc] mb-[8px]">
+              <label className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#ccc] mb-[8px]">
                 Email
               </label>
-              <div className="w-full bg-[#2a2a2a] text-[#999] rounded-[8px] px-[16px] py-[12px] border border-[#555] font-['Roboto:Regular',sans-serif] text-[16px] cursor-not-allowed">
+              <div className="w-full bg-[#2a2a2a] text-[#999] rounded-[8px] px-[16px] py-[12px] border border-[#555] font-['Roboto:Regular',sans-serif] text-[1rem] cursor-not-allowed">
                 {currentEmail}
               </div>
             </div>
@@ -227,7 +227,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
             onClick={handleCancel}
             className="border border-[#555] rounded-[8px] px-[24px] h-[44px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
           >
-            <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+            <p className="font-['Roboto:Regular',sans-serif] text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
               Cancel
             </p>
           </button>
@@ -240,7 +240,7 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
                 : 'bg-[#555] cursor-not-allowed opacity-50'
             }`}
           >
-            <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+            <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
               Save
             </p>
           </button>
@@ -251,20 +251,20 @@ export function EditProfileModal({ isOpen, onClose, currentDisplayName, currentE
       {showRemoveConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[400px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[18px] text-white mb-[12px]">Remove profile photo?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] mb-[24px]">Your photo will be removed and replaced with a default avatar.</p>
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Remove profile photo?</p>
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[24px]">Your photo will be removed and replaced with a default avatar.</p>
             <div className="flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowRemoveConfirm(false)}
                 className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Cancel</p>
+                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={handleRemoveAvatar}
                 className="bg-[#ff4d4f] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#ff787a] transition-all"
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#fffcfe]">Remove</p>
+                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Remove</p>
               </button>
             </div>
           </div>

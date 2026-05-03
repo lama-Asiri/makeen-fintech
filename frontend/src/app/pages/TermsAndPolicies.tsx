@@ -298,7 +298,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                 src={imgImage39}
               />
             </div>
-            <span className="font-['Roboto:SemiBold',sans-serif] text-[24px] text-[#fffcfe]">
+            <span className="font-['Roboto:SemiBold',sans-serif] text-[1.5rem] text-[#fffcfe]">
               Makeen
             </span>
           </div>
@@ -322,12 +322,12 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
               Terms & Policies
               <div className="absolute bottom-[-4px] left-0 right-0 h-[3px] bg-gradient-to-r from-[#7760bd] to-[#9580d4] rounded-full" />
             </h1>
-            <p className="font-['Roboto:Regular',sans-serif] text-[16px] text-[#999] mt-[20px]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[1rem] text-[#999] mt-[20px]">
               Transparent policies designed to keep your data safe and your experience clear.
             </p>
           </div>
           <div className="flex-shrink-0">
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#666]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#666]">
               Last updated: <span className="text-[#999]">February 1, 2026</span>
             </p>
           </div>
@@ -341,7 +341,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
           <div className="hidden lg:block">
             <div className="sticky top-[100px]">
               <div className="bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] p-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                <h2 className="font-['Roboto:SemiBold',sans-serif] text-[16px] text-[#fffcfe] mb-[16px]">
+                <h2 className="font-['Roboto:SemiBold',sans-serif] text-[1rem] text-[#fffcfe] mb-[16px]">
                   On this page
                 </h2>
 
@@ -375,7 +375,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search in this page…"
-                      className="w-full bg-[#2c2c2c] border border-[rgba(255,252,254,0.1)] rounded-[8px] pl-[36px] pr-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[13px] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
+                      className="w-full bg-[#2c2c2c] border border-[rgba(255,252,254,0.1)] rounded-[8px] pl-[36px] pr-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
                     />
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                         key={section.id}
                         onClick={() => scrollToSection(section.id)}
                         aria-current={activeSection === section.id ? 'true' : undefined}
-                        className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[14px] transition-all cursor-pointer ${
+                        className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[0.875rem] transition-all cursor-pointer ${
                           activeSection === section.id
                             ? 'bg-[#7760bd]/20 text-[#7760bd] border-l-2 border-[#7760bd]'
                             : 'text-[#999] hover:bg-[#2c2c2c] hover:text-[#fffcfe]'
@@ -398,7 +398,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                       </button>
                     ))
                   ) : (
-                    <p className="px-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[13px] text-[#666] italic">
+                    <p className="px-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#666] italic">
                       No matching sections.
                     </p>
                   )}
@@ -413,7 +413,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
               onClick={() => setIsTOCOpen(!isTOCOpen)}
               className="w-full bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] px-[20px] py-[16px] flex items-center justify-between"
             >
-              <span className="font-['Roboto:SemiBold',sans-serif] text-[16px] text-[#fffcfe]">
+              <span className="font-['Roboto:SemiBold',sans-serif] text-[1rem] text-[#fffcfe]">
                 On this page
               </span>
               <svg
@@ -435,7 +435,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                     <button
                       key={section.id}
                       onClick={() => scrollToSection(section.id)}
-                      className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[14px] transition-all cursor-pointer ${
+                      className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[0.875rem] transition-all cursor-pointer ${
                         activeSection === section.id
                           ? 'bg-[#7760bd]/20 text-[#7760bd] border-l-2 border-[#7760bd]'
                           : 'text-[#999] hover:bg-[#2c2c2c] hover:text-[#fffcfe]'
@@ -459,7 +459,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                   ref={(el) => { sectionRefs.current[section.id] = el; }}
                   className={index !== 0 ? 'mt-[48px]' : ''}
                 >
-                  <h2 className="font-['Roboto:SemiBold',sans-serif] text-[24px] text-[#fffcfe] mb-[16px]">
+                  <h2 className="font-['Roboto:SemiBold',sans-serif] text-[1.5rem] text-[#fffcfe] mb-[16px]">
                     {section.title}
                   </h2>
 
@@ -467,7 +467,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                     {section.content.map((paragraph, pIndex) => (
                       <p
                         key={pIndex}
-                        className="font-['Roboto:Regular',sans-serif] text-[15px] text-[#999] leading-[1.7]"
+                        className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#999] leading-[1.7]"
                       >
                         {paragraph}
                       </p>
@@ -491,7 +491,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
           className="fixed bottom-[32px] right-[32px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[12px] px-[20px] py-[12px] flex items-center gap-[8px] shadow-[0_4px_16px_rgba(119,96,189,0.4)] transition-all z-50 group"
         >
           <ArrowUp className="w-[18px] h-[18px]" />
-          <span className="font-['Roboto:Medium',sans-serif] text-[14px]">Back to top</span>
+          <span className="font-['Roboto:Medium',sans-serif] text-[0.875rem]">Back to top</span>
         </button>
       )}
 
@@ -499,7 +499,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
       <footer className="border-t border-[rgba(255,252,254,0.1)] bg-[#1a1a1a]">
         <div className="max-w-[1400px] mx-auto px-[24px] py-[24px]">
           <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-[16px]">
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#666]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#666]">
               Copyright © 2026 Makeen | All Rights Reserved
             </p>
             <div className="flex items-center gap-[24px]">

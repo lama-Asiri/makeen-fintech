@@ -139,10 +139,10 @@ export function AccountDropdown({
             <DefaultAvatar displayName={displayName} size={40} />
           )}
           <div className="flex-1 text-left min-w-0">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[14px] text-[#fffcfe] truncate">
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[0.875rem] text-[#fffcfe] truncate">
               {displayName}
             </p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] truncate">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] truncate">
               {email}
             </p>
           </div>
@@ -162,7 +162,7 @@ export function AccountDropdown({
             className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
           >
             <CreditCard className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
               Subscription
             </p>
           </button>
@@ -177,7 +177,7 @@ export function AccountDropdown({
           className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
         >
           <Palette className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-          <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+          <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
             Personalization
           </p>
         </button>
@@ -191,7 +191,7 @@ export function AccountDropdown({
           className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
         >
           <Settings className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-          <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+          <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
             Settings
           </p>
         </button>
@@ -207,7 +207,7 @@ export function AccountDropdown({
           className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
         >
           <LifeBuoy className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-          <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+          <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
             Help
           </p>
           <ChevronRight className="w-[16px] h-[16px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
@@ -222,7 +222,7 @@ export function AccountDropdown({
           className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group text-left"
         >
           <LogOut className="w-[18px] h-[18px] text-[#dc2626] group-hover:text-[#dc2626] flex-shrink-0 transition-colors" />
-          <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#dc2626] flex-1 text-left">
+          <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#dc2626] flex-1 text-left">
             Log out
           </p>
         </button>
@@ -260,7 +260,7 @@ export function AccountDropdown({
             className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
           >
             <LifeBuoy className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
               Help center
             </p>
           </button>
@@ -284,7 +284,7 @@ export function AccountDropdown({
             className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
           >
             <FileText className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
               Terms & policies
             </p>
           </button>
@@ -309,7 +309,7 @@ export function AccountDropdown({
             className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
           >
             <Bug className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
               Report Bug
             </p>
           </button>
@@ -333,7 +333,7 @@ export function AccountDropdown({
             className="w-full px-[16px] py-[12px] flex items-center gap-[12px] hover:bg-[#333] transition-colors cursor-pointer group"
           >
             <Keyboard className="w-[18px] h-[18px] text-[#999] group-hover:text-[#7760bd] flex-shrink-0 transition-colors" />
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] flex-1 text-left">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] flex-1 text-left">
               Keyboard shortcuts
             </p>
           </button>

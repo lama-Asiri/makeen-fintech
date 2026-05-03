@@ -96,7 +96,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
         <div className="bg-[#2c2c2c] border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between rounded-t-[16px]">
           <h2
             id="contact-modal-title"
-            className="font-['Roboto:Bold',sans-serif] font-bold text-[20px] text-[#fffcfe]"
+            className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
             style={{ fontVariationSettings: "'wdth' 100" }}
           >
             Contact us
@@ -112,7 +112,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
 
         {/* Content */}
         <div className="px-[24px] py-[24px]">
-          <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] mb-[20px]">
+          <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[20px]">
             Send us your question and we'll get back to you.
           </p>
 
@@ -120,7 +120,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
           <div className="mb-[16px]">
             <label
               htmlFor="contact-email"
-              className="block font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe] mb-[8px]"
+              className="block font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe] mb-[8px]"
             >
               Email <span className="text-[#666]">(optional)</span>
             </label>
@@ -130,7 +130,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your.email@example.com"
-              className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] focus:shadow-[0_0_0_3px_rgba(119,96,189,0.1)] transition-all"
+              className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] focus:shadow-[0_0_0_3px_rgba(119,96,189,0.1)] transition-all"
             />
           </div>
 
@@ -138,7 +138,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
           <div className="mb-[16px]">
             <label
               htmlFor="contact-subject"
-              className="block font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe] mb-[8px]"
+              className="block font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe] mb-[8px]"
             >
               Subject <span className="text-[#dc2626]">*</span>
             </label>
@@ -151,14 +151,14 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
                 if (subjectError) setSubjectError('');
               }}
               placeholder="What can we help you with?"
-              className={`w-full bg-[#1a1a1a] border rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] placeholder:text-[#666] focus:outline-none transition-all ${
+              className={`w-full bg-[#1a1a1a] border rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none transition-all ${
                 subjectError
                   ? 'border-[#dc2626] focus:border-[#dc2626] focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)]'
                   : 'border-[rgba(255,252,254,0.15)] focus:border-[#7760bd] focus:shadow-[0_0_0_3px_rgba(119,96,189,0.1)]'
               }`}
             />
             {subjectError && (
-              <p className="mt-[6px] font-['Roboto:Regular',sans-serif] text-[13px] text-[#dc2626]">
+              <p className="mt-[6px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#dc2626]">
                 {subjectError}
               </p>
             )}
@@ -168,7 +168,7 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
           <div className="mb-[24px]">
             <label
               htmlFor="contact-message"
-              className="block font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe] mb-[8px]"
+              className="block font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe] mb-[8px]"
             >
               Message <span className="text-[#dc2626]">*</span>
             </label>
@@ -181,14 +181,14 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
               }}
               placeholder="Describe your question or issue in detail"
               rows={6}
-              className={`w-full bg-[#1a1a1a] border rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe] placeholder:text-[#666] focus:outline-none transition-all resize-none ${
+              className={`w-full bg-[#1a1a1a] border rounded-[8px] px-[12px] py-[10px] font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none transition-all resize-none ${
                 messageError
                   ? 'border-[#dc2626] focus:border-[#dc2626] focus:shadow-[0_0_0_3px_rgba(220,38,38,0.1)]'
                   : 'border-[rgba(255,252,254,0.15)] focus:border-[#7760bd] focus:shadow-[0_0_0_3px_rgba(119,96,189,0.1)]'
               }`}
             />
             {messageError && (
-              <p className="mt-[6px] font-['Roboto:Regular',sans-serif] text-[13px] text-[#dc2626]">
+              <p className="mt-[6px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#dc2626]">
                 {messageError}
               </p>
             )}
@@ -198,13 +198,13 @@ export function ContactUsModal({ isOpen, onClose, onSuccess, userEmail }: Contac
           <div className="flex items-center justify-end gap-[12px]">
             <button
               onClick={onClose}
-              className="px-[20px] py-[10px] font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe] bg-[#1a1a1a] hover:bg-[#242424] active:bg-[#2a2a2a] border border-[rgba(255,252,254,0.15)] rounded-[8px] transition-all"
+              className="px-[20px] py-[10px] font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe] bg-[#1a1a1a] hover:bg-[#242424] active:bg-[#2a2a2a] border border-[rgba(255,252,254,0.15)] rounded-[8px] transition-all"
             >
               Cancel
             </button>
             <button
               onClick={handleSend}
-              className="px-[20px] py-[10px] font-['Roboto:Medium',sans-serif] text-[14px] text-[#fffcfe] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] rounded-[8px] transition-all"
+              className="px-[20px] py-[10px] font-['Roboto:Medium',sans-serif] text-[0.875rem] text-[#fffcfe] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] rounded-[8px] transition-all"
             >
               Send
             </button>

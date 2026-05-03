@@ -106,7 +106,7 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
         <div className="bg-[#2c2c2c] border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between rounded-t-[16px]">
           <h2
             id="report-bug-modal-title"
-            className="font-['Roboto:Bold',sans-serif] font-bold text-[20px] text-[#fffcfe]"
+            className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
             style={{ fontVariationSettings: "'wdth' 100" }}
           >
             Report a bug
@@ -132,7 +132,7 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
                     setSelectedIssueType(type);
                     setErrors((prev) => ({ ...prev, issueType: '' }));
                   }}
-                  className={`px-[16px] py-[8px] rounded-[8px] font-['Roboto:Medium',sans-serif] text-[14px] transition-all ${
+                  className={`px-[16px] py-[8px] rounded-[8px] font-['Roboto:Medium',sans-serif] text-[0.875rem] transition-all ${
                     selectedIssueType === type
                       ? 'bg-[#7760bd] text-[#fffcfe] border border-[#7760bd]'
                       : 'bg-[#1a1a1a] text-[#999] border border-[rgba(255,252,254,0.15)] hover:border-[#7760bd] hover:text-[#fffcfe]'
@@ -143,7 +143,7 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
               ))}
             </div>
             {errors.issueType && (
-              <p className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#dc2626] mt-[4px]">
+              <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#dc2626] mt-[4px]">
                 {errors.issueType}
               </p>
             )}
@@ -160,18 +160,18 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
                 }
               }}
               placeholder="Tell us about the issue you encountered"
-              className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[8px] px-[16px] py-[12px] font-['Roboto:Regular',sans-serif] text-[15px] text-[#fffcfe] placeholder:text-[#666] resize-none focus:outline-none focus:border-[#7760bd] transition-colors min-h-[120px]"
+              className="w-full bg-[#1a1a1a] border border-[rgba(255,252,254,0.15)] rounded-[8px] px-[16px] py-[12px] font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#fffcfe] placeholder:text-[#666] resize-none focus:outline-none focus:border-[#7760bd] transition-colors min-h-[120px]"
               rows={5}
             />
             <div className="flex items-center justify-between mt-[8px]">
               <div>
                 {errors.description && (
-                  <p className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#dc2626]">
+                  <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#dc2626]">
                     {errors.description}
                   </p>
                 )}
               </div>
-              <p className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#666]">
+              <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#666]">
                 {description.length} / 2000
               </p>
             </div>
@@ -181,7 +181,7 @@ export function ReportBugModal({ isOpen, onClose, onSuccess }: ReportBugModalPro
           <div className="flex justify-end">
             <button
               onClick={handleSend}
-              className="px-[24px] py-[10px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[15px] rounded-[8px] transition-colors"
+              className="px-[24px] py-[10px] bg-[#7760bd] hover:bg-[#6952a8] active:bg-[#5b4691] text-[#fffcfe] font-['Roboto:Medium',sans-serif] text-[0.9375rem] rounded-[8px] transition-colors"
             >
               Send
             </button>

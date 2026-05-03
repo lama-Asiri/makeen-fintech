@@ -101,7 +101,7 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-        className="font-['Inter:Bold',sans-serif] font-bold text-[28px] md:text-[32px] text-[#fffcfe] mb-[12px] relative"
+        className="font-['Inter:Bold',sans-serif] font-bold text-[1.75rem] md:text-[2rem] text-[#fffcfe] mb-[12px] relative"
       >
         <span className="bg-gradient-to-r from-[#fffcfe] via-[#fffcfe] to-[#fffcfe]/90 bg-clip-text text-transparent">
           {currentMessage.headline(displayName)}
@@ -113,7 +113,7 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="font-['Inter:Regular',sans-serif] text-[16px] md:text-[18px] text-[#999] max-w-[600px] mx-auto"
+        className="font-['Inter:Regular',sans-serif] text-[1rem] md:text-[1.125rem] text-[#999] max-w-[600px] mx-auto"
       >
         {currentMessage.subtext}
       </motion.p>

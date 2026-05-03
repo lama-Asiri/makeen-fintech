@@ -51,7 +51,7 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
         <div className="bg-[#2c2c2c] border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between rounded-t-[16px]">
           <h2
             id="shortcuts-modal-title"
-            className="font-['Roboto:Bold',sans-serif] font-bold text-[20px] text-[#fffcfe]"
+            className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
             style={{ fontVariationSettings: "'wdth' 100" }}
           >
             Keyboard shortcuts
@@ -70,10 +70,10 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
           <div className="space-y-[12px]">
             {shortcuts.map((shortcut, index) => (
               <div key={index} className="flex items-center justify-between py-[8px]">
-                <span className="font-['Roboto:Regular',sans-serif] text-[15px] text-[#fffcfe]">
+                <span className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#fffcfe]">
                   {shortcut.action}
                 </span>
-                <kbd className="font-['Roboto:Medium',sans-serif] text-[13px] text-[#999] bg-[#1a1a1a] px-[12px] py-[6px] rounded-[6px] border border-[rgba(255,252,254,0.15)] min-w-[120px] text-center">
+                <kbd className="font-['Roboto:Medium',sans-serif] text-[0.8125rem] text-[#999] bg-[#1a1a1a] px-[12px] py-[6px] rounded-[6px] border border-[rgba(255,252,254,0.15)] min-w-[120px] text-center">
                   {shortcut.keys}
                 </kbd>
               </div>

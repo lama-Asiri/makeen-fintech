@@ -179,12 +179,12 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           {/* Title */}
-          <h1 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[36px] md:text-[48px] leading-[1.2] mb-[16px]">
+          <h1 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[2.25rem] md:text-[48px] leading-[1.2] mb-[16px]">
             Choose the plan that fits your workflow
           </h1>
 
           {/* Subtitle */}
-          <p className="font-['Inter:Regular',sans-serif] text-[18px] md:text-[20px] text-[#b0b0b0] max-w-[700px] mx-auto mb-[24px] leading-[1.6]">
+          <p className="font-['Inter:Regular',sans-serif] text-[1.125rem] md:text-[1.25rem] text-[#b0b0b0] max-w-[700px] mx-auto mb-[24px] leading-[1.6]">
             Start free with core predictions + explanations. Upgrade anytime for advanced features and future integrations.
           </p>
 
@@ -198,7 +198,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                   setBillingPeriod('monthly');
                 }
               }}
-              className={`px-[24px] py-[10px] rounded-full font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] ${
+              className={`px-[24px] py-[10px] rounded-full font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] ${
                 billingPeriod === 'monthly'
                   ? 'bg-[#7760bd]/20 text-[#a89bd9] border-2 border-[#7760bd]'
                   : 'bg-transparent text-[#808080] border-2 border-[#444] hover:border-[#666] hover:text-[#b0b0b0]'
@@ -215,7 +215,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                   setBillingPeriod('yearly');
                 }
               }}
-              className={`px-[24px] py-[10px] rounded-full font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] ${
+              className={`px-[24px] py-[10px] rounded-full font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#1a1a1a] ${
                 billingPeriod === 'yearly'
                   ? 'bg-[#7760bd]/20 text-[#a89bd9] border-2 border-[#7760bd]'
                   : 'bg-transparent text-[#808080] border-2 border-[#444] hover:border-[#666] hover:text-[#b0b0b0]'
@@ -261,7 +261,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                         ? 'bg-[#7760bd]' 
                         : 'border border-[#444] bg-[#2a2a2a]'
                     }`}>
-                      <span className={`font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] uppercase tracking-wide ${
+                      <span className={`font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] uppercase tracking-wide ${
                         plan.isPopular ? 'text-white' : 'text-[#9e9e9e]'
                       }`}>
                         {plan.badge}
@@ -272,7 +272,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
 
                 <div className="p-[32px]">
                   {/* Plan Name */}
-                  <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[28px] mb-[8px]">
+                  <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.75rem] mb-[8px]">
                     {plan.name}
                   </h3>
 
@@ -282,14 +282,14 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                       {displayPrice}
                     </span>
                     {priceSuffix && (
-                      <span className="font-['Inter:Regular',sans-serif] text-[18px] text-[#9e9e9e]">
+                      <span className="font-['Inter:Regular',sans-serif] text-[1.125rem] text-[#9e9e9e]">
                         {priceSuffix}
                       </span>
                     )}
                   </div>
 
                   {/* Description */}
-                  <p className="font-['Inter:Regular',sans-serif] text-[14px] text-[#b0b0b0] mb-[24px] min-h-[40px]">
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] text-[#b0b0b0] mb-[24px] min-h-[40px]">
                     {plan.description}
                   </p>
 
@@ -297,7 +297,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                   <button
                     onClick={() => handlePlanClick(plan.id)}
                     disabled={plan.buttonVariant === 'current'}
-                    className={`w-full py-[14px] rounded-[10px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[15px] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#242424] ${
+                    className={`w-full py-[14px] rounded-[10px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.9375rem] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#242424] ${
                       plan.buttonVariant === 'current'
                         ? 'bg-[#333] text-[#808080] cursor-not-allowed'
                         : plan.buttonVariant === 'primary'
@@ -311,7 +311,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
 
                   {/* Note */}
                   {plan.note && (
-                    <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#808080] mt-[12px] italic">
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#808080] mt-[12px] italic">
                       {plan.note}
                     </p>
                   )}
@@ -332,13 +332,13 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
                           )}
                         </div>
                         <div className="flex-1">
-                          <span className={`font-['Inter:Regular',sans-serif] text-[14px] ${
+                          <span className={`font-['Inter:Regular',sans-serif] text-[0.875rem] ${
                             feature.included ? 'text-[#e0e0e0]' : 'text-[#666]'
                           }`}>
                             {feature.name}
                           </span>
                           {feature.comingSoon && (
-                            <span className="ml-[8px] px-[6px] py-[2px] rounded-[4px] bg-[#7760bd]/20 font-['Inter:Regular',sans-serif] text-[10px] text-[#a89bd9] uppercase tracking-wide">
+                            <span className="ml-[8px] px-[6px] py-[2px] rounded-[4px] bg-[#7760bd]/20 font-['Inter:Regular',sans-serif] text-[0.625rem] text-[#a89bd9] uppercase tracking-wide">
                               Soon
                             </span>
                           )}
@@ -369,12 +369,12 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
             </div>
 
             {/* Title */}
-            <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[20px] md:text-[24px] mb-[12px]">
+            <h3 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.25rem] md:text-[1.5rem] mb-[12px]">
               Questions about subscriptions?
             </h3>
 
             {/* Body */}
-            <p className="font-['Inter:Regular',sans-serif] text-[15px] text-[#b0b0b0] leading-[1.6] mb-[24px]">
+            <p className="font-['Inter:Regular',sans-serif] text-[0.9375rem] text-[#b0b0b0] leading-[1.6] mb-[24px]">
               Find answers in the Help Center under "Subscriptions."
             </p>
 
@@ -382,12 +382,12 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
             {onOpenHelpCenter ? (
               <button
                 onClick={onOpenHelpCenter}
-                className="px-[24px] py-[12px] rounded-[10px] bg-transparent border-2 border-[#7760bd] text-[#7760bd] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[15px] hover:bg-[#7760bd]/10 hover:border-[#8870cd] transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#242424]"
+                className="px-[24px] py-[12px] rounded-[10px] bg-transparent border-2 border-[#7760bd] text-[#7760bd] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.9375rem] hover:bg-[#7760bd]/10 hover:border-[#8870cd] transition-all duration-200 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#242424]"
               >
                 Open Help Center
               </button>
             ) : (
-              <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#808080] italic">
+              <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#808080] italic">
                 Help Center integration coming soon
               </p>
             )}
@@ -396,7 +396,7 @@ export function SubscriptionPage({ onBack, onOpenHelpCenter }: SubscriptionPageP
 
         {/* Footer Micro-copy */}
         <div className="text-center pt-[40px] border-t border-[#333]">
-          <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#808080] leading-[1.6] max-w-[600px] mx-auto">
+          <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#808080] leading-[1.6] max-w-[600px] mx-auto">
             Subscriptions are not active yet. This page represents the planned pricing structure for future releases.
           </p>
         </div>

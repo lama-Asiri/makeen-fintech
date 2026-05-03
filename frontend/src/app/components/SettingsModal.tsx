@@ -309,7 +309,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <SettingsIcon className={`w-[20px] h-[20px] ${activeTab === 'general' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[12px] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 General
               </div>
             </div>
@@ -326,7 +326,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <Shield className={`w-[20px] h-[20px] ${activeTab === 'security' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[12px] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Security
               </div>
             </div>
@@ -343,7 +343,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <Database className={`w-[20px] h-[20px] ${activeTab === 'data' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[12px] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Data Management
               </div>
             </div>
@@ -360,7 +360,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <Palette className={`w-[20px] h-[20px] ${activeTab === 'personalization' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[12px] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Personalization
               </div>
             </div>
@@ -395,7 +395,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
         <div className="flex-1 flex flex-col bg-[#262626] rounded-r-[16px] min-w-0">
           {/* Header */}
           <div className="bg-[#262626] h-[64px] px-[24px] flex items-center justify-between rounded-tr-[16px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex-shrink-0">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[20px] leading-[28px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.25rem] leading-[28px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
               {activeTab === 'general' && 'General'}
               {activeTab === 'security' && 'Security & Privacy'}
               {activeTab === 'data' && 'Data Management'}
@@ -420,8 +420,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                   <div className="flex items-center justify-between gap-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Language</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Choose your preferred language</p>
+                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Language</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Choose your preferred language</p>
                     </div>
                     <CustomSelect
                       value={language}
@@ -444,10 +444,10 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                     <div className="flex items-start justify-between mb-[16px]">
                       <div>
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>Subscription</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>Subscription</p>
                         <div className="flex items-center gap-[12px] mt-[6px]">
-                          <span className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#b0b0b0]">Current plan: <span className="text-[#fffcfe]">Free</span></span>
-                          <span className="px-[8px] py-[2px] rounded-[4px] bg-[#7760bd]/20 border border-[#7760bd]/30 font-['Roboto:Regular',sans-serif] text-[11px] text-[#a89bd9] uppercase tracking-wide">Active</span>
+                          <span className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#b0b0b0]">Current plan: <span className="text-[#fffcfe]">Free</span></span>
+                          <span className="px-[8px] py-[2px] rounded-[4px] bg-[#7760bd]/20 border border-[#7760bd]/30 font-['Roboto:Regular',sans-serif] text-[0.6875rem] text-[#a89bd9] uppercase tracking-wide">Active</span>
                         </div>
                       </div>
                     </div>
@@ -455,16 +455,16 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Usage Summary */}
                     <div className="space-y-[12px] mb-[16px]">
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#999]">Datasets used</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[13px] text-[#fffcfe]">{usageData.datasetsUsed} / {usageData.datasetsLimit}</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Datasets used</span>
+                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.datasetsUsed} / {usageData.datasetsLimit}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#999]">Exports used</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[13px] text-[#fffcfe]">{usageData.exportsUsed} / {usageData.exportsLimit}</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Exports used</span>
+                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.exportsUsed} / {usageData.exportsLimit}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#999]">Saved chats</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[13px] text-[#fffcfe]">{usageData.savedChats} / {usageData.savedChatsLimit}</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Saved chats</span>
+                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.savedChats} / {usageData.savedChatsLimit}</span>
                       </div>
                     </div>
 
@@ -475,7 +475,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                           onViewPlansClick();
                           onClose();
                         }}
-                        className="w-full bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[14px]"
+                        className="w-full bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem]"
                       >
                         View Plans
                       </button>
@@ -501,10 +501,10 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                       <div className="flex flex-col gap-[14px]">
                         <div className="flex items-center justify-between">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Change Password</p>
+                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Change Password</p>
                           <button
                             onClick={() => setSecurityView('changePassword')}
-                            className="bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[14px]"
+                            className="bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem]"
                           >
                             Change
                           </button>
@@ -523,8 +523,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     >
                       <div className="flex items-center justify-between gap-[16px]">
                         <div className="flex-1 min-w-0">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Save chat history</p>
-                          <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">When off, chats are not stored in history.</p>
+                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Save chat history</p>
+                          <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">When off, chats are not stored in history.</p>
                         </div>
                         <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
                           <input 
@@ -549,12 +549,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                       <div className="flex items-center justify-between gap-[16px]">
                         <div className="flex-1 min-w-0">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Clear conversation context</p>
-                          <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Resets the current conversation memory in this session.</p>
+                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Clear conversation context</p>
+                          <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Resets the current conversation memory in this session.</p>
                         </div>
                         <button
                           onClick={() => setShowClearContextConfirm(true)}
-                          className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[14px] flex-shrink-0"
+                          className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
                         >
                           Clear context
                         </button>
@@ -590,7 +590,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 {/* Change Password Section */}
                 {securityView === 'changePassword' && (
                   <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Change Password</p>
+                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Change Password</p>
                     <div className="flex flex-col gap-[8px]">
                       <PasswordInput
                         label="Current Password"
@@ -641,7 +641,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                         onClick={handleCancelPasswordChange}
                         className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
                       >
-                        <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Cancel</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
                       </button>
                       <button
                         onClick={handlePasswordSubmit}
@@ -658,7 +658,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                             <path className="opacity-75" fill="#FFFCFE" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.928l3-2.647z" />
                           </svg>
                         ) : (
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#fffcfe]">Confirm</p>
+                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Confirm</p>
                         )}
                       </button>
                     </div>
@@ -666,7 +666,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Password Change Toast */}
                     {passwordToast && (
                       <div
-                        className={`absolute left-1/2 bottom-[20px] -translate-x-1/2 px-[16px] py-[10px] rounded-[8px] text-[14px] font-['Roboto:Regular',sans-serif] ${
+                        className={`absolute left-1/2 bottom-[20px] -translate-x-1/2 px-[16px] py-[10px] rounded-[8px] text-[0.875rem] font-['Roboto:Regular',sans-serif] ${
                           passwordToast.type === 'success' ? 'bg-[#16a34a] text-[#fffcfe]' : 'bg-[#dc2626] text-[#fffcfe]'
                         }`}
                       >
@@ -685,12 +685,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                   <div className="flex items-center justify-between gap-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Clear local cache</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Removes temporary files and cached previews from this device. Your chats won't be deleted.</p>
+                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Clear local cache</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Removes temporary files and cached previews from this device. Your chats won't be deleted.</p>
                     </div>
                     <button
                       onClick={() => setShowClearCacheConfirm(true)}
-                      className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[14px] flex-shrink-0"
+                      className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
                     >
                       Clear
                     </button>
@@ -701,12 +701,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
                   <div className="flex items-center justify-between gap-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Delete all chats</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Permanently removes all saved conversations from your account.</p>
+                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Delete all chats</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Permanently removes all saved conversations from your account.</p>
                     </div>
                     <button
                       onClick={() => setShowDeleteAllChatsConfirm(true)}
-                      className="bg-[#dc2626] hover:bg-[#ef4444] text-white rounded-[6px] px-[16px] py-[8px] cursor-pointer transition-colors text-[14px] flex-shrink-0"
+                      className="bg-[#dc2626] hover:bg-[#ef4444] text-white rounded-[6px] px-[16px] py-[8px] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
                     >
                       Delete
                     </button>
@@ -737,8 +737,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* 0) Font Size */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[4px]" style={{ fontVariationSettings: "'wdth' 100" }}>Font Size</p>
-                  <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mb-[16px]">Controls the size of message text across the chat.</p>
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[4px]" style={{ fontVariationSettings: "'wdth' 100" }}>Font Size</p>
+                  <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mb-[16px]">Controls the size of message text across the chat.</p>
                   <div className="flex gap-[10px]">
                     {(['small', 'medium', 'large'] as const).map((size) => (
                       <button
@@ -751,7 +751,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                         }`}
                       >
                         <span style={{ fontSize: size === 'small' ? '12px' : size === 'medium' ? '15px' : '19px' }}>Aa</span>
-                        <span className="text-[11px] capitalize font-['Roboto:Medium',sans-serif]">{size}</span>
+                        <span className="text-[0.6875rem] capitalize font-['Roboto:Medium',sans-serif]">{size}</span>
                       </button>
                     ))}
                   </div>
@@ -759,13 +759,13 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* 1) Theme / Appearance */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Theme / Appearance</p>
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Theme / Appearance</p>
                   <div className="flex flex-col gap-[16px]">
                     {/* Row A - Theme */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Theme</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Choose the overall app theme.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Theme</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Choose the overall app theme.</p>
                       </div>
                       <CustomSelect
                         value={theme}
@@ -786,8 +786,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Row B - Accent Color */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Accent Color</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Changes buttons, highlights, and active states.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Accent Color</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Changes buttons, highlights, and active states.</p>
                       </div>
                       <ColorSelect
                         value={accentColor}
@@ -812,12 +812,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* 2) Response Style */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Response Style</p>
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Response Style</p>
                   <div className="flex flex-col gap-[16px]">
                     {/* Row A - Response Length */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Response Length</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Response Length</p>
                       </div>
                       <CustomSelect
                         value={responseLength}
@@ -835,16 +835,16 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                       />
                     </div>
                     <div className="pl-[16px] border-l-2 border-[#555]">
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999]">More: Use clear formatting and lists</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Less: More paragraphs instead of lists</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999]">More: Use clear formatting and lists</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Less: More paragraphs instead of lists</p>
                     </div>
 
                     {/* Row B - Tone */}
                     <div className="flex items-center justify-between gap-[16px] mt-[8px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Tone</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Controls the writing tone of answers.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Tone</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls the writing tone of answers.</p>
                       </div>
                       <CustomSelect
                         value={tone}
@@ -866,12 +866,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* 3) Headers & Lists */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Headers & Lists</p>
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Headers & Lists</p>
                   <div className="flex flex-col gap-[16px]">
                     {/* Row - Formatting Preference */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Formatting Preference</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Formatting Preference</p>
                       </div>
                       <CustomSelect
                         value={formattingPref}
@@ -889,22 +889,22 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                       />
                     </div>
                     <div className="pl-[16px] border-l-2 border-[#555]">
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999]">More lists: Use clear formatting and lists</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">More paragraphs: More paragraphs instead of lists</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999]">More lists: Use clear formatting and lists</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
+                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">More paragraphs: More paragraphs instead of lists</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 4) File-related Behavior */}
                 <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>File-related Behavior</p>
+                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>File-related Behavior</p>
                   <div className="flex flex-col gap-[16px]">
                     {/* Row A - Auto-summarize uploaded files */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Auto-summarize uploaded files</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Generate a short summary after upload.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Auto-summarize uploaded files</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Generate a short summary after upload.</p>
                       </div>
                       <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
                         <input type="checkbox" className="sr-only peer" checked={autoSummarize} onChange={(e) => {
@@ -923,8 +923,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Row B - Ask before using file data */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Ask before using file data</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Ask for confirmation before referencing uploaded data.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Ask before using file data</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Ask for confirmation before referencing uploaded data.</p>
                       </div>
                       <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
                         <input type="checkbox" className="sr-only peer" checked={askBeforeUse} onChange={(e) => {
@@ -943,8 +943,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Row C - Preferred analysis depth */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-white">Preferred analysis depth</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[12px] text-[#999] mt-[4px]">Controls how detailed file analysis should be.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Preferred analysis depth</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls how detailed file analysis should be.</p>
                       </div>
                       <CustomSelect
                         value={analysisDepth}
@@ -981,14 +981,14 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
       {showClearContextConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[400px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[18px] text-white mb-[12px]">Clear conversation context?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] mb-[24px]">This will reset the current session context.</p>
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Clear conversation context?</p>
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[24px]">This will reset the current session context.</p>
             <div className="flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowClearContextConfirm(false)}
                 className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Cancel</p>
+                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -998,7 +998,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 }}
                 className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] transition-all"
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#fffcfe]">Clear</p>
+                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
               </button>
             </div>
           </div>
@@ -1009,14 +1009,14 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
       {showClearCacheConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[400px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[18px] text-white mb-[12px]">Clear local cache?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] mb-[24px]">This will remove temporary files from this device. Your chats will not be affected.</p>
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Clear local cache?</p>
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[24px]">This will remove temporary files from this device. Your chats will not be affected.</p>
             <div className="flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowClearCacheConfirm(false)}
                 className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Cancel</p>
+                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -1028,7 +1028,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 }}
                 className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] transition-all"
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#fffcfe]">Clear</p>
+                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
               </button>
             </div>
           </div>
@@ -1039,15 +1039,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
       {showDeleteAllChatsConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[440px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[18px] text-white mb-[12px]">Delete all chats?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#999] mb-[16px]">This action cannot be undone. All your saved conversations will be permanently removed.</p>
+            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Delete all chats?</p>
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[16px]">This action cannot be undone. All your saved conversations will be permanently removed.</p>
             <div className="mb-[24px]">
-              <p className="font-['Roboto:Regular',sans-serif] text-[13px] text-[#999] mb-[8px]">Type <span className="font-['Roboto:SemiBold',sans-serif] text-white">DELETE</span> to confirm:</p>
+              <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999] mb-[8px]">Type <span className="font-['Roboto:SemiBold',sans-serif] text-white">DELETE</span> to confirm:</p>
               <input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#555] rounded-[6px] px-[12px] py-[10px] text-white font-['Roboto:Regular',sans-serif] text-[14px] focus:outline-none focus:border-[#dc2626] transition-colors"
+                className="w-full bg-[#1a1a1a] border border-[#555] rounded-[6px] px-[12px] py-[10px] text-white font-['Roboto:Regular',sans-serif] text-[0.875rem] focus:outline-none focus:border-[#dc2626] transition-colors"
                 placeholder="Type DELETE"
               />
             </div>
@@ -1059,7 +1059,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 }}
                 className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[14px] text-[#fffcfe]">Cancel</p>
+                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -1081,7 +1081,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 }`}
                 disabled={deleteConfirmText !== 'DELETE'}
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] text-[#fffcfe]">Delete All</p>
+                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Delete All</p>
               </button>
             </div>
           </div>

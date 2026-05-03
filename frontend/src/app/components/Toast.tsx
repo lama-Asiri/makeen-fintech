@@ -34,7 +34,7 @@ export function Toast({ message, onClose, autoHideDuration = 4000 }: ToastProps)
         </div>
         
         {/* Message */}
-        <p className="font-['Inter:Regular',sans-serif] text-[16px] text-white flex-1">
+        <p className="font-['Inter:Regular',sans-serif] text-[1rem] text-white flex-1">
           {message}
         </p>
         

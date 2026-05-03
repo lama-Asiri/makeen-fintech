@@ -156,7 +156,7 @@ export function Tooltip({ text, children, position = 'right', disabled = false }
         createPortal(
           <div
             ref={tooltipRef}
-            className="fixed px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[12px] rounded-[6px] whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200"
+            className="fixed px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200"
             style={{
               left: `${coords.x}px`,
               top: `${coords.y}px`,

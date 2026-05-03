@@ -2183,7 +2183,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     />
                   </div>
                   <p
-                    className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[24px] text-[#fffcfe]"
+                    className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.5rem] text-[#fffcfe]"
                     style={{ fontVariationSettings: "'wdth' 100" }}
                   >
                     Makeen
@@ -2249,7 +2249,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   ref={searchInputRef}
                   type="text"
                   placeholder="Search"
-                  className="flex-1 bg-transparent font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white placeholder:text-[#9e9e9e] outline-none"
+                  className="flex-1 bg-transparent font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white placeholder:text-[#9e9e9e] outline-none"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -2285,7 +2285,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             >
               <PenSquare className="w-[20px] h-[20px] shrink-0 stroke-white" strokeWidth={2} />
               {!isSidebarCollapsed && (
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-[#9e9e9e]">New Chat</p>
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-[#9e9e9e]">New Chat</p>
               )}
             </button>
           </Tooltip>
@@ -2306,7 +2306,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 18 18">
                   <path d={svgPaths.p16599900} fill="white" />
                 </svg>
-                <p className="flex-1 text-left font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-[#9e9e9e]">Chat history</p>
+                <p className="flex-1 text-left font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-[#9e9e9e]">Chat history</p>
                 {isChatHistoryExpanded ? (
                   <ChevronDown className="w-[16px] h-[16px] stroke-[#9e9e9e] transition-transform" strokeWidth={2} />
                 ) : (
@@ -2336,14 +2336,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               onChange={(e) => setRenameValue(e.target.value)}
                               onKeyDown={handleRenameKeyDown}
                               onBlur={handleSaveRename}
-                              className="flex-1 min-w-0 max-w-full bg-[#333] text-white font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] px-[8px] py-[4px] rounded-[6px] outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                              className="flex-1 min-w-0 max-w-full bg-[#333] text-white font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] px-[8px] py-[4px] rounded-[6px] outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                             />
                           ) : (
                             <button
                               onClick={() => {
                                 setActiveChatId(chat.id);
                               }}
-                              className={`flex-1 font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-left transition-all cursor-pointer ${
+                              className={`flex-1 font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-left transition-all cursor-pointer ${
                                 activeChatId === chat.id ? 'text-[#7760bd]' : 'text-[#fffcfe] hover:text-[#7760bd]'
                               } ${
                                 hoveredChatId === chat.id ? 'bg-[#7760bd]/5 px-[8px] py-[4px] rounded-[6px]' : ''
@@ -2368,7 +2368,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               {chatMenuOpenId === chat.id && (
                                 <div className="absolute right-0 top-full mt-[4px] bg-[#1a1a1a] rounded-[8px] shadow-lg py-[4px] min-w-[140px] z-20">
                                   <button
-                                    className="w-full px-[16px] py-[8px] text-left text-white text-[14px] hover:bg-[#7760bd]/20 transition-colors cursor-pointer flex items-center gap-[8px]"
+                                    className="w-full px-[16px] py-[8px] text-left text-white text-[0.875rem] hover:bg-[#7760bd]/20 transition-colors cursor-pointer flex items-center gap-[8px]"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleOpenShareModal(chat);
@@ -2377,7 +2377,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                     <span>Share</span>
                                   </button>
                                   <button
-                                    className="w-full px-[16px] py-[8px] text-left text-white text-[14px] hover:bg-[#7760bd]/20 transition-colors cursor-pointer flex items-center gap-[8px]"
+                                    className="w-full px-[16px] py-[8px] text-left text-white text-[0.875rem] hover:bg-[#7760bd]/20 transition-colors cursor-pointer flex items-center gap-[8px]"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       handleStartRename(chat);
@@ -2386,7 +2386,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                     <span>Rename</span>
                                   </button>
                                   <button
-                                    className="w-full px-[16px] py-[8px] text-left text-red-400 text-[14px] hover:bg-red-400/20 transition-colors cursor-pointer flex items-center gap-[8px]"
+                                    className="w-full px-[16px] py-[8px] text-left text-red-400 text-[0.875rem] hover:bg-red-400/20 transition-colors cursor-pointer flex items-center gap-[8px]"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       setChatMenuOpenId(null);
@@ -2403,7 +2403,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       </div>
                     ))
                   ) : (
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] text-[#808080] italic">
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] text-[#808080] italic">
                       No chats found
                     </p>
                   )}
@@ -2460,8 +2460,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 <DefaultAvatar displayName={displayName} size={40} />
               )}
               <div className="flex flex-col gap-[4px] flex-1 min-w-0 text-left">
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-[#fffcfe] truncate text-left">{displayName}</p>
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-[#808080] truncate text-left">{userEmail}</p>
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-[#fffcfe] truncate text-left">{displayName}</p>
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-[#808080] truncate text-left">{userEmail}</p>
               </div>
             </button>
           )}
@@ -2497,7 +2497,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="bg-[#2c2c2c] rounded-[8px] w-full shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col">
                 {/* Modal Header — title changes per step */}
                 <div className="bg-[#2c2c2c] px-[20px] md:px-[24px] py-[14px] md:py-[16px] rounded-t-[8px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] md:text-[18px] text-white">
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] md:text-[1.125rem] text-white">
                     File Upload
                   </p>
                 </div>
@@ -2522,8 +2522,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                         </svg>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[13px] font-semibold text-[#e05a5a] mb-[2px]">Upload failed</p>
-                          <p className="text-[12px] text-[#e05a5a]/80 leading-[1.4]">{uploadError}</p>
+                          <p className="text-[0.8125rem] font-semibold text-[#e05a5a] mb-[2px]">Upload failed</p>
+                          <p className="text-[0.75rem] text-[#e05a5a]/80 leading-[1.4]">{uploadError}</p>
                         </div>
                         <button onClick={() => setUploadError(null)} className="text-[#e05a5a]/60 hover:text-[#e05a5a] transition-colors flex-shrink-0">
                           <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 16 16">
@@ -2549,14 +2549,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <path d="M9 15L12 12L15 15" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         <path d="M12 12V21" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
-                      <p className={`font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
+                      <p className={`font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
                         {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or drag file to this area to upload'}
                       </p>
                     </div>
 
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
                     <div className="h-[1px] bg-black opacity-20" />
-                    <p className="font-['Inter:Regular',sans-serif] text-[14px] md:text-[16px] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
 
                     {/* Sample dataset cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
@@ -2567,8 +2567,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           onClick={() => setSelectedSampleDataset(ds.id)}
                           className="bg-[#262626] border border-[#444] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all hover:border-[#7760bd] hover:bg-[#2a2a2a]"
                         >
-                          <p className="font-semibold text-[13px] text-white leading-tight">{ds.name}</p>
-                          <p className="text-[11px] text-[#999] leading-tight">{ds.description}</p>
+                          <p className="font-semibold text-[0.8125rem] text-white leading-tight">{ds.name}</p>
+                          <p className="text-[0.6875rem] text-[#999] leading-tight">{ds.description}</p>
                         </button>
                       ))}
                     </div>
@@ -2579,7 +2579,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 {uploadStep === 'loading' && (
                   <div className="px-[24px] py-[48px] flex flex-col items-center gap-[16px]">
                     <div className="w-[40px] h-[40px] border-4 border-[#7760bd] border-t-transparent rounded-full animate-spin" />
-                    <p className="font-['Inter:Regular',sans-serif] text-[15px] text-[#ccc]">Uploading and parsing your file…</p>
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.9375rem] text-[#ccc]">Uploading and parsing your file…</p>
                   </div>
                 )}
 
@@ -2590,7 +2590,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     disabled={uploadStep === 'loading'}
                     className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
                   >
-                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[14px] md:text-[16px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] md:text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
                       Send
                     </p>
                   </button>
@@ -2622,8 +2622,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   </svg>
                   <div className="flex flex-col min-w-0 text-left">
-                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white truncate">{activeChat.fileAttachment.name}</p>
-                    <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
+                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white truncate">{activeChat.fileAttachment.name}</p>
+                    <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
                   </div>
                 </button>
               </div>
@@ -2640,20 +2640,20 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
                       </svg>
-                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Dataset Overview</p>
-                      <span className="text-[11px] text-[#555]">{activeChat.datasetInfo.rows > 0 ? `${activeChat.datasetInfo.rows.toLocaleString()} rows · ` : ''}{activeChat.datasetInfo.columns.length} cols</span>
+                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-white flex-1 text-left">Dataset Overview</p>
+                      <span className="text-[0.6875rem] text-[#555]">{activeChat.datasetInfo.rows > 0 ? `${activeChat.datasetInfo.rows.toLocaleString()} rows · ` : ''}{activeChat.datasetInfo.columns.length} cols</span>
                       <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isDatasetCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
                     </button>
                     {isDatasetCardExpanded && (
                       <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
                         <div className="flex gap-[20px] mb-[12px]">
-                          {activeChat.datasetInfo.rows > 0 && <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>}
-                          <div><p className="text-[10px] text-[#555] uppercase tracking-wide">Columns</p><p className="text-[18px] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
+                          {activeChat.datasetInfo.rows > 0 && <div><p className="text-[0.625rem] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>}
+                          <div><p className="text-[0.625rem] text-[#555] uppercase tracking-wide">Columns</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
                         </div>
-                        <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[7px]">Features</p>
+                        <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[7px]">Features</p>
                         <div className="flex flex-wrap gap-[5px]">
                           {activeChat.datasetInfo.columns.map((col) => (
-                            <span key={col} className={`px-[7px] py-[2px] rounded-full text-[11px] border ${activeChat.datasetInfo!.idColumns.includes(col) ? 'bg-[#2a2a2a] border-[#444] text-[#555]' : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'}`}>
+                            <span key={col} className={`px-[7px] py-[2px] rounded-full text-[0.6875rem] border ${activeChat.datasetInfo!.idColumns.includes(col) ? 'bg-[#2a2a2a] border-[#444] text-[#555]' : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'}`}>
                               {col}{activeChat.datasetInfo!.idColumns.includes(col) ? ' (ID)' : ''}
                             </span>
                           ))}
@@ -2675,14 +2675,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[12px] text-white flex-1 text-left">Model Performance</p>
+                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-white flex-1 text-left">Model Performance</p>
                       <Tooltip
                         text={activeChat.trainingMetrics.metricKey === 'accuracy'
                           ? 'Accuracy: how often the model predicts correctly. 90–100% excellent · 70–90% good · 50–70% fair · below 50% poor.'
                           : 'R²: how much of the variation in the target the model explains. 80–100% excellent · 50–80% good · 20–50% fair · below 20% means the target is hard to predict from these features.'}
                         position="top"
                       >
-                        <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[11px] text-[#08B839] font-semibold cursor-help">
+                        <span className="bg-[#08B839]/15 border border-[#08B839]/30 rounded-full px-[8px] py-[1px] text-[0.6875rem] text-[#08B839] font-semibold cursor-help">
                           {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'} {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
                         </span>
                       </Tooltip>
@@ -2690,21 +2690,21 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     </button>
                     {isModelCardExpanded && (
                       <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
-                        <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[10px]">Top Features by Importance</p>
+                        <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[10px]">Top Features by Importance</p>
                         {(() => {
                           const features = activeChat.trainingMetrics!.topFeatures;
                           const maxImp = Math.max(...features.map((f) => f.importance), 0.0001);
                           return features.map((f) => (
                             <div key={f.name} className="flex items-center gap-[10px] mb-[7px] last:mb-0">
-                              <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
+                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
                               <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                 <motion.div className="h-full rounded-full bg-[#7760bd]" initial={{ width: 0 }} animate={{ width: `${(f.importance / maxImp) * 100}%` }} transition={{ duration: 0.5, ease: 'easeOut' }} />
                               </div>
-                              <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#7760bd] w-[32px] flex-shrink-0 text-right">{(f.importance * 100).toFixed(1)}%</p>
+                              <p className="font-['Inter:Regular',sans-serif] text-[0.625rem] text-[#7760bd] w-[32px] flex-shrink-0 text-right">{(f.importance * 100).toFixed(1)}%</p>
                             </div>
                           ));
                         })()}
-                        <p className="font-['Inter:Regular',sans-serif] text-[10px] text-[#444] mt-[10px]">
+                        <p className="font-['Inter:Regular',sans-serif] text-[0.625rem] text-[#444] mt-[10px]">
                           {activeChat.trainingMetrics.taskType === 'classification' ? 'Classification' : 'Regression'} · RandomForest
                         </p>
                       </div>
@@ -2732,7 +2732,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         /* Edit Mode */
                         <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] w-full">
                           <textarea
-                            className="w-full bg-transparent text-white font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] resize-none outline-none border-none placeholder:text-white/70"
+                            className="w-full bg-transparent text-white font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] resize-none outline-none border-none placeholder:text-white/70"
                             style={{ fontVariationSettings: "'wdth' 100" }}
                             value={editMessageValue}
                             onChange={(e) => setEditMessageValue(e.target.value)}
@@ -2768,7 +2768,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <>
                           <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] overflow-x-hidden">
                             <p
-                              className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-white"
+                              className="font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] text-white"
                               style={{
                                 fontVariationSettings: "'wdth' 100",
                                 whiteSpace: 'pre-wrap',
@@ -2779,7 +2779,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               {message.content}
                             </p>
                             {message.edited && (
-                              <p className="font-['Inter:Regular',sans-serif] text-[12px] text-white/70 mt-[6px] italic">
+                              <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-white/70 mt-[6px] italic">
                                 (edited)
                               </p>
                             )}
@@ -2842,7 +2842,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <div className="flex flex-col items-start">
                       <div className="max-w-[700px]">
                         <p
-                          className="font-['Roboto:Regular',sans-serif] text-[16px] leading-[24px] text-[#fffcfe] whitespace-pre-line"
+                          className="font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] text-[#fffcfe] whitespace-pre-line"
                           style={{ fontVariationSettings: "'wdth' 100" }}
                         >
                           {streamedMessageIds.has(message.id) ? (
@@ -2861,7 +2861,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           )}
                         </p>
                         {message.stopped && (
-                          <p className="mt-[6px] text-[12px] text-[#888] italic">Generation stopped</p>
+                          <p className="mt-[6px] text-[0.75rem] text-[#888] italic">Generation stopped</p>
                         )}
                       </div>
 
@@ -2899,7 +2899,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                               </svg>
-                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[13px] text-white">XAI Explanation</p>
+                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.8125rem] text-white">XAI Explanation</p>
                             </div>
                             <div className="flex items-center gap-[6px] flex-wrap justify-end">
                               {message.xaiData.confidence !== null && message.xaiData.confidence !== undefined && message.xaiData.confidence < 60 && (
@@ -2907,11 +2907,11 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   <svg className="w-[10px] h-[10px] text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                                   </svg>
-                                  <p className="text-[10px] text-[#f59e0b]">Low confidence — treat with caution</p>
+                                  <p className="text-[0.625rem] text-[#f59e0b]">Low confidence — treat with caution</p>
                                 </div>
                               )}
                               <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px]">
-                                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[11px] text-[#7760bd]">
+                                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.6875rem] text-[#7760bd]">
                                   {message.xaiData.prediction}
                                 </p>
                               </div>
@@ -2920,7 +2920,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                           {/* SHAP Feature Importance Chart */}
                           <div className="px-[20px] py-[14px]">
-                            <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (SHAP)</p>
+                            <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (SHAP)</p>
                             {(() => {
                               const entries = Object.entries(message.xaiData.shapValues);
                               const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)));
@@ -2931,7 +2931,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   const positive = value >= 0;
                                   return (
                                     <div key={feature} title={`${feature} ${positive ? 'pushed toward' : 'pushed against'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] mb-[8px] last:mb-0 cursor-default">
-                                      <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                      <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
                                       <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                         <motion.div
                                           className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
@@ -2940,7 +2940,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                           transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
                                         />
                                       </div>
-                                      <p className={`font-['Inter:Regular',sans-serif] text-[11px] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                                      <p className={`font-['Inter:Regular',sans-serif] text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
                                         {positive ? '+' : ''}{value.toFixed(2)}
                                       </p>
                                     </div>
@@ -2952,7 +2952,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           {/* LIME Feature Importance Chart — local_single only */}
                           {message.xaiData.mode === 'local_single' && message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
                             <div className="px-[20px] pb-[14px] border-t border-[#3a3a3a] pt-[14px]">
-                              <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (LIME)</p>
+                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (LIME)</p>
                               {(() => {
                                 const entries = Object.entries(message.xaiData.limeValues).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
                                 const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)), 0.0001);
@@ -2961,7 +2961,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   const positive = value >= 0;
                                   return (
                                     <div key={feature} title={`${feature} ${positive ? 'supports' : 'opposes'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] mb-[8px] last:mb-0 cursor-default">
-                                      <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                      <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
                                       <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                         <motion.div
                                           className={`h-full rounded-full ${positive ? 'bg-[#2e8b6e]' : 'bg-[#c0713a]'}`}
@@ -2970,7 +2970,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                           transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
                                         />
                                       </div>
-                                      <p className={`font-['Inter:Regular',sans-serif] text-[11px] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#3db88a]' : 'text-[#e08050]'}`}>
+                                      <p className={`font-['Inter:Regular',sans-serif] text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#3db88a]' : 'text-[#e08050]'}`}>
                                         {positive ? '+' : ''}{value.toFixed(2)}
                                       </p>
                                     </div>
@@ -2986,7 +2986,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               <svg className="w-[12px] h-[12px] text-[#555]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#555]">SHAP: purple/red · LIME: green/orange</p>
+                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#555]">SHAP: purple/red · LIME: green/orange</p>
                             </div>
                             {activeChat.rawFeatureDefaults && (
                               <button
@@ -3000,7 +3000,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   setWhatIfError(null);
                                   setShowWhatIfModal(true);
                                 }}
-                                className="flex-shrink-0 text-[11px] text-[#7760bd] hover:text-[#9e82e0] border border-[#7760bd]/40 hover:border-[#7760bd]/70 rounded-full px-[10px] py-[2px] transition-all cursor-pointer"
+                                className="flex-shrink-0 text-[0.6875rem] text-[#7760bd] hover:text-[#9e82e0] border border-[#7760bd]/40 hover:border-[#7760bd]/70 rounded-full px-[10px] py-[2px] transition-all cursor-pointer"
                               >
                                 Try What-If
                               </button>
@@ -3180,7 +3180,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                 )}
                               </div>
                               {/* Label */}
-                              <p className={`font-['Inter:Regular',sans-serif] text-[13px] transition-colors duration-500 ${
+                              <p className={`font-['Inter:Regular',sans-serif] text-[0.8125rem] transition-colors duration-500 ${
                                 done   ? 'text-[#7760bd] line-through' :
                                 active ? 'text-white' :
                                          'text-[#555]'
@@ -3227,7 +3227,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                         <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
-                      <p className="font-['Inter:Regular',sans-serif] text-[14px] text-[#9e9e9e]">
+                      <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] text-[#9e9e9e]">
                         Regenerating response...
                       </p>
                     </div>
@@ -3252,7 +3252,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         setInputValue(q);
                         textareaRef.current?.focus();
                       }}
-                      className="flex-shrink-0 bg-[#2c2c2c] border border-[#444] hover:border-[#7760bd] hover:bg-[#2a2635] text-[#ccc] hover:text-white text-[12px] rounded-full px-[14px] py-[7px] transition-all cursor-pointer whitespace-nowrap"
+                      className="flex-shrink-0 bg-[#2c2c2c] border border-[#444] hover:border-[#7760bd] hover:bg-[#2a2635] text-[#ccc] hover:text-white text-[0.75rem] rounded-full px-[14px] py-[7px] transition-all cursor-pointer whitespace-nowrap"
                     >
                       {q}
                     </button>
@@ -3365,7 +3365,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <TextareaAutosize
                       ref={textareaRef}
                       placeholder="Ask away"
-                      className="bg-transparent text-[16px] text-white placeholder:text-[#9e9e9e] outline-none font-['Inter:Regular',sans-serif] resize-none max-w-full overflow-x-hidden"
+                      className="bg-transparent text-[1rem] text-white placeholder:text-[#9e9e9e] outline-none font-['Inter:Regular',sans-serif] resize-none max-w-full overflow-x-hidden"
                       style={{
                         whiteSpace: 'pre-wrap',
                         overflowWrap: 'anywhere',
@@ -3387,7 +3387,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                     {/* Character counter — only visible when user has typed something */}
                     {inputValue.length > 0 && (
-                      <p className={`text-right text-[11px] font-['Inter:Regular',sans-serif] transition-colors ${
+                      <p className={`text-right text-[0.6875rem] font-['Inter:Regular',sans-serif] transition-colors ${
                         inputValue.length > 450
                           ? inputValue.length >= 500 ? 'text-red-400' : 'text-yellow-400'
                           : 'text-[#666]'
@@ -3427,7 +3427,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             <rect x="2" y="2" width="12" height="12" rx="2" fill="white" />
                           </svg>
                         ) : (
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[16px] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
+                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
                             Send
                           </p>
                         )}
@@ -3466,10 +3466,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="font-['Inter:SemiBold',sans-serif] font-semibold text-[15px] text-white mb-[2px]">
+              <p className="font-['Inter:SemiBold',sans-serif] font-semibold text-[0.9375rem] text-white mb-[2px]">
                 Chat history is off
               </p>
-              <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#ccc]">
+              <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc]">
                 This chat won't be saved. Turn it on in Settings → Security.
               </p>
             </div>
@@ -3479,7 +3479,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Turn on button */}
               <button
                 onClick={handleTurnOnChatHistory}
-                className="h-[34px] px-[14px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[10px] font-['Inter:Medium',sans-serif] font-medium text-[13px] transition-colors"
+                className="h-[34px] px-[14px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[10px] font-['Inter:Medium',sans-serif] font-medium text-[0.8125rem] transition-colors"
               >
                 Turn on
               </button>
@@ -3503,14 +3503,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {showDeleteToast && pendingDelete && (
         <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-50 animate-[slideUp_0.3s_ease-out]">
           <div className="bg-[#2c2c2c] border border-[#555] rounded-[8px] px-[24px] py-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center gap-[16px]">
-            <p className="font-['Inter:Regular',sans-serif] text-[16px] text-white">
+            <p className="font-['Inter:Regular',sans-serif] text-[1rem] text-white">
               Chat deleted
             </p>
             <button
               onClick={handleUndoDelete}
               className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[6px] px-[16px] py-[6px] transition-colors cursor-pointer"
             >
-              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
+              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
                 Undo
               </p>
             </button>
@@ -3548,10 +3548,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           >
             {/* Header */}
             <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white mb-[4px]">
+              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[4px]">
                 Export Results
               </h2>
-              <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
+              <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
                 Download the prediction, SHAP explanation, and conversation
               </p>
             </div>
@@ -3569,10 +3569,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
                     Export as PDF
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
                     Opens print dialog — save as PDF
                   </p>
                 </div>
@@ -3589,10 +3589,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
                     Export as HTML
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
                     Download a self-contained HTML report
                   </p>
                 </div>
@@ -3609,10 +3609,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
                     Export as CSV
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
                     Download prediction and SHAP values as spreadsheet
                   </p>
                 </div>
@@ -3625,7 +3625,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 onClick={handleCloseShareModal}
                 className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
                   Close
                 </p>
               </button>
@@ -3645,10 +3645,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-[32px] pt-[32px] pb-[24px]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white mb-[12px]">
+              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[12px]">
                 Log out?
               </h2>
-              <p className="font-['Inter:Regular',sans-serif] text-[16px] text-[#9e9e9e]">
+              <p className="font-['Inter:Regular',sans-serif] text-[1rem] text-[#9e9e9e]">
                 Are you sure you want to log out?
               </p>
             </div>
@@ -3657,7 +3657,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 onClick={() => setShowLogoutModal(false)}
                 className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
                   Cancel
                 </p>
               </button>
@@ -3670,7 +3670,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 }}
                 className="bg-[#7760bd] hover:bg-[#6956a7] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
                   Log out
                 </p>
               </button>
@@ -3691,7 +3691,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           >
             {/* Header */}
             <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[24px] text-white mb-[8px]">
+              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[8px]">
                 Share chat
               </h2>
             </div>
@@ -3709,8 +3709,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">Copy Chat Text</p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">Copy full transcript to clipboard</p>
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">Copy Chat Text</p>
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">Copy full transcript to clipboard</p>
                 </div>
               </button>
 
@@ -3725,8 +3725,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">Download (.txt)</p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[13px] text-[#9e9e9e]">Download chat as text file</p>
+                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">Download (.txt)</p>
+                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">Download chat as text file</p>
                 </div>
               </button>
             </div>
@@ -3737,7 +3737,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 onClick={handleCloseMessageShareModal}
                 className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[14px] text-white">
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
                   Close
                 </p>
               </button>
@@ -3768,9 +3768,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Header */}
               <div className="px-[28px] pt-[24px] pb-[16px] border-b border-[#333] flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[20px] text-white">File Preview</h2>
+                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.25rem] text-white">File Preview</h2>
                   {datasetInfo && (
-                    <p className="text-[12px] text-[#666] mt-[2px]">{datasetInfo.rows.toLocaleString()} rows · {datasetInfo.columns.length} columns</p>
+                    <p className="text-[0.75rem] text-[#666] mt-[2px]">{datasetInfo.rows.toLocaleString()} rows · {datasetInfo.columns.length} columns</p>
                   )}
                 </div>
                 <button onClick={() => setShowFilePreview(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
@@ -3789,15 +3789,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <path d="M13 2v7h7" stroke="#08B839" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-[14px] text-white truncate">{attachment?.name ?? 'Sample_Template.csv'}</p>
-                    <p className="text-[12px] text-[#666]">{attachment?.type?.toUpperCase() ?? 'CSV'}{attachment?.size ? ` · ${(attachment.size / 1024).toFixed(1)} KB` : ''}</p>
+                    <p className="font-semibold text-[0.875rem] text-white truncate">{attachment?.name ?? 'Sample_Template.csv'}</p>
+                    <p className="text-[0.75rem] text-[#666]">{attachment?.type?.toUpperCase() ?? 'CSV'}{attachment?.size ? ` · ${(attachment.size / 1024).toFixed(1)} KB` : ''}</p>
                   </div>
                 </div>
 
                 {/* Data table — shown when we have columns */}
                 {previewColumns.length > 0 && (
                   <div>
-                    <p className="text-[11px] text-[#555] uppercase tracking-wide mb-[10px]">
+                    <p className="text-[0.6875rem] text-[#555] uppercase tracking-wide mb-[10px]">
                       {previewRows.length > 0 ? 'Sample Rows' : 'Columns'}
                     </p>
                     <div className="overflow-x-auto rounded-[8px] border border-[#333]">
@@ -3805,7 +3805,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <thead>
                           <tr className="bg-[#252525]">
                             {previewColumns.map((col) => (
-                              <th key={col} className="px-[12px] py-[8px] text-[11px] font-semibold text-[#9e9e9e] uppercase tracking-wide border-b border-[#333] whitespace-nowrap">
+                              <th key={col} className="px-[12px] py-[8px] text-[0.6875rem] font-semibold text-[#9e9e9e] uppercase tracking-wide border-b border-[#333] whitespace-nowrap">
                                 {col}
                               </th>
                             ))}
@@ -3816,7 +3816,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             {previewRows.map((row, ri) => (
                               <tr key={ri} className="border-b border-[#2a2a2a] hover:bg-[#232323] transition-colors">
                                 {row.map((cell, ci) => (
-                                  <td key={ci} className="px-[12px] py-[7px] text-[12px] text-[#ccc] whitespace-nowrap">{cell}</td>
+                                  <td key={ci} className="px-[12px] py-[7px] text-[0.75rem] text-[#ccc] whitespace-nowrap">{cell}</td>
                                 ))}
                               </tr>
                             ))}
@@ -3825,7 +3825,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       </table>
                     </div>
                     {previewRows.length > 0 && datasetInfo && (
-                      <p className="text-[11px] text-[#444] mt-[6px]">Showing 5 of {datasetInfo.rows.toLocaleString()} rows</p>
+                      <p className="text-[0.6875rem] text-[#444] mt-[6px]">Showing 5 of {datasetInfo.rows.toLocaleString()} rows</p>
                     )}
                   </div>
                 )}
@@ -3833,7 +3833,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 {/* Fallback if no column info yet */}
                 {previewColumns.length === 0 && (
                   <div className="bg-[#2c2c2c] rounded-[10px] p-[24px] flex items-center justify-center min-h-[120px]">
-                    <p className="text-[13px] text-[#555]">Column information not available yet — ask a question to begin analysis.</p>
+                    <p className="text-[0.8125rem] text-[#555]">Column information not available yet — ask a question to begin analysis.</p>
                   </div>
                 )}
               </div>
@@ -3844,7 +3844,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   onClick={() => setShowFilePreview(false)}
                   className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[20px] py-[8px] transition-colors cursor-pointer"
                 >
-                  <p className="font-semibold text-[13px] text-white">Close</p>
+                  <p className="font-semibold text-[0.8125rem] text-white">Close</p>
                 </button>
               </div>
             </div>
@@ -3868,7 +3868,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333] flex items-start justify-between gap-[16px]">
                 <div>
                   <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[22px] text-white">{ds.name}</h2>
-                  <p className="text-[14px] text-[#999] mt-[4px]">{ds.description}</p>
+                  <p className="text-[0.875rem] text-[#999] mt-[4px]">{ds.description}</p>
                 </div>
                 <button
                   onClick={() => setSelectedSampleDataset(null)}
@@ -3883,9 +3883,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="px-[32px] py-[24px] flex flex-col gap-[24px]">
                 {/* Table preview */}
                 <div>
-                  <p className="text-[12px] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Preview (first 5 rows)</p>
+                  <p className="text-[0.75rem] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Preview (first 5 rows)</p>
                   <div className="overflow-x-auto rounded-[8px] border border-[#333]">
-                    <table className="text-[12px] text-[#ccc] w-full border-collapse">
+                    <table className="text-[0.75rem] text-[#ccc] w-full border-collapse">
                       <thead>
                         <tr className="bg-[#252525]">
                           {ds.columns.map((col) => (
@@ -3908,12 +3908,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                 {/* Suggested questions */}
                 <div>
-                  <p className="text-[12px] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Suggested questions</p>
+                  <p className="text-[0.75rem] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Suggested questions</p>
                   <div className="flex flex-col gap-[8px]">
                     {ds.suggestedQuestions.map((q) => (
                       <div key={q} className="flex items-start gap-[10px] bg-[#252525] rounded-[8px] px-[14px] py-[10px]">
-                        <span className="text-[#7760bd] text-[14px] font-bold mt-[1px] flex-shrink-0">›</span>
-                        <p className="text-[13px] text-[#ddd]">{q}</p>
+                        <span className="text-[#7760bd] text-[0.875rem] font-bold mt-[1px] flex-shrink-0">›</span>
+                        <p className="text-[0.8125rem] text-[#ddd]">{q}</p>
                       </div>
                     ))}
                   </div>
@@ -3926,7 +3926,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   onClick={() => setSelectedSampleDataset(null)}
                   className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[20px] py-[10px] transition-colors cursor-pointer"
                 >
-                  <p className="font-semibold text-[14px] text-white">Cancel</p>
+                  <p className="font-semibold text-[0.875rem] text-white">Cancel</p>
                 </button>
                 <button
                   onClick={async () => {
@@ -3944,7 +3944,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   }}
                   className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer hover:shadow-[0_0_20px_rgba(119,96,189,0.4)]"
                 >
-                  <p className="font-semibold text-[14px] text-white">Use this dataset</p>
+                  <p className="font-semibold text-[0.875rem] text-white">Use this dataset</p>
                 </button>
               </div>
             </div>
@@ -4124,8 +4124,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             {/* Header */}
             <div className="px-[24px] py-[16px] border-b border-[#3a3a3a] flex items-center justify-between">
               <div>
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[16px] text-white">What-If Analysis</p>
-                <p className="font-['Inter:Regular',sans-serif] text-[12px] text-[#666] mt-[2px]">Adjust feature values to simulate a new prediction</p>
+                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">What-If Analysis</p>
+                <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#666] mt-[2px]">Adjust feature values to simulate a new prediction</p>
               </div>
               <button onClick={() => setShowWhatIfModal(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
                 <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
@@ -4138,7 +4138,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <div className="flex-1 overflow-y-auto px-[24px] py-[16px] flex flex-col gap-[10px]">
               {Object.entries(whatIfValues).map(([feature, value]) => (
                 <div key={feature} className="flex items-center gap-[12px]">
-                  <label className="font-['Inter:Regular',sans-serif] text-[13px] text-[#ccc] w-[140px] flex-shrink-0 truncate text-right">{feature}</label>
+                  <label className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc] w-[140px] flex-shrink-0 truncate text-right">{feature}</label>
                   <input
                     type={typeof value === 'number' ? 'number' : 'text'}
                     value={String(value)}
@@ -4146,7 +4146,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       ...prev,
                       [feature]: typeof value === 'number' ? (parseFloat(e.target.value) || 0) : e.target.value,
                     }))}
-                    className="flex-1 bg-[#1a1a1a] border border-[#444] rounded-[6px] px-[10px] py-[6px] font-['Inter:Regular',sans-serif] text-[13px] text-white outline-none focus:border-[#7760bd] transition-colors"
+                    className="flex-1 bg-[#1a1a1a] border border-[#444] rounded-[6px] px-[10px] py-[6px] font-['Inter:Regular',sans-serif] text-[0.8125rem] text-white outline-none focus:border-[#7760bd] transition-colors"
                   />
                 </div>
               ))}
@@ -4155,17 +4155,17 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             {/* Result Panel */}
             {whatIfResult && (
               <div className="mx-[24px] mb-[12px] bg-[#1a1a1a] rounded-[10px] border border-[#3a3a3a] p-[16px]">
-                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[12px]">Counterfactual Result</p>
+                <p className="text-[0.625rem] text-[#666] uppercase tracking-wide mb-[12px]">Counterfactual Result</p>
                 <div className="flex gap-[12px] mb-[14px]">
                   {/* Before */}
                   {whatIfOriginalPrediction && (
                     <div className="flex-1 bg-[#252525] border border-[#3a3a3a] rounded-[8px] p-[10px]">
-                      <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[6px]">Before</p>
+                      <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[6px]">Before</p>
                       <div className="bg-[#3a3a3a]/60 border border-[#555]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
-                        <p className="font-semibold text-[12px] text-[#999]">{whatIfOriginalPrediction.prediction}</p>
+                        <p className="font-semibold text-[0.75rem] text-[#999]">{whatIfOriginalPrediction.prediction}</p>
                       </div>
                       {whatIfOriginalPrediction.confidence !== null && (
-                        <p className="text-[11px] text-[#555]">{whatIfOriginalPrediction.confidence.toFixed(1)}%</p>
+                        <p className="text-[0.6875rem] text-[#555]">{whatIfOriginalPrediction.confidence.toFixed(1)}%</p>
                       )}
                     </div>
                   )}
@@ -4179,16 +4179,16 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   )}
                   {/* After */}
                   <div className="flex-1 bg-[#252525] border border-[#7760bd]/30 rounded-[8px] p-[10px]">
-                    <p className="text-[10px] text-[#555] uppercase tracking-wide mb-[6px]">{whatIfOriginalPrediction ? 'After' : 'Prediction'}</p>
+                    <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[6px]">{whatIfOriginalPrediction ? 'After' : 'Prediction'}</p>
                     <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
-                      <p className="font-semibold text-[12px] text-[#7760bd]">{whatIfResult.prediction}</p>
+                      <p className="font-semibold text-[0.75rem] text-[#7760bd]">{whatIfResult.prediction}</p>
                     </div>
                     {whatIfResult.confidence !== null && (
-                      <p className="text-[11px] text-[#9e9e9e]">{whatIfResult.confidence.toFixed(1)}%</p>
+                      <p className="text-[0.6875rem] text-[#9e9e9e]">{whatIfResult.confidence.toFixed(1)}%</p>
                     )}
                   </div>
                 </div>
-                <p className="text-[10px] text-[#666] uppercase tracking-wide mb-[8px]">Key Drivers</p>
+                <p className="text-[0.625rem] text-[#666] uppercase tracking-wide mb-[8px]">Key Drivers</p>
                 {(() => {
                   const entries = Object.entries(whatIfResult.shapValues).slice(0, 5);
                   const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)), 0.0001);
@@ -4197,7 +4197,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     const positive = val >= 0;
                     return (
                       <div key={feat} className="flex items-center gap-[10px] mb-[6px]">
-                        <p className="font-['Inter:Regular',sans-serif] text-[11px] text-[#9e9e9e] w-[100px] flex-shrink-0 truncate text-right">{feat}</p>
+                        <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#9e9e9e] w-[100px] flex-shrink-0 truncate text-right">{feat}</p>
                         <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
                           <motion.div
                             className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
@@ -4206,7 +4206,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             transition={{ duration: 0.5, ease: 'easeOut' }}
                           />
                         </div>
-                        <p className={`font-['Inter:Regular',sans-serif] text-[10px] w-[34px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                        <p className={`font-['Inter:Regular',sans-serif] text-[0.625rem] w-[34px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
                           {positive ? '+' : ''}{val.toFixed(2)}
                         </p>
                       </div>
@@ -4218,14 +4218,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
             {/* Error */}
             {whatIfError && (
-              <p className="mx-[24px] mb-[8px] font-['Inter:Regular',sans-serif] text-[12px] text-[#e05a5a]">{whatIfError}</p>
+              <p className="mx-[24px] mb-[8px] font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#e05a5a]">{whatIfError}</p>
             )}
 
             {/* Footer */}
             <div className="px-[24px] py-[14px] border-t border-[#3a3a3a] flex justify-end gap-[10px]">
               <button
                 onClick={() => setShowWhatIfModal(false)}
-                className="px-[16px] h-[36px] rounded-[8px] border border-[#555] font-['Inter:Regular',sans-serif] text-[13px] text-[#ccc] hover:bg-[#333] transition-colors cursor-pointer"
+                className="px-[16px] h-[36px] rounded-[8px] border border-[#555] font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc] hover:bg-[#333] transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -4246,7 +4246,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     setIsWhatIfLoading(false);
                   }
                 }}
-                className="bg-[#7760bd] disabled:opacity-50 px-[20px] h-[36px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] text-[13px] text-white hover:bg-[#8870cd] transition-all flex items-center gap-[8px] cursor-pointer"
+                className="bg-[#7760bd] disabled:opacity-50 px-[20px] h-[36px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] text-[0.8125rem] text-white hover:bg-[#8870cd] transition-all flex items-center gap-[8px] cursor-pointer"
               >
                 {isWhatIfLoading && <div className="w-[12px] h-[12px] border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Run Simulation

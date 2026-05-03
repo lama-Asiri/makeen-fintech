@@ -84,7 +84,7 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
       >
         {/* Header */}
         <div className="flex items-center justify-between p-[24px] pb-[16px]">
-          <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[20px] text-white">
+          <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.25rem] text-white">
             Share feedback
           </h2>
           <button
@@ -104,7 +104,7 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
               <button
                 key={option}
                 onClick={() => setSelectedReason(option)}
-                className={`px-[20px] h-[40px] rounded-full border transition-all cursor-pointer font-['Inter:Semi_Bold',sans-serif] font-medium text-[14px] ${
+                className={`px-[20px] h-[40px] rounded-full border transition-all cursor-pointer font-['Inter:Semi_Bold',sans-serif] font-medium text-[0.875rem] ${
                   selectedReason === option
                     ? 'bg-[#7760bd]/20 border-[#7760bd] text-white'
                     : 'bg-transparent border-white/20 text-[#B0B0B0] hover:bg-[#3a3a3a] hover:border-white/30'
@@ -120,13 +120,13 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             placeholder="Share details (optional)"
-            className="w-full min-h-[100px] px-[16px] py-[12px] bg-[#1a1a1a] border border-white/20 rounded-[8px] text-white text-[14px] font-['Inter:Semi_Bold',sans-serif] placeholder:text-[#808080] outline-none focus:border-[#7760bd]/50 focus:ring-2 focus:ring-[#7760bd]/20 transition-all resize-none"
+            className="w-full min-h-[100px] px-[16px] py-[12px] bg-[#1a1a1a] border border-white/20 rounded-[8px] text-white text-[0.875rem] font-['Inter:Semi_Bold',sans-serif] placeholder:text-[#808080] outline-none focus:border-[#7760bd]/50 focus:ring-2 focus:ring-[#7760bd]/20 transition-all resize-none"
             rows={3}
           />
 
           {/* Info bar */}
           <div className="bg-[#1a1a1a] rounded-[8px] px-[16px] py-[12px]">
-            <p className="text-[13px] text-[#B0B0B0] font-['Inter:Semi_Bold',sans-serif]">
+            <p className="text-[0.8125rem] text-[#B0B0B0] font-['Inter:Semi_Bold',sans-serif]">
               Your conversation will be included with your feedback to help improve our service.{' '}
               <a
                 href="#"
@@ -143,7 +143,7 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
             <button
               onClick={handleSubmit}
               disabled={!isSubmitEnabled}
-              className={`px-[24px] h-[44px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[15px] transition-all cursor-pointer ${
+              className={`px-[24px] h-[44px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.9375rem] transition-all cursor-pointer ${
                 isSubmitEnabled
                   ? 'bg-[#7760bd] hover:bg-[#8970c7] text-white'
                   : 'bg-[#3a3a3a] text-[#666] cursor-not-allowed'

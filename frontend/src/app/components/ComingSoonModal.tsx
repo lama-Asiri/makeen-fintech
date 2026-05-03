@@ -108,7 +108,7 @@ export function ComingSoonModal({
           <div className="border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between">
             <h2
               id="coming-soon-title"
-              className="font-['Roboto:Bold',sans-serif] font-bold text-[20px] text-[#fffcfe]"
+              className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
               style={{ fontVariationSettings: "'wdth' 100" }}
             >
               {title}
@@ -124,7 +124,7 @@ export function ComingSoonModal({
 
           {/* Content */}
           <div className="px-[24px] py-[24px]">
-            <p className="font-['Roboto:Regular',sans-serif] text-[15px] text-[#e0e0e0] leading-[1.6]">
+            <p className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#e0e0e0] leading-[1.6]">
               {message}
             </p>
           </div>

@@ -100,7 +100,7 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
             : 'bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#7760bd]/40 hover:bg-[#2d2d2d]'
         }`}
       >
-        <span className="text-[14px] text-white font-['Roboto:Regular',sans-serif]">
+        <span className="text-[0.875rem] text-white font-['Roboto:Regular',sans-serif]">
           {value || placeholder}
         </span>
         <ChevronDown
@@ -134,7 +134,7 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
                       : 'text-[#ccc] hover:bg-[#7760bd]/10'
                   }`}
                 >
-                  <span className="text-[14px] font-['Roboto:Regular',sans-serif]">
+                  <span className="text-[0.875rem] font-['Roboto:Regular',sans-serif]">
                     {option}
                   </span>
                   {isSelected && (
@@ -150,10 +150,10 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
                 onClick={onLockedClick}
                 className="w-full h-[42px] px-[14px] flex items-center justify-between transition-colors duration-100 text-[#ccc] hover:bg-[#7760bd]/10"
               >
-                <span className="text-[14px] font-['Roboto:Regular',sans-serif]">
+                <span className="text-[0.875rem] font-['Roboto:Regular',sans-serif]">
                   {option}
                 </span>
-                <span className="text-[12px] font-['Roboto:Regular',sans-serif] text-[#7760bd]">Soon</span>
+                <span className="text-[0.75rem] font-['Roboto:Regular',sans-serif] text-[#7760bd]">Soon</span>
               </button>
             ))}
           </div>
