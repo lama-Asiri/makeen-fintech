@@ -212,18 +212,6 @@ def predict_local_single(
 
         raw_row        = {col: raw_defaults.get(col, 0) for col in feature_names_orig}
         filled_columns = [col for col in feature_names_orig if col not in feature_values]
-        if len(filled_columns) > len(feature_names_orig) / 2:
-            provided = len(feature_names_orig) - len(filled_columns)
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Sorry, I'm unable to generate a reliable prediction with the information provided — "
-                    f"you supplied {provided} out of {len(feature_names_orig)} required features. "
-                    f"When most features are missing, the model relies on dataset-wide averages instead of your specific case, "
-                    f"which significantly reduces accuracy. "
-                    f"Please also provide: {', '.join(filled_columns)}."
-                ),
-            )
         for col, val in feature_values.items():
             if col in raw_row:
                 raw_row[col] = val

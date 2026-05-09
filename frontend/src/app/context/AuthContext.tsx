@@ -59,8 +59,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     await supabase.auth.signOut();
-    localStorage.removeItem('makeen_chats');
-    localStorage.removeItem('makeen_active_chat_id');
   };
 
   return (
