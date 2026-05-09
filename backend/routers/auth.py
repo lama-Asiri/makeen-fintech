@@ -121,11 +121,11 @@ async def get_profile(authorization: str = Header(None)):
 @router.put("/user/profile")
 async def update_profile(body: UpdateProfileRequest, authorization: str = Header(None)):
     user_id = _get_user_id(authorization)
-    update_data: dict = {"username": body.username}
+    update_data: dict = {"USER_ID": user_id, "username": body.username}
     if body.avatar_url is not None:
         update_data["avatar_url"] = body.avatar_url
     try:
-        supabase.table("User").update(update_data).eq("USER_ID", user_id).execute()
+        supabase.table("User").upsert(update_data, on_conflict="USER_ID").execute()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return {"message": "Profile updated"}
@@ -161,26 +161,15 @@ async def upload_file(
     # 1. Get user ID from auth token
     user_id = _get_user_id(authorization)
 
-    # 2. Get username from database
-    try:
-        result = supabase.table("User") \
-            .select("username") \
-            .eq("USER_ID", user_id) \
-            .single() \
-            .execute()
-        username = result.data["username"]
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to get username: {str(e)}")
-
-    # 3. Get file name and validate type
+    # 2. Get file name and validate type
     filename = os.path.basename(file.filename)
     if not filename.lower().endswith((".csv", ".xlsx")):
         raise HTTPException(status_code=400, detail="Only CSV or XLSX allowed")
-    
+
     file_type = "xlsx" if filename.lower().endswith(".xlsx") else "csv"
 
-    # 4. Set storage path
-    path = f"{username}/{filename}"
+    # 3. Set storage path — use user_id so the path is stable regardless of username changes
+    path = f"{user_id}/{filename}"
 
     # 5. Read file bytes — Supabase storage requires bytes, not a SpooledTemporaryFile object.
     # validate file size — reject anything over 10 MB before uploading.
