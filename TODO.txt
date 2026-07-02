@@ -7,6 +7,42 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  SECTION 9 — LOCAL DEV ENVIRONMENT (blocking local testing after redesign)
+  Owner: Lama | Priority: HIGH — nothing local works until these are done
+
+  [ ] N. Replace placeholder Supabase creds in frontend/.env.local with real values
+        Currently: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are fake
+        (placeholder.supabase.co) — was only set so the app wouldn't crash during
+        a design QA pass. Get real values from Supabase dashboard → Project
+        Settings → API, then RESTART the Vite dev server (env vars are only
+        read at startup, hot-reload won't pick them up).
+        Symptom if not fixed: login "succeeds" against the backend but then
+        supabase.auth.setSession() fails with ERR_NAME_NOT_RESOLVED on
+        placeholder.supabase.co/auth/v1/user, leaving no active session —
+        which is also why sendMessage() then throws "No active session or chat".
+
+  [ ] O. Investigate 400 Bad Request on sample-dataset CSV downloads
+        GET https://qekzvieqlzhlzrjwrdcc.supabase.co/storage/v1/object/public/
+            sample-datasets/loan_default.csv  → 400
+            sample-datasets/credit_fraud.csv  → 400
+        Not yet root-caused — check the bucket's public access policy / whether
+        the object actually exists at that path in that Supabase project.
+
+  [ ] P. Re-verify chat send end-to-end once N is fixed
+        Confirm "No active session or chat" is gone and a real message round-trips
+        through /processQuestion with a valid session.
+
+  [ ] Q. backend/.env now has real SUPABASE_URL/SUPABASE_SERVICE_KEY/OPENAI_API_KEY
+        (added this session) — confirm these are also set in Railway's env vars
+        for the deployed backend, not just locally.
+
+  [ ] R. CORS allow_origins in backend/app.py now includes localhost:5173/5174/5175
+        as a local-dev convenience — if port 5173 stays occupied by something else
+        long-term, consider finding/closing whatever's holding it instead of
+        permanently widening the allow-list.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 

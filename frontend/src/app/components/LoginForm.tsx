@@ -77,8 +77,8 @@ export function LoginForm({
   return (
     <div className="flex flex-col gap-8 w-full">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold text-white tracking-tight">Welcome back!</h2>
-        <p className="text-[#999] text-base font-normal">Please enter your details to sign in.</p>
+        <h2 className="font-serif font-medium text-3xl text-white tracking-tight">Welcome back!</h2>
+        <p className="text-[#9e9e9e] text-base font-normal">Please enter your details to sign in.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
@@ -169,7 +169,7 @@ export function LoginForm({
         </LoginButton>
       </div>
 
-      <p className="text-center text-sm text-[#999] mt-2">
+      <p className="text-center text-sm text-[#9e9e9e] mt-2">
         Don't have an account?{' '}
         <button
           type="button"

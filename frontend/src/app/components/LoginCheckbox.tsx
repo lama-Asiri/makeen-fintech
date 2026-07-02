@@ -59,7 +59,7 @@ export const LoginCheckbox = forwardRef<HTMLInputElement, LoginCheckboxProps>(
               ${!hasRead 
                 ? 'border-white/10 bg-white/5' 
                 : 'border-white/20 bg-white/5 peer-checked:bg-[#7760bd] peer-checked:border-[#7760bd] peer-hover:border-white/40 group-hover:border-white/40'}
-              peer-focus-visible:ring-2 peer-focus-visible:ring-[#7760bd] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[#0f0f0f]`} 
+              peer-focus-visible:ring-2 peer-focus-visible:ring-[#7760bd] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[#141414]`} 
             />
             <svg
               className="absolute w-3.5 h-3.5 text-white opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"
@@ -73,7 +73,7 @@ export const LoginCheckbox = forwardRef<HTMLInputElement, LoginCheckboxProps>(
               <polyline points="20 6 9 17 4 12" />
             </svg>
           </div>
-          <span className={`text-sm font-normal transition-colors leading-snug ${!hasRead ? 'text-[#666]' : 'text-[#999] group-hover:text-white'}`}>
+          <span className={`text-sm font-normal transition-colors leading-snug ${!hasRead ? 'text-[#666]' : 'text-[#9e9e9e] group-hover:text-white'}`}>
             {label.split(/(Terms of Service|Privacy Policy)/).map((part, i) => {
               if (part === "Terms of Service") {
                 return (

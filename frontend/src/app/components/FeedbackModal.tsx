@@ -79,35 +79,42 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
     >
       <div
         id="feedback-modal"
-        className="bg-[#2c2c2c] rounded-[16px] w-[90vw] max-w-[770px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.5)] border border-white/10"
+        className="bg-[#2c2c2c] rounded-[16px] w-[90vw] max-w-[770px] shadow-[0px_20px_60px_0px_rgba(0,0,0,0.5)] border border-[rgba(255,255,255,0.08)]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-[24px] pb-[16px]">
-          <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.25rem] text-white">
-            Share feedback
-          </h2>
+        <div className="px-[28px] pt-[26px] pb-[20px] flex items-start justify-between">
+          <div>
+            <p className="text-[#7760bd] text-[11px] font-sans font-semibold uppercase tracking-[0.2em] mb-[10px]">
+              Feedback
+            </p>
+            <h2 className="font-sans font-semibold text-[1.25rem] text-[#fffcfe]">
+              Share feedback
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="w-[32px] h-[32px] flex items-center justify-center rounded-[6px] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
+            className="w-[32px] h-[32px] -mt-1 -mr-1 flex items-center justify-center rounded-[6px] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
             aria-label="Close"
           >
-            <X className="w-[18px] h-[18px] text-[#B0B0B0]" />
+            <X className="w-[18px] h-[18px] text-[#9e9e9e]" />
           </button>
         </div>
 
+        <div className="h-px bg-white/[0.08]" />
+
         {/* Content */}
-        <div className="px-[24px] pb-[24px] flex flex-col gap-[20px]">
+        <div className="px-[28px] pt-[26px] pb-[28px] flex flex-col gap-[24px]">
           {/* Chip group */}
           <div className="flex flex-wrap gap-[12px]">
             {FEEDBACK_OPTIONS.map((option) => (
               <button
                 key={option}
                 onClick={() => setSelectedReason(option)}
-                className={`px-[20px] h-[40px] rounded-full border transition-all cursor-pointer font-['Inter:Semi_Bold',sans-serif] font-medium text-[0.875rem] ${
+                className={`px-[20px] h-[40px] rounded-full border transition-colors cursor-pointer font-sans font-medium text-[0.875rem] ${
                   selectedReason === option
-                    ? 'bg-[#7760bd]/20 border-[#7760bd] text-white'
-                    : 'bg-transparent border-white/20 text-[#B0B0B0] hover:bg-[#3a3a3a] hover:border-white/30'
+                    ? 'bg-[#7760bd]/15 border-[#7760bd] text-[#fffcfe]'
+                    : 'bg-transparent border-[rgba(255,255,255,0.14)] text-[#9e9e9e] hover:border-[rgba(255,255,255,0.3)] hover:text-[#fffcfe]'
                 }`}
               >
                 {option}
@@ -120,17 +127,18 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
             value={details}
             onChange={(e) => setDetails(e.target.value)}
             placeholder="Share details (optional)"
-            className="w-full min-h-[100px] px-[16px] py-[12px] bg-[#1a1a1a] border border-white/20 rounded-[8px] text-white text-[0.875rem] font-['Inter:Semi_Bold',sans-serif] placeholder:text-[#808080] outline-none focus:border-[#7760bd]/50 focus:ring-2 focus:ring-[#7760bd]/20 transition-all resize-none"
+            className="w-full min-h-[100px] px-[16px] py-[12px] bg-transparent border border-[rgba(255,255,255,0.14)] rounded-[8px] text-[#fffcfe] text-[0.875rem] font-sans placeholder:text-[#6b6963] outline-none focus:border-[#7760bd]/60 transition-colors resize-none"
             rows={3}
           />
 
           {/* Info bar */}
-          <div className="bg-[#1a1a1a] rounded-[8px] px-[16px] py-[12px]">
-            <p className="text-[0.8125rem] text-[#B0B0B0] font-['Inter:Semi_Bold',sans-serif]">
+          <div>
+            <div className="h-px bg-white/[0.08] mb-[16px]" />
+            <p className="text-[0.8125rem] text-[#9e9e9e] font-sans">
               Your conversation will be included with your feedback to help improve our service.{' '}
               <a
                 href="#"
-                className="text-[#7760bd] hover:text-[#9580d4] underline transition-colors"
+                className="text-[#7760bd] hover:text-[#8a75d4] underline transition-colors"
                 onClick={(e) => { e.preventDefault(); onLearnMore?.(); }}
               >
                 Learn more
@@ -143,10 +151,10 @@ export function FeedbackModal({ isOpen, onClose, onSubmit, onLearnMore }: Feedba
             <button
               onClick={handleSubmit}
               disabled={!isSubmitEnabled}
-              className={`px-[24px] h-[44px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.9375rem] transition-all cursor-pointer ${
+              className={`px-[26px] h-[44px] rounded-full font-sans font-semibold text-[13px] uppercase tracking-[0.08em] transition-colors cursor-pointer ${
                 isSubmitEnabled
-                  ? 'bg-[#7760bd] hover:bg-[#8970c7] text-white'
-                  : 'bg-[#3a3a3a] text-[#666] cursor-not-allowed'
+                  ? 'bg-[#7760bd] hover:bg-[#8a75d4] text-[#141414]'
+                  : 'bg-[#3a3a3a] text-[#6b6963] cursor-not-allowed'
               }`}
             >
               Submit

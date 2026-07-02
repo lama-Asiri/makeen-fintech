@@ -45,41 +45,44 @@ export function KeyboardShortcutsModal({ isOpen, onClose }: KeyboardShortcutsMod
         role="dialog"
         aria-modal="true"
         aria-labelledby="shortcuts-modal-title"
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,252,254,0.1)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-[90%] max-w-[520px] z-[101]"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,255,255,0.08)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-[90%] max-w-[520px] z-[101]"
       >
         {/* Header */}
-        <div className="bg-[#2c2c2c] border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between rounded-t-[16px]">
+        <div className="px-[28px] pt-[26px] pb-[20px] flex items-center justify-between">
           <h2
             id="shortcuts-modal-title"
-            className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
-            style={{ fontVariationSettings: "'wdth' 100" }}
+            className="font-sans font-bold text-[1.25rem] text-[#fffcfe]"
           >
             Keyboard shortcuts
           </h2>
           <button
             onClick={onClose}
-            className="text-[#999] hover:text-[#fffcfe] transition-colors p-2 -mr-2 rounded-lg hover:bg-[#333] active:bg-[#3a3a3a]"
+            className="text-[#9e9e9e] hover:text-[#fffcfe] transition-colors p-2 -mr-2 rounded-lg hover:bg-[#3a3a3a] active:bg-[#444]"
             aria-label="Close modal"
           >
             <X className="w-[20px] h-[20px]" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="px-[24px] py-[24px]">
-          <div className="space-y-[12px]">
-            {shortcuts.map((shortcut, index) => (
-              <div key={index} className="flex items-center justify-between py-[8px]">
-                <span className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#fffcfe]">
+        {/* Content — editorial list, rows separated by hairline dividers */}
+        <div className="px-[28px] pb-[10px]">
+          <div className="h-px bg-white/[0.08]" />
+          {shortcuts.map((shortcut, index) => (
+            <div key={index}>
+              <div className="flex items-center justify-between py-[16px]">
+                <span className="font-sans text-[0.9375rem] text-[#fffcfe]">
                   {shortcut.action}
                 </span>
-                <kbd className="font-['Roboto:Medium',sans-serif] text-[0.8125rem] text-[#999] bg-[#1a1a1a] px-[12px] py-[6px] rounded-[6px] border border-[rgba(255,252,254,0.15)] min-w-[120px] text-center">
+                <kbd className="font-tabular text-[0.8125rem] text-[#9e9e9e] bg-[#3a3a3a] px-[12px] py-[6px] rounded-[6px] border border-[rgba(255,255,255,0.1)] min-w-[120px] text-center">
                   {shortcut.keys}
                 </kbd>
               </div>
-            ))}
-          </div>
+              {index < shortcuts.length - 1 && <div className="h-px bg-white/[0.08]" />}
+            </div>
+          ))}
+          <div className="h-px bg-white/[0.08]" />
         </div>
+        <div className="pb-[18px]" />
       </div>
     </>
   );

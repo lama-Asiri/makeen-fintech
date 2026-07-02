@@ -23,7 +23,7 @@ function Slot(props: SlotProps) {
         ${props.isActive ? 'border-[#7760bd] ring-4 ring-[#7760bd]/10' : ''}
       `}
     >
-      <div className="text-white text-3xl font-bold">
+      <div className="text-white font-serif font-medium text-3xl">
         {props.char !== null && <div>{props.char}</div>}
         {props.char === null && props.hasFakeCaret && <FakeCaret />}
       </div>
@@ -71,8 +71,8 @@ export function EmailVerificationForm({ onBack, onVerify, email }: EmailVerifica
           <Mail className="w-8 h-8 text-[#7760bd]" />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold text-white tracking-tight">Check your email</h2>
-          <p className="text-[#999] text-base font-normal max-w-sm mx-auto">
+          <h2 className="font-serif font-medium text-3xl text-white tracking-tight">Check your email</h2>
+          <p className="text-[#9e9e9e] text-base font-normal max-w-sm mx-auto">
             We sent a verification code to <span className="text-white font-medium">{email || 'your email'}</span>.
           </p>
         </div>
@@ -104,7 +104,7 @@ export function EmailVerificationForm({ onBack, onVerify, email }: EmailVerifica
           </LoginButton>
 
           <div className="flex flex-col gap-4 items-center">
-            <p className="text-sm text-[#999]">
+            <p className="text-sm text-[#9e9e9e]">
               Didn't receive the code?{' '}
               <button
                 type="button"
@@ -118,7 +118,7 @@ export function EmailVerificationForm({ onBack, onVerify, email }: EmailVerifica
             <button
               type="button"
               onClick={onBack}
-              className="flex items-center gap-2 text-sm font-medium text-[#999] hover:text-white transition-colors group"
+              className="flex items-center gap-2 text-sm font-medium text-[#9e9e9e] hover:text-white transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
               Back to log in

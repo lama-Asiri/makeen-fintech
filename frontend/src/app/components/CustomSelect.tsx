@@ -96,15 +96,15 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full h-[46px] rounded-[13px] px-[14px] flex items-center justify-between transition-all duration-200 ${
           isOpen
-            ? 'bg-[#2a2a2a] border border-[#7760bd] shadow-[0_0_12px_rgba(119,96,189,0.25)]'
-            : 'bg-[#2a2a2a] border border-[#3a3a3a] hover:border-[#7760bd]/40 hover:bg-[#2d2d2d]'
+            ? 'bg-[#2c2c2c] border border-[#7760bd] shadow-[0_0_12px_rgba(119, 96, 189,0.25)]'
+            : 'bg-[#2c2c2c] border border-[#3a3a3a] hover:border-[#7760bd]/40 hover:bg-[#2c2c2c]'
         }`}
       >
-        <span className="text-[0.875rem] text-white font-['Roboto:Regular',sans-serif]">
+        <span className="text-[0.875rem] text-white font-sans">
           {value || placeholder}
         </span>
         <ChevronDown
-          className={`w-[16px] h-[16px] text-[#999] transition-transform duration-200 ${
+          className={`w-[16px] h-[16px] text-[#9e9e9e] transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -114,7 +114,7 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#2a2a2a] border border-[#7760bd]/50 rounded-[13px] shadow-[0_8px_24px_rgba(0,0,0,0.4),0_0_12px_rgba(119,96,189,0.2)] backdrop-blur-sm z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+          className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#2c2c2c] border border-[#7760bd]/50 rounded-[13px] shadow-[0_8px_24px_rgba(0,0,0,0.4),0_0_12px_rgba(119, 96, 189,0.2)] backdrop-blur-sm z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
           style={{ minWidth: '100%' }}
         >
           <div className="py-[6px] max-h-[280px] overflow-y-auto">
@@ -131,10 +131,10 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
                   className={`w-full h-[42px] px-[14px] flex items-center justify-between transition-colors duration-100 ${
                     isFocused || isSelected
                       ? 'bg-[#7760bd]/15 text-white'
-                      : 'text-[#ccc] hover:bg-[#7760bd]/10'
+                      : 'text-[#d8d8d8] hover:bg-[#7760bd]/10'
                   }`}
                 >
-                  <span className="text-[0.875rem] font-['Roboto:Regular',sans-serif]">
+                  <span className="text-[0.875rem] font-sans">
                     {option}
                   </span>
                   {isSelected && (
@@ -148,12 +148,12 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
                 key={option}
                 type="button"
                 onClick={onLockedClick}
-                className="w-full h-[42px] px-[14px] flex items-center justify-between transition-colors duration-100 text-[#ccc] hover:bg-[#7760bd]/10"
+                className="w-full h-[42px] px-[14px] flex items-center justify-between transition-colors duration-100 text-[#d8d8d8] hover:bg-[#7760bd]/10"
               >
-                <span className="text-[0.875rem] font-['Roboto:Regular',sans-serif]">
+                <span className="text-[0.875rem] font-sans">
                   {option}
                 </span>
-                <span className="text-[0.75rem] font-['Roboto:Regular',sans-serif] text-[#7760bd]">Soon</span>
+                <span className="text-[0.75rem] font-sans text-[#7760bd]">Soon</span>
               </button>
             ))}
           </div>

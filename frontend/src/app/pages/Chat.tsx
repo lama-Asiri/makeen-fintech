@@ -97,6 +97,22 @@ function TypewriterText({
   return <>{displayedText}</>;
 }
 
+// Small tracked-out eyebrow label — same editorial signature used on the landing page,
+// reused here to mark data "exhibits" (e.g. the XAI results card) as structured content.
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[#7760bd] text-[10px] font-sans font-semibold uppercase tracking-[0.2em]">
+      {children}
+    </p>
+  );
+}
+
+// Hairline divider — separates list rows (chat history, feature-importance bars)
+// instead of boxed cards or hover-only highlighting.
+function HairlineDivider({ className = '' }: { className?: string }) {
+  return <div className={`h-px bg-white/[0.08] ${className}`} />;
+}
+
 // ── Sample datasets available in the upload modal ──
 const SAMPLE_DATASETS = [
   {
@@ -1797,7 +1813,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
           .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
           .map(
             ([feature, value]) =>
-              `<tr><td>${feature}</td><td style="color:${value >= 0 ? '#4ade80' : '#f87171'}">${value >= 0 ? '+' : ''}${value.toFixed(4)}</td></tr>`
+              `<tr><td>${feature}</td><td style="color:${value >= 0 ? '#08B839' : '#e05a5a'}">${value >= 0 ? '+' : ''}${value.toFixed(4)}</td></tr>`
           )
           .join('')
       : '';
@@ -1820,7 +1836,7 @@ export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
   .user { background: #f3f4f6; border-radius: 8px; padding: 12px; margin: 8px 0; }
   .assistant { background: #ede9fe; border-radius: 8px; padding: 12px; margin: 8px 0; }
   table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-  th { background: #7760bd; color: white; } .meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+  th { background: #7760bd; color: white; } .meta { color: #9e9e9e; font-size: 13px; margin-bottom: 24px; }
 </style>
 </head>
 <body>
@@ -2116,7 +2132,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       )}
 
       {/* Main Chat Page */}
-      <div className="bg-[#1e1e1e] relative w-full h-screen overflow-hidden">
+      <div className="bg-[#141414] relative w-full h-screen overflow-hidden">
       {/* Mobile backdrop — tap outside to close sidebar */}
       {!isSidebarCollapsed && (
         <div
@@ -2147,16 +2163,16 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <Tooltip text="Open sidebar" position="right">
                 <button
                   onClick={toggleSidebar}
-                  className="p-[4px] hover:bg-[#333] rounded-[4px] transition-colors cursor-pointer relative"
+                  className="p-[4px] hover:bg-[#3a3a3a] rounded-[4px] transition-colors cursor-pointer relative"
                   onMouseEnter={() => setIsHoveredOverToggle(true)}
                   onMouseLeave={() => setIsHoveredOverToggle(false)}
                 >
                   {isHoveredOverToggle ? (
                     <svg className="w-[28.5px] h-[28.5px]" fill="none" viewBox="0 0 28.5 28.5">
-                      <path d="M24.9375 11.875H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 7.125H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 16.625H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 21.375H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 11.875H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 7.125H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 16.625H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 21.375H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                     </svg>
                   ) : (
                     <div className="w-[40px] h-[40px]">
@@ -2183,7 +2199,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     />
                   </div>
                   <p
-                    className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.5rem] text-[#fffcfe]"
+                    className="font-serif font-semibold text-[1.5rem] text-[#fffcfe]"
                     style={{ fontVariationSettings: "'wdth' 100" }}
                   >
                     Makeen
@@ -2192,13 +2208,13 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 <Tooltip text="Close sidebar" position="right">
                   <button
                     onClick={toggleSidebar}
-                    className="p-[4px] hover:bg-[#333] rounded-[4px] transition-colors cursor-pointer"
+                    className="p-[4px] hover:bg-[#3a3a3a] rounded-[4px] transition-colors cursor-pointer"
                   >
                     <svg className="w-[28.5px] h-[28.5px]" fill="none" viewBox="0 0 28.5 28.5">
-                      <path d="M24.9375 11.875H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 7.125H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 16.625H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 21.375H3.5625" stroke="#9E9E9E" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 11.875H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 7.125H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 16.625H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      <path d="M24.9375 21.375H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                     </svg>
                   </button>
                 </Tooltip>
@@ -2209,7 +2225,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           {/* Search Field */}
           {isSidebarCollapsed ? (
             <Tooltip text="Search" position="right">
-              <button className="bg-[#333] flex items-center rounded-[8px] cursor-pointer hover:bg-[#3a3a3a] transition-colors p-[12px] justify-center">
+              <button className="bg-[#3a3a3a] flex items-center rounded-[8px] cursor-pointer hover:bg-[#3a3a3a] transition-colors p-[12px] justify-center">
                 <svg className="w-[20.5px] h-[20.5px] shrink-0" fill="none" viewBox="0 0 20.5 20.5">
                   <path d={svgPaths.p39117340} stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   <path d={svgPaths.p11970080} stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -2218,9 +2234,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             </Tooltip>
           ) : (
             <div className="relative group/search">
-              
-              {/* ORIGINAL Highlight - Sharp gradient border */}
-              <div 
+
+              {/* Gold highlight - hairline border on focus */}
+              <div
                 className="absolute inset-[-2px] rounded-[10px] opacity-0 group-focus-within/search:opacity-60 transition-opacity duration-[180ms] pointer-events-none"
                 style={{
                   background: '#7760bd',
@@ -2229,18 +2245,18 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               >
                 <div className="h-full w-full bg-transparent rounded-[8px]"></div>
               </div>
-              
-              {/* ORIGINAL Highlight - Blurred glow */}
-              <div 
+
+              {/* Gold highlight - restrained blurred glow (single tone, no rainbow) */}
+              <div
                 className="absolute inset-[-3px] rounded-[11px] opacity-0 group-focus-within/search:opacity-25 transition-opacity duration-[180ms] pointer-events-none"
                 style={{
-                  background: 'linear-gradient(135deg, #7760bd 0%, #9580d4 25%, #FFC107 50%, #E59866 75%, #7760bd 100%)',
+                  background: 'rgba(119, 96, 189, 0.25)',
                   filter: 'blur(18px)',
                 }}
               />
-              
 
-              <div className="relative bg-[#333] flex items-center gap-[16px] p-[16px] rounded-[8px] transition-all">
+
+              <div className="relative bg-[#3a3a3a] flex items-center gap-[16px] p-[16px] rounded-[8px] transition-all">
                 <svg className="w-[20.5px] h-[20.5px] shrink-0" fill="none" viewBox="0 0 20.5 20.5">
                   <path d={svgPaths.p39117340} stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   <path d={svgPaths.p11970080} stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
@@ -2249,7 +2265,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   ref={searchInputRef}
                   type="text"
                   placeholder="Search"
-                  className="flex-1 bg-transparent font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white placeholder:text-[#9e9e9e] outline-none"
+                  className="flex-1 bg-transparent font-sans font-semibold text-[1rem] text-white placeholder:text-[#9e9e9e] outline-none"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -2277,15 +2293,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <button
               onClick={handleNewChat}
               disabled={chats.length >= MAX_CHATS}
-              className={`flex items-center rounded-[8px] transition-colors ${
+              className={`flex items-center rounded-[8px] border transition-colors ${
                 chats.length >= MAX_CHATS
-                  ? 'opacity-40 cursor-not-allowed'
-                  : 'cursor-pointer hover:bg-[#333]'
-              } ${isSidebarCollapsed ? 'p-[12px] justify-center' : 'gap-[16px] p-[16px] w-full'}`}
+                  ? 'opacity-40 cursor-not-allowed border-white/[0.08]'
+                  : 'cursor-pointer border-[#7760bd]/30 hover:border-[#7760bd]/60 hover:bg-[#7760bd]/10'
+              } ${isSidebarCollapsed ? 'p-[12px] justify-center' : 'gap-[14px] p-[14px] w-full'}`}
             >
-              <PenSquare className="w-[20px] h-[20px] shrink-0 stroke-white" strokeWidth={2} />
+              <PenSquare className={`w-[18px] h-[18px] shrink-0 ${chats.length >= MAX_CHATS ? 'stroke-[#9e9e9e]' : 'stroke-[#7760bd]'}`} strokeWidth={2} />
               {!isSidebarCollapsed && (
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-[#9e9e9e]">New Chat</p>
+                <p className={`font-sans font-semibold uppercase tracking-[0.08em] text-[0.875rem] ${chats.length >= MAX_CHATS ? 'text-[#9e9e9e]' : 'text-[#7760bd]'}`}>New Chat</p>
               )}
             </button>
           </Tooltip>
@@ -2301,12 +2317,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <div className="px-[24px] pt-[16px]">
               <button 
                 onClick={() => setIsChatHistoryExpanded(!isChatHistoryExpanded)}
-                className="flex gap-[12px] items-center p-[16px] hover:bg-[#333] rounded-[8px] transition-colors cursor-pointer w-full"
+                className="flex gap-[12px] items-center p-[16px] hover:bg-[#3a3a3a] rounded-[8px] transition-colors cursor-pointer w-full"
               >
                 <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 18 18">
                   <path d={svgPaths.p16599900} fill="white" />
                 </svg>
-                <p className="flex-1 text-left font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-[#9e9e9e]">Chat history</p>
+                <p className="flex-1 text-left font-sans font-semibold text-[0.875rem] text-[#9e9e9e]">Chat history</p>
                 {isChatHistoryExpanded ? (
                   <ChevronDown className="w-[16px] h-[16px] stroke-[#9e9e9e] transition-transform" strokeWidth={2} />
                 ) : (
@@ -2318,12 +2334,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             {/* Chat History List */}
             {isChatHistoryExpanded && (
               <div className="flex-1 overflow-y-auto overflow-x-visible px-[24px] pb-[16px] pt-[4px]">
-                <div className="flex flex-col gap-[12px] pl-[18px]">
+                <div className="flex flex-col pl-[18px]">
                   {filteredChats.length > 0 ? (
-                    [...filteredChats].reverse().map((chat) => (
+                    <>
+                      <HairlineDivider />
+                      {[...filteredChats].reverse().map((chat) => (
+                      <div key={chat.id}>
                       <div
-                        key={chat.id}
-                        className="relative group"
+                        className="relative group py-[10px]"
                         onMouseEnter={() => setHoveredChatId(chat.id)}
                         onMouseLeave={() => setHoveredChatId(null)}
                       >
@@ -2336,14 +2354,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               onChange={(e) => setRenameValue(e.target.value)}
                               onKeyDown={handleRenameKeyDown}
                               onBlur={handleSaveRename}
-                              className="flex-1 min-w-0 max-w-full bg-[#333] text-white font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] px-[8px] py-[4px] rounded-[6px] outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                              className="flex-1 min-w-0 max-w-full bg-[#3a3a3a] text-white font-sans font-semibold text-[1rem] px-[8px] py-[4px] rounded-[6px] outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                             />
                           ) : (
                             <button
                               onClick={() => {
                                 setActiveChatId(chat.id);
                               }}
-                              className={`flex-1 font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-left transition-all cursor-pointer ${
+                              className={`flex-1 font-sans font-semibold text-[1rem] text-left transition-all cursor-pointer ${
                                 activeChatId === chat.id ? 'text-[#7760bd]' : 'text-[#fffcfe] hover:text-[#7760bd]'
                               } ${
                                 hoveredChatId === chat.id ? 'bg-[#7760bd]/5 px-[8px] py-[4px] rounded-[6px]' : ''
@@ -2360,13 +2378,13 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   e.stopPropagation();
                                   setChatMenuOpenId(chatMenuOpenId === chat.id ? null : chat.id);
                                 }}
-                                className="p-[4px] hover:bg-[#333] rounded-[4px] transition-colors cursor-pointer"
+                                className="p-[4px] hover:bg-[#3a3a3a] rounded-[4px] transition-colors cursor-pointer"
                               >
                                 <MoreVertical className="w-[16px] h-[16px] stroke-[#9e9e9e]" strokeWidth={2} />
                               </button>
                               {/* Dropdown Menu */}
                               {chatMenuOpenId === chat.id && (
-                                <div className="absolute right-0 top-full mt-[4px] bg-[#1a1a1a] rounded-[8px] shadow-lg py-[4px] min-w-[140px] z-20">
+                                <div className="absolute right-0 top-full mt-[4px] bg-[#2c2c2c] rounded-[8px] shadow-lg py-[4px] min-w-[140px] z-20">
                                   <button
                                     className="w-full px-[16px] py-[8px] text-left text-white text-[0.875rem] hover:bg-[#7760bd]/20 transition-colors cursor-pointer flex items-center gap-[8px]"
                                     onClick={(e) => {
@@ -2401,9 +2419,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           )}
                         </div>
                       </div>
-                    ))
+                      <HairlineDivider />
+                      </div>
+                      ))}
+                    </>
                   ) : (
-                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] text-[#808080] italic">
+                    <p className="font-sans text-[0.875rem] text-[#9e9e9e] italic py-[12px]">
                       No chats found
                     </p>
                   )}
@@ -2446,7 +2467,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 setAccountDropdownRect(rect);
                 setShowAccountDropdown(!showAccountDropdown);
               }}
-              className="bg-[#333] flex items-center gap-[16px] px-[16px] py-[16px] rounded-[8px] hover:bg-[#3a3a3a] transition-colors cursor-pointer w-full"
+              className="bg-[#3a3a3a] flex items-center gap-[16px] px-[16px] py-[16px] rounded-[8px] hover:bg-[#3a3a3a] transition-colors cursor-pointer w-full"
             >
               {avatarUrl ? (
                 <div className="w-[40px] h-[40px] rounded-full overflow-hidden flex-shrink-0">
@@ -2460,8 +2481,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 <DefaultAvatar displayName={displayName} size={40} />
               )}
               <div className="flex flex-col gap-[4px] flex-1 min-w-0 text-left">
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-[#fffcfe] truncate text-left">{displayName}</p>
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-[#808080] truncate text-left">{userEmail}</p>
+                <p className="font-sans font-semibold text-[0.875rem] text-[#fffcfe] truncate text-left">{displayName}</p>
+                <p className="font-sans font-semibold text-[0.75rem] text-[#9e9e9e] truncate text-left">{userEmail}</p>
               </div>
             </button>
           )}
@@ -2478,7 +2499,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
         <button
           type="button"
           onClick={() => setIsSidebarCollapsed(false)}
-          className="md:hidden absolute top-[14px] left-[14px] z-30 bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] p-[8px] transition-colors"
+          className="md:hidden absolute top-[14px] left-[14px] z-30 bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] p-[8px] transition-colors"
           aria-label="Open menu"
         >
           <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -2497,7 +2518,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="bg-[#2c2c2c] rounded-[8px] w-full shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col">
                 {/* Modal Header — title changes per step */}
                 <div className="bg-[#2c2c2c] px-[20px] md:px-[24px] py-[14px] md:py-[16px] rounded-t-[8px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] md:text-[1.125rem] text-white">
+                  <p className="font-sans font-semibold text-[1rem] md:text-[1.125rem] text-white">
                     File Upload
                   </p>
                 </div>
@@ -2536,8 +2557,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     {/* Upload Drop Zone */}
                     <div
                       onClick={handleDropZoneClick}
-                      className={`bg-[#262626] border-2 border-dashed rounded-[8px] px-[20px] md:px-[80px] py-[24px] md:py-[32px] flex flex-col gap-[10px] md:gap-[12px] items-center text-center cursor-pointer transition-all ${
-                        isDragging ? 'border-[#7760bd] bg-[#2a2a2a]' : 'border-[#bebebe] hover:border-[#7760bd] hover:bg-[#2a2a2a]'
+                      className={`bg-[#2c2c2c] border-2 border-dashed rounded-[8px] px-[20px] md:px-[80px] py-[24px] md:py-[32px] flex flex-col gap-[10px] md:gap-[12px] items-center text-center cursor-pointer transition-all ${
+                        isDragging ? 'border-[#7760bd] bg-[#3a3a3a]' : 'border-[#9e9e9e] hover:border-[#7760bd] hover:bg-[#3a3a3a]'
                       } ${selectedFile ? 'border-[#08B839] bg-[#08B839]/10' : ''}`}
                       onDragEnter={(e) => { e.preventDefault(); setIsDragging(true); }}
                       onDragLeave={handleDragLeave}
@@ -2549,14 +2570,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <path d="M9 15L12 12L15 15" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                         <path d="M12 12V21" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
-                      <p className={`font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
+                      <p className={`font-sans text-[0.875rem] md:text-[1rem] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
                         {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or drag file to this area to upload'}
                       </p>
                     </div>
 
-                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] text-[#ccc]">Formats accepted are .csv and .xlsx</p>
+                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#9e9e9e]">Formats accepted are .csv and .xlsx</p>
                     <div className="h-[1px] bg-black opacity-20" />
-                    <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
+                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
 
                     {/* Sample dataset cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
@@ -2565,10 +2586,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           key={ds.id}
                           type="button"
                           onClick={() => setSelectedSampleDataset(ds.id)}
-                          className="bg-[#262626] border border-[#444] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all hover:border-[#7760bd] hover:bg-[#2a2a2a]"
+                          className="bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all hover:border-[#7760bd] hover:bg-[#3a3a3a]"
                         >
                           <p className="font-semibold text-[0.8125rem] text-white leading-tight">{ds.name}</p>
-                          <p className="text-[0.6875rem] text-[#999] leading-tight">{ds.description}</p>
+                          <p className="text-[0.6875rem] text-[#9e9e9e] leading-tight">{ds.description}</p>
                         </button>
                       ))}
                     </div>
@@ -2579,7 +2600,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 {uploadStep === 'loading' && (
                   <div className="px-[24px] py-[48px] flex flex-col items-center gap-[16px]">
                     <div className="w-[40px] h-[40px] border-4 border-[#7760bd] border-t-transparent rounded-full animate-spin" />
-                    <p className="font-['Inter:Regular',sans-serif] text-[0.9375rem] text-[#ccc]">Uploading and parsing your file…</p>
+                    <p className="font-sans text-[0.9375rem] text-[#9e9e9e]">Uploading and parsing your file…</p>
                   </div>
                 )}
 
@@ -2588,9 +2609,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   <button
                     onClick={handleFileUpload}
                     disabled={uploadStep === 'loading'}
-                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
+                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8a75d4] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
                   >
-                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] md:text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+                    <p className="font-sans font-medium text-[0.875rem] md:text-[1rem] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
                       Send
                     </p>
                   </button>
@@ -2609,7 +2630,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
               {/* File bar */}
               {activeChat.fileAttachment && <div className="mb-[16px] flex justify-end">
-              <div className="w-full max-w-[480px] bg-[#333] border border-[#555] rounded-[8px] px-[16px] py-[12px] flex items-center gap-[12px] shadow-lg">
+              <div className="w-full max-w-[480px] bg-[#3a3a3a] border border-[#9e9e9e] rounded-[8px] px-[16px] py-[12px] flex items-center gap-[12px] shadow-lg">
                 <button
                   onClick={() => setShowFilePreview(true)}
                   className="flex gap-[12px] items-center flex-1 min-w-0 hover:opacity-80 transition-opacity"
@@ -2622,8 +2643,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     <path d="M11 11V18" stroke="#08B839" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
                   </svg>
                   <div className="flex flex-col min-w-0 text-left">
-                    <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white truncate">{activeChat.fileAttachment.name}</p>
-                    <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
+                    <p className="font-sans font-semibold text-[0.875rem] text-white truncate">{activeChat.fileAttachment.name}</p>
+                    <p className="font-sans text-[0.75rem] text-[#9e9e9e]">{activeChat.fileAttachment.type.toUpperCase()}</p>
                   </div>
                 </button>
               </div>
@@ -2632,28 +2653,28 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Dataset Overview Card — expandable, appears after upload */}
               {activeChat.datasetInfo && (
                 <div className="mb-[10px] flex justify-end">
-                  <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[8px] overflow-hidden">
+                  <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] overflow-hidden">
                     <button
                       onClick={() => setIsDatasetCardExpanded((v) => !v)}
-                      className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#333] transition-colors cursor-pointer"
+                      className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
                     >
                       <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M3 14h18M10 3v18M14 3v18M3 6a3 3 0 013-3h12a3 3 0 013 3v12a3 3 0 01-3 3H6a3 3 0 01-3-3V6z" />
                       </svg>
-                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-white flex-1 text-left">Dataset Overview</p>
-                      <span className="text-[0.6875rem] text-[#555]">{activeChat.datasetInfo.rows > 0 ? `${activeChat.datasetInfo.rows.toLocaleString()} rows · ` : ''}{activeChat.datasetInfo.columns.length} cols</span>
-                      <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isDatasetCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+                      <p className="font-sans font-semibold text-[0.75rem] text-white flex-1 text-left">Dataset Overview</p>
+                      <span className="text-[0.6875rem] text-[#9e9e9e]">{activeChat.datasetInfo.rows > 0 ? `${activeChat.datasetInfo.rows.toLocaleString()} rows · ` : ''}{activeChat.datasetInfo.columns.length} cols</span>
+                      <ChevronDown className={`w-[14px] h-[14px] text-[#9e9e9e] transition-transform duration-200 ${isDatasetCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
                     </button>
                     {isDatasetCardExpanded && (
-                      <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
+                      <div className="border-t border-white/[0.08] px-[16px] py-[12px]">
                         <div className="flex gap-[20px] mb-[12px]">
-                          {activeChat.datasetInfo.rows > 0 && <div><p className="text-[0.625rem] text-[#555] uppercase tracking-wide">Rows</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>}
-                          <div><p className="text-[0.625rem] text-[#555] uppercase tracking-wide">Columns</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
+                          {activeChat.datasetInfo.rows > 0 && <div><p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide">Rows</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.rows.toLocaleString()}</p></div>}
+                          <div><p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide">Columns</p><p className="text-[1.125rem] font-semibold text-white">{activeChat.datasetInfo.columns.length}</p></div>
                         </div>
-                        <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[7px]">Features</p>
+                        <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[7px]">Features</p>
                         <div className="flex flex-wrap gap-[5px]">
                           {activeChat.datasetInfo.columns.map((col) => (
-                            <span key={col} className={`px-[7px] py-[2px] rounded-full text-[0.6875rem] border ${activeChat.datasetInfo!.idColumns.includes(col) ? 'bg-[#2a2a2a] border-[#444] text-[#555]' : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#9e82e0]'}`}>
+                            <span key={col} className={`px-[7px] py-[2px] rounded-full text-[0.6875rem] border ${activeChat.datasetInfo!.idColumns.includes(col) ? 'bg-[#3a3a3a] border-white/[0.08] text-[#9e9e9e]' : 'bg-[#7760bd]/10 border-[#7760bd]/30 text-[#8a75d4]'}`}>
                               {col}{activeChat.datasetInfo!.idColumns.includes(col) ? ' (ID)' : ''}
                             </span>
                           ))}
@@ -2667,15 +2688,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Model Performance Card — expandable, appears after first training */}
               {activeChat.trainingMetrics && (
                 <div className="mb-[16px] flex justify-end">
-                  <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[8px] overflow-hidden">
+                  <div className="w-full max-w-[480px] bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] overflow-hidden">
                     <button
                       onClick={() => setIsModelCardExpanded((v) => !v)}
-                      className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#333] transition-colors cursor-pointer"
+                      className="w-full px-[16px] py-[10px] flex items-center gap-[10px] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
                     >
                       <svg className="w-[14px] h-[14px] flex-shrink-0 text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.75rem] text-white flex-1 text-left">Model Performance</p>
+                      <p className="font-sans font-semibold text-[0.75rem] text-white flex-1 text-left">Model Performance</p>
                       <Tooltip
                         text={activeChat.trainingMetrics.metricKey === 'accuracy'
                           ? 'Accuracy: how often the model predicts correctly. 90–100% excellent · 70–90% good · 50–70% fair · below 50% poor.'
@@ -2686,25 +2707,25 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           {activeChat.trainingMetrics.metricKey === 'accuracy' ? 'Accuracy' : 'R²'} {(activeChat.trainingMetrics.metricValue * 100).toFixed(1)}%
                         </span>
                       </Tooltip>
-                      <ChevronDown className={`w-[14px] h-[14px] text-[#666] transition-transform duration-200 ${isModelCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
+                      <ChevronDown className={`w-[14px] h-[14px] text-[#9e9e9e] transition-transform duration-200 ${isModelCardExpanded ? 'rotate-180' : ''}`} strokeWidth={2} />
                     </button>
                     {isModelCardExpanded && (
-                      <div className="border-t border-[#3a3a3a] px-[16px] py-[12px]">
-                        <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[10px]">Top Features by Importance</p>
+                      <div className="border-t border-white/[0.08] px-[16px] py-[12px]">
+                        <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[10px]">Top Features by Importance</p>
                         {(() => {
                           const features = activeChat.trainingMetrics!.topFeatures;
                           const maxImp = Math.max(...features.map((f) => f.importance), 0.0001);
                           return features.map((f) => (
                             <div key={f.name} className="flex items-center gap-[10px] mb-[7px] last:mb-0">
-                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
+                              <p className="font-sans text-[0.6875rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
                               <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                 <motion.div className="h-full rounded-full bg-[#7760bd]" initial={{ width: 0 }} animate={{ width: `${(f.importance / maxImp) * 100}%` }} transition={{ duration: 0.5, ease: 'easeOut' }} />
                               </div>
-                              <p className="font-['Inter:Regular',sans-serif] text-[0.625rem] text-[#7760bd] w-[32px] flex-shrink-0 text-right">{(f.importance * 100).toFixed(1)}%</p>
+                              <p className="font-tabular text-[0.625rem] text-[#7760bd] w-[32px] flex-shrink-0 text-right">{(f.importance * 100).toFixed(1)}%</p>
                             </div>
                           ));
                         })()}
-                        <p className="font-['Inter:Regular',sans-serif] text-[0.625rem] text-[#444] mt-[10px]">
+                        <p className="font-sans text-[0.625rem] text-[#444] mt-[10px]">
                           {activeChat.trainingMetrics.taskType === 'classification' ? 'Classification' : 'Regression'} · RandomForest
                         </p>
                       </div>
@@ -2728,11 +2749,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   {message.role === 'user' ? (
                     /* User Message Bubble - Right Aligned */
                     <div className="flex flex-col items-end group/user">
+                      <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-[#666] mb-[8px]">You</p>
                       {editingMessageId === message.id ? (
                         /* Edit Mode */
-                        <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] w-full">
+                        <div className="bg-[#3a3a3a] border border-white/[0.08] rounded-[16px] px-[24px] py-[12px] max-w-[700px] w-full">
                           <textarea
-                            className="w-full bg-transparent text-white font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] resize-none outline-none border-none placeholder:text-white/70"
+                            className="w-full bg-transparent text-[#fffcfe] font-sans text-[1rem] leading-[24px] resize-none outline-none border-none placeholder:text-white/70"
                             style={{ fontVariationSettings: "'wdth' 100" }}
                             value={editMessageValue}
                             onChange={(e) => setEditMessageValue(e.target.value)}
@@ -2749,12 +2771,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               title="Cancel"
                             >
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
-                                <path d="M12 4L4 12M4 4L12 12" stroke="#B0B0B0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                                <path d="M12 4L4 12M4 4L12 12" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                               </svg>
                             </button>
                             <button
                               onClick={() => handleConfirmEdit(message.id)}
-                              className="p-[6px] rounded-[6px] bg-[#7760bd] hover:bg-[#8870cd] transition-colors"
+                              className="p-[6px] rounded-[6px] bg-[#7760bd] hover:bg-[#8a75d4] transition-colors"
                               title="Confirm"
                             >
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
@@ -2766,9 +2788,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       ) : (
                         /* Normal Display Mode */
                         <>
-                          <div className="bg-[#5e4a99] rounded-[16px] px-[24px] py-[12px] max-w-[700px] overflow-x-hidden">
+                          <div className="bg-[#3a3a3a] border border-white/[0.08] rounded-[16px] px-[24px] py-[12px] max-w-[700px] overflow-x-hidden">
                             <p
-                              className="font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] text-white"
+                              className="font-sans text-[1rem] leading-[24px] text-[#fffcfe]"
                               style={{
                                 fontVariationSettings: "'wdth' 100",
                                 whiteSpace: 'pre-wrap',
@@ -2779,7 +2801,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               {message.content}
                             </p>
                             {message.edited && (
-                              <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-white/70 mt-[6px] italic">
+                              <p className="font-sans text-[0.75rem] text-white/70 mt-[6px] italic">
                                 (edited)
                               </p>
                             )}
@@ -2798,7 +2820,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   setToastMessage('Failed to copy');
                                 });
                               }}
-                              className="p-[4px] rounded-[6px] hover:bg-[#333] transition-colors"
+                              className="p-[4px] rounded-[6px] hover:bg-[#3a3a3a] transition-colors"
                               title={copiedMessageId === message.id ? "Copied" : "Copy"}
                             >
                               {copiedMessageId === message.id ? (
@@ -2809,8 +2831,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               ) : (
                                 /* Copy Icon */
                                 <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 18 18">
-                                  <rect x="6" y="6" width="10" height="10" rx="2" stroke="#B0B0B0" strokeWidth="1.5" fill="none" />
-                                  <path d="M12 6V4C12 2.89543 11.1046 2 10 2H4C2.89543 2 2 2.89543 2 4V10C2 11.1046 2.89543 12 4 12H6" stroke="#B0B0B0" strokeWidth="1.5" fill="none" />
+                                  <rect x="6" y="6" width="10" height="10" rx="2" stroke="#9e9e9e" strokeWidth="1.5" fill="none" />
+                                  <path d="M12 6V4C12 2.89543 11.1046 2 10 2H4C2.89543 2 2 2.89543 2 4V10C2 11.1046 2.89543 12 4 12H6" stroke="#9e9e9e" strokeWidth="1.5" fill="none" />
                                 </svg>
                               )}
                             </button>
@@ -2823,12 +2845,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                 }
                               }}
                               className={`p-[4px] rounded-[6px] transition-colors ${
-                                isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#333] cursor-pointer'
+                                isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#3a3a3a] cursor-pointer'
                               }`}
                               title={isProcessing ? 'Cannot edit while regenerating' : 'Edit'}
                               disabled={isProcessing}
                             >
-                              <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 18 18" stroke="#B0B0B0" strokeWidth="1.5">
+                              <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 18 18" stroke="#9e9e9e" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l-1.261-1.261a2.5 2.5 0 00-3.536 0l-9.5 9.5a1 1 0 00-.293.707V16.5h3.067a1 1 0 00.707-.293l9.5-9.5a2.5 2.5 0 000-3.536z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.5 6.5l3 3" />
                               </svg>
@@ -2840,9 +2862,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   ) : (
                     /* AI Message - Left Aligned with Action Icons */
                     <div className="flex flex-col items-start">
+                      <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-[#666] mb-[8px]">Makeen</p>
                       <div className="max-w-[700px]">
                         <p
-                          className="font-['Roboto:Regular',sans-serif] text-[1rem] leading-[24px] text-[#fffcfe] whitespace-pre-line"
+                          className="font-sans text-[1rem] leading-[24px] text-[#fffcfe] whitespace-pre-line"
                           style={{ fontVariationSettings: "'wdth' 100" }}
                         >
                           {streamedMessageIds.has(message.id) ? (
@@ -2861,7 +2884,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           )}
                         </p>
                         {message.stopped && (
-                          <p className="mt-[6px] text-[0.75rem] text-[#888] italic">Generation stopped</p>
+                          <p className="mt-[6px] text-[0.75rem] text-[#9e9e9e] italic">Generation stopped</p>
                         )}
                       </div>
 
@@ -2875,7 +2898,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                 setInputValue('');
                                 sendMessage(suggestion);
                               }}
-                              className="text-left px-[16px] py-[10px] rounded-[10px] border border-[#7760bd]/40 text-[#ccc] hover:bg-[#7760bd]/15 hover:border-[#7760bd]/70 hover:text-white transition-all"
+                              className="text-left px-[16px] py-[10px] rounded-[10px] border border-[#7760bd]/30 text-[#7760bd] hover:bg-[#7760bd]/10 hover:border-[#7760bd]/60 hover:text-[#8a75d4] transition-all"
                               style={{ fontSize: 'var(--ui-font-size)' }}
                             >
                               {suggestion}
@@ -2887,106 +2910,116 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       {/* XAI Results Card — shown when pipeline data is available */}
                       {message.xaiData && (
                         <motion.div
-                          className="mt-[16px] w-full max-w-[520px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] overflow-hidden"
+                          className="mt-[16px] w-full max-w-[520px] bg-[#2c2c2c] border border-white/[0.08] rounded-[12px] overflow-hidden"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.4, delay: 0.3, ease: 'easeOut' }}
                         >
                           {/* Header */}
-                          <div className="px-[20px] py-[12px] border-b border-[#3a3a3a] flex items-center justify-between gap-[8px] flex-wrap">
+                          <div className="px-[20px] py-[12px] border-b border-white/[0.08] flex items-center justify-between gap-[8px] flex-wrap">
                             <div className="flex items-center gap-[8px]">
                               <svg className="w-[16px] h-[16px] text-[#7760bd]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
                               </svg>
-                              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.8125rem] text-white">XAI Explanation</p>
+                              <p className="font-sans font-semibold text-[0.8125rem] text-white">XAI Explanation</p>
                             </div>
                             <div className="flex items-center gap-[6px] flex-wrap justify-end">
                               {message.xaiData.confidence !== null && message.xaiData.confidence !== undefined && message.xaiData.confidence < 60 && (
-                                <div className="flex items-center gap-[4px] bg-[#f59e0b]/10 border border-[#f59e0b]/30 rounded-full px-[8px] py-[2px]">
-                                  <svg className="w-[10px] h-[10px] text-[#f59e0b]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <div className="flex items-center gap-[4px] bg-[#FFC107]/10 border border-[#FFC107]/30 rounded-full px-[8px] py-[2px]">
+                                  <svg className="w-[10px] h-[10px] text-[#FFC107]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
                                   </svg>
-                                  <p className="text-[0.625rem] text-[#f59e0b]">Low confidence — treat with caution</p>
+                                  <p className="text-[0.625rem] text-[#FFC107]">Low confidence — treat with caution</p>
                                 </div>
                               )}
                               <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px]">
-                                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.6875rem] text-[#7760bd]">
+                                <p className="font-sans font-semibold text-[0.6875rem] text-[#7760bd]">
                                   {message.xaiData.prediction}
                                 </p>
                               </div>
                             </div>
                           </div>
 
-                          {/* SHAP Feature Importance Chart */}
-                          <div className="px-[20px] py-[14px]">
-                            <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (SHAP)</p>
+                          {/* SHAP Feature Importance Chart — presented as a data exhibit: eyebrow label, thin bars, hairline-separated rows */}
+                          <div className="px-[20px] py-[16px]">
+                            <Eyebrow>Factor Importance · SHAP</Eyebrow>
+                            <div className="mt-[12px]">
                             {(() => {
                               const entries = Object.entries(message.xaiData.shapValues);
                               const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)));
                               return entries
                                 .sort(([, a], [, b]) => Math.abs(b) - Math.abs(a))
-                                .map(([feature, value]) => {
+                                .map(([feature, value], i) => {
                                   const pct = (Math.abs(value) / maxAbs) * 100;
                                   const positive = value >= 0;
                                   return (
-                                    <div key={feature} title={`${feature} ${positive ? 'pushed toward' : 'pushed against'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] mb-[8px] last:mb-0 cursor-default">
-                                      <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
-                                      <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
-                                        <motion.div
-                                          className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
-                                          initial={{ width: 0 }}
-                                          animate={{ width: `${pct}%` }}
-                                          transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
-                                        />
+                                    <div key={feature}>
+                                      {i > 0 && <HairlineDivider className="my-[8px]" />}
+                                      <div title={`${feature} ${positive ? 'pushed toward' : 'pushed against'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] py-[2px] cursor-default">
+                                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                        <div className="flex-1 h-[5px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                                          <motion.div
+                                            className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${pct}%` }}
+                                            transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
+                                          />
+                                        </div>
+                                        <p className={`font-tabular text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                                          {positive ? '+' : ''}{value.toFixed(2)}
+                                        </p>
                                       </div>
-                                      <p className={`font-['Inter:Regular',sans-serif] text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
-                                        {positive ? '+' : ''}{value.toFixed(2)}
-                                      </p>
                                     </div>
                                   );
                                 });
                             })()}
+                            </div>
                           </div>
 
                           {/* LIME Feature Importance Chart — local_single only */}
                           {message.xaiData.mode === 'local_single' && message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
-                            <div className="px-[20px] pb-[14px] border-t border-[#3a3a3a] pt-[14px]">
-                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#666] uppercase tracking-wide mb-[12px]">Feature Importance (LIME)</p>
+                            <div className="px-[20px] pb-[16px] border-t border-white/[0.08] pt-[16px]">
+                              <p className="font-sans text-[10px] text-[#9e9e9e] font-semibold uppercase tracking-[0.2em]">Feature Importance · LIME</p>
+                              <div className="mt-[12px]">
                               {(() => {
                                 const entries = Object.entries(message.xaiData.limeValues).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
                                 const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)), 0.0001);
-                                return entries.map(([feature, value]) => {
+                                return entries.map(([feature, value], i) => {
                                   const pct = (Math.abs(value) / maxAbs) * 100;
                                   const positive = value >= 0;
                                   return (
-                                    <div key={feature} title={`${feature} ${positive ? 'supports' : 'opposes'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] mb-[8px] last:mb-0 cursor-default">
-                                      <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
-                                      <div className="flex-1 h-[8px] bg-[#3a3a3a] rounded-full overflow-hidden">
-                                        <motion.div
-                                          className={`h-full rounded-full ${positive ? 'bg-[#2e8b6e]' : 'bg-[#c0713a]'}`}
-                                          initial={{ width: 0 }}
-                                          animate={{ width: `${pct}%` }}
-                                          transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
-                                        />
+                                    <div key={feature}>
+                                      {i > 0 && <HairlineDivider className="my-[8px]" />}
+                                      <div title={`${feature} ${positive ? 'supports' : 'opposes'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] py-[2px] cursor-default">
+                                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                        <div className="flex-1 h-[5px] bg-[#3a3a3a] rounded-full overflow-hidden">
+                                          <motion.div
+                                            className={`h-full rounded-full ${positive ? 'bg-[#08B839]' : 'bg-[#FFC107]'}`}
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${pct}%` }}
+                                            transition={{ duration: 0.6, delay: 0.7, ease: 'easeOut' }}
+                                          />
+                                        </div>
+                                        <p className={`font-tabular text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#08B839]' : 'text-[#FFC107]'}`}>
+                                          {positive ? '+' : ''}{value.toFixed(2)}
+                                        </p>
                                       </div>
-                                      <p className={`font-['Inter:Regular',sans-serif] text-[0.6875rem] w-[36px] flex-shrink-0 text-right ${positive ? 'text-[#3db88a]' : 'text-[#e08050]'}`}>
-                                        {positive ? '+' : ''}{value.toFixed(2)}
-                                      </p>
                                     </div>
                                   );
                                 });
                               })()}
+                              </div>
                             </div>
                           )}
 
                           {/* Footer */}
-                          <div className="px-[20px] py-[8px] border-t border-[#3a3a3a] flex items-center justify-between gap-[6px]">
+                          <div className="px-[20px] py-[8px] border-t border-white/[0.08] flex items-center justify-between gap-[6px]">
                             <div className="flex items-center gap-[6px]">
-                              <svg className="w-[12px] h-[12px] text-[#555]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <svg className="w-[12px] h-[12px] text-[#9e9e9e]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                               </svg>
-                              <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#555]">SHAP: purple/red · LIME: green/orange</p>
+                              <p className="font-sans text-[0.6875rem] text-[#9e9e9e]">SHAP: gold/red · LIME: green/amber</p>
                             </div>
                             {activeChat.rawFeatureDefaults && (
                               <button
@@ -3000,7 +3033,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                                   setWhatIfError(null);
                                   setShowWhatIfModal(true);
                                 }}
-                                className="flex-shrink-0 text-[0.6875rem] text-[#7760bd] hover:text-[#9e82e0] border border-[#7760bd]/40 hover:border-[#7760bd]/70 rounded-full px-[10px] py-[2px] transition-all cursor-pointer"
+                                className="flex-shrink-0 text-[0.6875rem] text-[#7760bd] hover:text-[#8a75d4] border border-[#7760bd]/40 hover:border-[#7760bd]/70 rounded-full px-[10px] py-[2px] transition-all cursor-pointer"
                               >
                                 Try What-If
                               </button>
@@ -3014,7 +3047,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         {/* Copy Button */}
                         <Tooltip text={copiedMessageId === message.id ? "Copied" : "Copy"} position="top">
                           <button
-                            className="p-[6px] rounded-[6px] hover:bg-[#333] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                            className="p-[6px] rounded-[6px] hover:bg-[#3a3a3a] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                             aria-label="Copy"
                             onClick={() => handleCopyMessage(message.content, message.id)}
                           >
@@ -3026,8 +3059,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             ) : (
                               /* Copy Icon */
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 18 18">
-                                <rect x="6" y="6" width="10" height="10" rx="2" stroke="#B0B0B0" strokeWidth="1.5" fill="none" />
-                                <path d="M12 6V4C12 2.89543 11.1046 2 10 2H4C2.89543 2 2 2.89543 2 4V10C2 11.1046 2.89543 12 4 12H6" stroke="#B0B0B0" strokeWidth="1.5" fill="none" />
+                                <rect x="6" y="6" width="10" height="10" rx="2" stroke="#9e9e9e" strokeWidth="1.5" fill="none" />
+                                <path d="M12 6V4C12 2.89543 11.1046 2 10 2H4C2.89543 2 2 2.89543 2 4V10C2 11.1046 2.89543 12 4 12H6" stroke="#9e9e9e" strokeWidth="1.5" fill="none" />
                               </svg>
                             )}
                           </button>
@@ -3040,14 +3073,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         })() && (
                           <Tooltip text="Regenerate" position="top">
                             <button
-                              className="p-[6px] rounded-[6px] hover:bg-[#333] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                              className="p-[6px] rounded-[6px] hover:bg-[#3a3a3a] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                               aria-label="Regenerate"
                               onClick={() => handleRetryMessage(message.id)}
                             >
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 18 18">
-                                <path d="M2 9C2 5.13401 5.13401 2 9 2C11.3869 2 13.5056 3.16667 14.7513 4.96493M16 9C16 12.866 12.866 16 9 16C6.61311 16 4.49437 14.8333 3.24868 13.0351" stroke="#B0B0B0" strokeWidth="1.5" strokeLinecap="round" />
-                                <path d="M14 2V5H11" stroke="#B0B0B0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M4 16V13H7" stroke="#B0B0B0" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M2 9C2 5.13401 5.13401 2 9 2C11.3869 2 13.5056 3.16667 14.7513 4.96493M16 9C16 12.866 12.866 16 9 16C6.61311 16 4.49437 14.8333 3.24868 13.0351" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" />
+                                <path d="M14 2V5H11" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                <path d="M4 16V13H7" stroke="#9e9e9e" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </button>
                           </Tooltip>
@@ -3060,7 +3093,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               className={`p-[6px] rounded-[6px] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50 ${
                                 message.feedback === 'up'
                                   ? 'bg-[#7760bd]/20 hover:bg-[#7760bd]/30'
-                                  : 'hover:bg-[#333]'
+                                  : 'hover:bg-[#3a3a3a]'
                               }`}
                               onClick={() => handleFeedback(message.id, 'up')}
                               aria-label="Good response"
@@ -3068,11 +3101,11 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 18 18">
                                 <path
                                   d={svgPathsAnswer.p6226600}
-                                  fill={message.feedback === 'up' ? '#7760bd' : '#B0B0B0'}
+                                  fill={message.feedback === 'up' ? '#7760bd' : '#9e9e9e'}
                                 />
                                 <path
                                   d="M4.73413 6.94358V17.2287"
-                                  stroke={message.feedback === 'up' ? '#7760bd' : '#B0B0B0'}
+                                  stroke={message.feedback === 'up' ? '#7760bd' : '#9e9e9e'}
                                   strokeWidth="2.5"
                                 />
                               </svg>
@@ -3087,7 +3120,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               className={`p-[6px] rounded-[6px] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50 ${
                                 message.feedback === 'down'
                                   ? 'bg-[#7760bd]/20 hover:bg-[#7760bd]/30'
-                                  : 'hover:bg-[#333]'
+                                  : 'hover:bg-[#3a3a3a]'
                               }`}
                               onClick={() => handleFeedback(message.id, 'down')}
                               aria-label="Bad response"
@@ -3095,11 +3128,11 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 18 18">
                                 <path
                                   d={svgPathsAnswer.p115b4180}
-                                  fill={message.feedback === 'down' ? '#7760bd' : '#B0B0B0'}
+                                  fill={message.feedback === 'down' ? '#7760bd' : '#9e9e9e'}
                                 />
                                 <path
                                   d="M4.84912 11V0.999976"
-                                  stroke={message.feedback === 'down' ? '#7760bd' : '#B0B0B0'}
+                                  stroke={message.feedback === 'down' ? '#7760bd' : '#9e9e9e'}
                                   strokeWidth="2"
                                 />
                               </svg>
@@ -3110,12 +3143,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         {/* Share Button */}
                         <Tooltip text="Share" position="top">
                           <button
-                            className="p-[6px] rounded-[6px] hover:bg-[#333] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                            className="p-[6px] rounded-[6px] hover:bg-[#3a3a3a] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                             aria-label="Share"
                             onClick={() => handleOpenMessageShareModal(message.id, message.content)}
                           >
                             <svg className="w-[17px] h-[17px]" fill="none" viewBox="0 0 20 19.995">
-                              <path d={svgPathsAnswer.p123ea5e0} fill="#B0B0B0" />
+                              <path d={svgPathsAnswer.p123ea5e0} fill="#9e9e9e" />
                             </svg>
                           </button>
                         </Tooltip>
@@ -3123,11 +3156,11 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         {/* Read Aloud Button (Coming Soon) */}
                         <Tooltip text="Read aloud" position="top">
                           <button
-                            className="p-[6px] rounded-[6px] hover:bg-[#333] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
+                            className="p-[6px] rounded-[6px] hover:bg-[#3a3a3a] transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#7760bd]/50"
                             aria-label="Read aloud"
                             onClick={() => setToastMessage('Coming soon')}
                           >
-                            <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="#B0B0B0" strokeWidth="2">
+                            <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="#9e9e9e" strokeWidth="2">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                             </svg>
                           </button>
@@ -3155,7 +3188,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
                   >
-                    <div className="max-w-[480px] bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] px-[20px] py-[16px]">
+                    <div className="max-w-[480px] bg-[#2c2c2c] border border-white/[0.08] rounded-[12px] px-[20px] py-[16px]">
                       {/* Stage steps */}
                       <div className="flex flex-col gap-[10px] mb-[14px]">
                         {stages.map((s, i) => {
@@ -3167,23 +3200,23 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               <div className={`w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-500 ${
                                 done   ? 'bg-[#7760bd]' :
                                 active ? 'bg-[#7760bd]/20 border border-[#7760bd]' :
-                                         'bg-[#333] border border-[#444]'
+                                         'bg-[#3a3a3a] border border-white/[0.08]'
                               }`}>
                                 {done ? (
                                   <svg className="w-[14px] h-[14px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                   </svg>
                                 ) : (
-                                  <svg className={`w-[14px] h-[14px] ${active ? 'text-[#7760bd]' : 'text-[#555]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                  <svg className={`w-[14px] h-[14px] ${active ? 'text-[#7760bd]' : 'text-[#9e9e9e]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d={s.icon} />
                                   </svg>
                                 )}
                               </div>
                               {/* Label */}
-                              <p className={`font-['Inter:Regular',sans-serif] text-[0.8125rem] transition-colors duration-500 ${
+                              <p className={`font-sans text-[0.8125rem] transition-colors duration-500 ${
                                 done   ? 'text-[#7760bd] line-through' :
                                 active ? 'text-white' :
-                                         'text-[#555]'
+                                         'text-[#9e9e9e]'
                               }`}>{s.label}</p>
                               {/* Spinner on active step */}
                               {active && (
@@ -3227,7 +3260,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                         <div className="w-[8px] h-[8px] bg-[#7760bd] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                       </div>
-                      <p className="font-['Inter:Regular',sans-serif] text-[0.875rem] text-[#9e9e9e]">
+                      <p className="font-sans text-[0.875rem] text-[#9e9e9e]">
                         Regenerating response...
                       </p>
                     </div>
@@ -3252,7 +3285,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         setInputValue(q);
                         textareaRef.current?.focus();
                       }}
-                      className="flex-shrink-0 bg-[#2c2c2c] border border-[#444] hover:border-[#7760bd] hover:bg-[#2a2635] text-[#ccc] hover:text-white text-[0.75rem] rounded-full px-[14px] py-[7px] transition-all cursor-pointer whitespace-nowrap"
+                      className="flex-shrink-0 bg-[#2c2c2c] border border-white/[0.08] hover:border-[#7760bd] hover:bg-[#3a3a3a] text-[#9e9e9e] hover:text-white text-[0.75rem] rounded-full px-[14px] py-[7px] transition-all cursor-pointer whitespace-nowrap"
                     >
                       {q}
                     </button>
@@ -3264,7 +3297,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     setSampleSuggestedQuestions([]);
                     setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, suggestedQuestions: [] } : c));
                   }}
-                  className="flex-shrink-0 text-[#555] hover:text-[#999] transition-colors"
+                  className="flex-shrink-0 text-[#9e9e9e] hover:text-[#9e9e9e] transition-colors"
                   title="Dismiss suggestions"
                 >
                   <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
@@ -3279,8 +3312,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* ChatInputGlowShell - Premium multi-layer glow container */}
               <div className="relative group/composer">
                 
-                {/* ORIGINAL Search Highlight - Sharp gradient border (only on focus) */}
-                <div 
+                {/* Gold highlight - hairline border on focus */}
+                <div
                   className="absolute inset-[-2px] rounded-[18px] opacity-0 group-focus-within/composer:opacity-60 transition-opacity duration-[180ms] pointer-events-none"
                   style={{
                     background: '#7760bd',
@@ -3289,83 +3322,43 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 >
                   <div className="h-full w-full bg-transparent rounded-[16px]"></div>
                 </div>
-                
-                {/* ORIGINAL Search Highlight - Blurred glow (only on focus) */}
-                <div 
+
+                {/* Gold highlight - restrained blurred glow (single tone, no rainbow) */}
+                <div
                   className="absolute inset-[-3px] rounded-[19px] opacity-0 group-focus-within/composer:opacity-25 transition-opacity duration-[180ms] pointer-events-none"
                   style={{
-                    background: 'linear-gradient(135deg, #7760bd 0%, #9580d4 25%, #FFC107 50%, #E59866 75%, #7760bd 100%)',
+                    background: 'rgba(119, 96, 189, 0.25)',
                     filter: 'blur(18px)',
                   }}
                 />
-                
-                {/* AuraGlow - Soft radial background bloom with breathing animation */}
-                <div 
+
+                {/* AuraGlow - Soft radial gold bloom, breathes gently at rest */}
+                <div
                   className="absolute inset-0 rounded-[16px] pointer-events-none transition-all duration-300 ease-in-out animate-[breathe_3s_ease-in-out_infinite]"
                   style={{
-                    background: 'radial-gradient(ellipse at center, rgba(119, 96, 189, 0.35) 0%, rgba(255, 193, 7, 0.18) 35%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at center, rgba(119, 96, 189, 0.30) 0%, transparent 70%)',
                     opacity: 0.28,
                     filter: 'blur(35px)',
                   }}
                 />
-                
+
                 {/* AuraGlow Enhanced on Hover/Focus */}
-                <div 
+                <div
                   className="absolute inset-0 rounded-[16px] pointer-events-none transition-all duration-300 ease-in-out opacity-0 group-hover/composer:group-[:not(:focus-within)]:opacity-[0.15] group-focus-within/composer:opacity-[0.30]"
                   style={{
-                    background: 'radial-gradient(ellipse at center, rgba(119, 96, 189, 0.4) 0%, rgba(255, 193, 7, 0.22) 40%, transparent 70%)',
+                    background: 'radial-gradient(ellipse at center, rgba(119, 96, 189, 0.35) 0%, transparent 70%)',
                     filter: 'blur(45px)',
                     boxShadow: '0 0 60px 20px rgba(119, 96, 189, 0.20)',
                   }}
                 />
-                
-                {/* GlowStrokeBlur - Thick blurred gradient edge (creates aura edge) */}
-                <div 
-                  className="absolute inset-0 rounded-[16px] pointer-events-none transition-all duration-300 ease-in-out group-hover/composer:group-[:not(:focus-within)]:opacity-[0.45] group-focus-within/composer:opacity-[0.60]"
-                  style={{
-                    background: 'linear-gradient(135deg, #7760bd 0%, #9580d4 20%, #FFC107 40%, #E59866 60%, #9580d4 80%, #7760bd 100%)',
-                    opacity: 0.35,
-                    padding: '8px',
-                    filter: 'blur(14px)',
-                  }}
-                >
-                  <div className="h-full w-full bg-transparent rounded-[8px]" />
-                </div>
-                
-                {/* GradientStrokeLayer - Sharp 3px gradient border */}
-                <div 
-                  className="absolute inset-0 rounded-[16px] p-[3px] pointer-events-none transition-all duration-300 ease-in-out group-hover/composer:group-[:not(:focus-within)]:opacity-100 group-focus-within/composer:opacity-100"
-                  style={{
-                    background: 'linear-gradient(135deg, #7760bd 0%, #9580d4 20%, #FFC107 40%, #E59866 60%, #9580d4 80%, #7760bd 100%)',
-                    opacity: 0.95,
-                  }}
-                >
-                  <div className="h-full w-full bg-[#1a1a1a] rounded-[13px]" />
-                </div>
-                
-                {/* ShimmerOverlay - Animated subtle shimmer */}
-                <div 
-                  className="absolute inset-0 rounded-[16px] pointer-events-none overflow-hidden"
-                  style={{
-                    opacity: 0.15,
-                  }}
-                >
-                  <div 
-                    className="absolute inset-0 animate-[shimmer_6s_linear_infinite]"
-                    style={{
-                      backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(119, 96, 189, 0.5) 45%, rgba(255, 193, 7, 0.4) 50%, rgba(119, 96, 189, 0.5) 55%, transparent 100%)',
-                      backgroundSize: '200% 100%',
-                    }}
-                  />
-                </div>
-                  
-                  {/* Main Composer Container - FIXED dimensions */}
-                  <div className="relative bg-[#333] rounded-[16px] px-[20px] py-[14px] flex flex-col gap-[12px]">
+
+                  {/* Main Composer Container - FIXED dimensions — hairline border command-bar, not a solid filled box */}
+                  <div className="relative bg-white/[0.02] border border-white/[0.08] backdrop-blur-sm rounded-[16px] px-[20px] py-[14px] flex flex-col gap-[12px]">
                     {/* Top Section: Text Area */}
                     <TextareaAutosize
                       ref={textareaRef}
                       placeholder="Ask away"
-                      className="bg-transparent text-[1rem] text-white placeholder:text-[#9e9e9e] outline-none font-['Inter:Regular',sans-serif] resize-none max-w-full overflow-x-hidden"
+                      className="bg-transparent text-[1rem] text-white placeholder:text-[#9e9e9e]/80 placeholder:italic outline-none font-sans resize-none max-w-full overflow-x-hidden"
                       style={{
                         whiteSpace: 'pre-wrap',
                         overflowWrap: 'anywhere',
@@ -3387,10 +3380,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                     {/* Character counter — only visible when user has typed something */}
                     {inputValue.length > 0 && (
-                      <p className={`text-right text-[0.6875rem] font-['Inter:Regular',sans-serif] transition-colors ${
+                      <p className={`text-right text-[0.6875rem] font-sans transition-colors ${
                         inputValue.length > 450
                           ? inputValue.length >= 500 ? 'text-red-400' : 'text-yellow-400'
-                          : 'text-[#666]'
+                          : 'text-[#9e9e9e]'
                       }`}>
                         {inputValue.length} / 500
                       </p>
@@ -3401,7 +3394,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       {/* Dictate Button */}
                       <button
                         className={`p-[8px] rounded-[8px] transition-all cursor-pointer focus:outline-none ${
-                          isDictating ? 'bg-[#FFC107]/20' : 'hover:bg-[#444]'
+                          isDictating ? 'bg-[#7760bd]/20' : 'hover:bg-[#444]'
                         }`}
                         onClick={() => {
                           setIsDictating(!isDictating);
@@ -3409,15 +3402,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         }}
                         aria-label="Dictate"
                       >
-                        <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke={isDictating ? "#FFC107" : "#B0B0B0"} strokeWidth="2">
+                        <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke={isDictating ? "#7760bd" : "#9e9e9e"} strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
                         </svg>
                       </button>
                       <button
-                        className={`bg-[#7760bd] rounded-[8px] px-[28px] py-[12px] transition-all cursor-pointer ${
+                        className={`bg-[#7760bd] rounded-full px-[28px] py-[12px] transition-all cursor-pointer ${
                           isProcessing || isTyping
-                            ? 'hover:bg-[#8870cd]'
-                            : 'hover:bg-[#8870cd] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105'
+                            ? 'hover:bg-[#8a75d4]'
+                            : 'hover:bg-[#8a75d4] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105'
                         }`}
                         onClick={(isProcessing || isTyping) ? stopGeneration : () => sendMessage()}
                       >
@@ -3427,7 +3420,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             <rect x="2" y="2" width="12" height="12" rx="2" fill="white" />
                           </svg>
                         ) : (
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
+                          <p className="font-sans font-semibold text-[0.875rem] uppercase tracking-[0.08em] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
                             Send
                           </p>
                         )}
@@ -3466,10 +3459,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <p className="font-['Inter:SemiBold',sans-serif] font-semibold text-[0.9375rem] text-white mb-[2px]">
+              <p className="font-sans font-semibold text-[0.9375rem] text-white mb-[2px]">
                 Chat history is off
               </p>
-              <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc]">
+              <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                 This chat won't be saved. Turn it on in Settings → Security.
               </p>
             </div>
@@ -3479,7 +3472,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Turn on button */}
               <button
                 onClick={handleTurnOnChatHistory}
-                className="h-[34px] px-[14px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[10px] font-['Inter:Medium',sans-serif] font-medium text-[0.8125rem] transition-colors"
+                className="h-[34px] px-[14px] bg-[#7760bd] hover:bg-[#8a75d4] text-white rounded-[10px] font-sans font-medium text-[0.8125rem] transition-colors"
               >
                 Turn on
               </button>
@@ -3487,7 +3480,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Close button */}
               <button
                 onClick={() => setShowChatHistoryBanner(false)}
-                className="hover:bg-[#333] rounded-[4px] p-[2px] transition-colors"
+                className="hover:bg-[#3a3a3a] rounded-[4px] p-[2px] transition-colors"
                 aria-label="Close"
               >
                 <svg className="w-[22px] h-[22px]" fill="none" viewBox="0 0 24 24">
@@ -3502,15 +3495,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* Delete Toast with Undo */}
       {showDeleteToast && pendingDelete && (
         <div className="fixed bottom-[24px] left-1/2 transform -translate-x-1/2 z-50 animate-[slideUp_0.3s_ease-out]">
-          <div className="bg-[#2c2c2c] border border-[#555] rounded-[8px] px-[24px] py-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center gap-[16px]">
-            <p className="font-['Inter:Regular',sans-serif] text-[1rem] text-white">
+          <div className="bg-[#2c2c2c] border border-[#9e9e9e] rounded-[8px] px-[24px] py-[16px] shadow-[0_4px_20px_rgba(0,0,0,0.4)] flex items-center gap-[16px]">
+            <p className="font-sans text-[1rem] text-white">
               Chat deleted
             </p>
             <button
               onClick={handleUndoDelete}
-              className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[6px] px-[16px] py-[6px] transition-colors cursor-pointer"
+              className="bg-[#7760bd] hover:bg-[#8a75d4] rounded-[6px] px-[16px] py-[6px] transition-colors cursor-pointer"
             >
-              <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
+              <p className="font-sans font-semibold text-[0.875rem] text-white">
                 Undo
               </p>
             </button>
@@ -3525,7 +3518,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 }
                 setPendingDelete(null);
               }}
-              className="text-[#999] hover:text-white transition-colors cursor-pointer p-[2px]"
+              className="text-[#9e9e9e] hover:text-white transition-colors cursor-pointer p-[2px]"
               aria-label="Dismiss"
             >
               <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -3543,15 +3536,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           onClick={handleCloseShareModal}
         >
           <div
-            className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[480px] max-w-[90vw] border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+            className="bg-[#2c2c2c] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[480px] max-w-[90vw] border border-white/[0.08] animate-[modalFadeIn_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[4px]">
+            <div className="px-[32px] pt-[32px] pb-[16px] border-b border-white/[0.08]">
+              <h2 className="font-sans font-semibold text-[1.5rem] text-white mb-[4px]">
                 Export Results
               </h2>
-              <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
+              <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                 Download the prediction, SHAP explanation, and conversation
               </p>
             </div>
@@ -3561,7 +3554,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* PDF */}
               <button
                 onClick={handleExportPDF}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
@@ -3569,10 +3562,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
+                  <p className="font-sans font-semibold text-[1rem] text-white">
                     Export as PDF
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                     Opens print dialog — save as PDF
                   </p>
                 </div>
@@ -3581,7 +3574,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* HTML */}
               <button
                 onClick={handleExportHTML}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
@@ -3589,10 +3582,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
+                  <p className="font-sans font-semibold text-[1rem] text-white">
                     Export as HTML
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                     Download a self-contained HTML report
                   </p>
                 </div>
@@ -3601,7 +3594,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* CSV */}
               <button
                 onClick={handleExportCSV}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
@@ -3609,10 +3602,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">
+                  <p className="font-sans font-semibold text-[1rem] text-white">
                     Export as CSV
                   </p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                     Download prediction and SHAP values as spreadsheet
                   </p>
                 </div>
@@ -3623,9 +3616,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <div className="px-[32px] pb-[32px] pt-[8px] flex justify-end">
               <button
                 onClick={handleCloseShareModal}
-                className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
+                className="bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
+                <p className="font-sans font-semibold text-[0.875rem] text-white">
                   Close
                 </p>
               </button>
@@ -3641,23 +3634,23 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           onClick={() => setShowLogoutModal(false)}
         >
           <div
-            className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[400px] max-w-[90vw] border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+            className="bg-[#2c2c2c] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[400px] max-w-[90vw] border border-white/[0.08] animate-[modalFadeIn_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-[32px] pt-[32px] pb-[24px]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[12px]">
+              <h2 className="font-sans font-semibold text-[1.5rem] text-white mb-[12px]">
                 Log out?
               </h2>
-              <p className="font-['Inter:Regular',sans-serif] text-[1rem] text-[#9e9e9e]">
+              <p className="font-sans text-[1rem] text-[#9e9e9e]">
                 Are you sure you want to log out?
               </p>
             </div>
             <div className="px-[32px] pb-[32px] flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
+                className="bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
+                <p className="font-sans font-semibold text-[0.875rem] text-white">
                   Cancel
                 </p>
               </button>
@@ -3668,9 +3661,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     onLogout();
                   }
                 }}
-                className="bg-[#7760bd] hover:bg-[#6956a7] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
+                className="bg-[#7760bd] hover:bg-[#8b7dd8] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
+                <p className="font-sans font-semibold text-[0.875rem] text-white">
                   Log out
                 </p>
               </button>
@@ -3686,12 +3679,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           onClick={handleCloseMessageShareModal}
         >
           <div
-            className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[480px] max-w-[90vw] border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+            className="bg-[#2c2c2c] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[480px] max-w-[90vw] border border-white/[0.08] animate-[modalFadeIn_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333]">
-              <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.5rem] text-white mb-[8px]">
+            <div className="px-[32px] pt-[32px] pb-[16px] border-b border-white/[0.08]">
+              <h2 className="font-sans font-semibold text-[1.5rem] text-white mb-[8px]">
                 Share chat
               </h2>
             </div>
@@ -3701,7 +3694,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               {/* Copy Chat Text */}
               <button
                 onClick={handleCopyConversationText}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
@@ -3709,15 +3702,15 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">Copy Chat Text</p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">Copy full transcript to clipboard</p>
+                  <p className="font-sans font-semibold text-[1rem] text-white">Copy Chat Text</p>
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">Copy full transcript to clipboard</p>
                 </div>
               </button>
 
               {/* Download */}
               <button
                 onClick={handleDownloadTXT}
-                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#333] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group"
               >
                 <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
                   <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
@@ -3725,8 +3718,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">Download (.txt)</p>
-                  <p className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#9e9e9e]">Download chat as text file</p>
+                  <p className="font-sans font-semibold text-[1rem] text-white">Download (.txt)</p>
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">Download chat as text file</p>
                 </div>
               </button>
             </div>
@@ -3735,9 +3728,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <div className="px-[32px] pb-[32px] pt-[8px] flex justify-end">
               <button
                 onClick={handleCloseMessageShareModal}
-                className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
+                className="bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer"
               >
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] text-white">
+                <p className="font-sans font-semibold text-[0.875rem] text-white">
                   Close
                 </p>
               </button>
@@ -3762,20 +3755,20 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             onClick={() => setShowFilePreview(false)}
           >
             <div
-              className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[680px] max-w-[95vw] max-h-[90vh] flex flex-col border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+              className="bg-[#2c2c2c] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[680px] max-w-[95vw] max-h-[90vh] flex flex-col border border-white/[0.08] animate-[modalFadeIn_0.2s_ease-out]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="px-[28px] pt-[24px] pb-[16px] border-b border-[#333] flex items-center justify-between flex-shrink-0">
+              <div className="px-[28px] pt-[24px] pb-[16px] border-b border-white/[0.08] flex items-center justify-between flex-shrink-0">
                 <div>
-                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1.25rem] text-white">File Preview</h2>
+                  <h2 className="font-sans font-semibold text-[1.25rem] text-white">File Preview</h2>
                   {datasetInfo && (
-                    <p className="text-[0.75rem] text-[#666] mt-[2px]">{datasetInfo.rows.toLocaleString()} rows · {datasetInfo.columns.length} columns</p>
+                    <p className="text-[0.75rem] text-[#9e9e9e] mt-[2px]">{datasetInfo.rows.toLocaleString()} rows · {datasetInfo.columns.length} columns</p>
                   )}
                 </div>
-                <button onClick={() => setShowFilePreview(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
+                <button onClick={() => setShowFilePreview(false)} className="p-[6px] hover:bg-[#3a3a3a] rounded-[6px] transition-colors cursor-pointer">
                   <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
-                    <path d="M12 4L4 12M4 4L12 12" stroke="#B0B0B0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M12 4L4 12M4 4L12 12" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                   </svg>
                 </button>
               </div>
@@ -3790,22 +3783,22 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </svg>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-[0.875rem] text-white truncate">{attachment?.name ?? 'Sample_Template.csv'}</p>
-                    <p className="text-[0.75rem] text-[#666]">{attachment?.type?.toUpperCase() ?? 'CSV'}{attachment?.size ? ` · ${(attachment.size / 1024).toFixed(1)} KB` : ''}</p>
+                    <p className="text-[0.75rem] text-[#9e9e9e]">{attachment?.type?.toUpperCase() ?? 'CSV'}{attachment?.size ? ` · ${(attachment.size / 1024).toFixed(1)} KB` : ''}</p>
                   </div>
                 </div>
 
                 {/* Data table — shown when we have columns */}
                 {previewColumns.length > 0 && (
                   <div>
-                    <p className="text-[0.6875rem] text-[#555] uppercase tracking-wide mb-[10px]">
+                    <p className="text-[0.6875rem] text-[#9e9e9e] uppercase tracking-wide mb-[10px]">
                       {previewRows.length > 0 ? 'Sample Rows' : 'Columns'}
                     </p>
-                    <div className="overflow-x-auto rounded-[8px] border border-[#333]">
+                    <div className="overflow-x-auto rounded-[8px] border border-white/[0.08]">
                       <table className="w-full text-left border-collapse" style={{ minWidth: `${previewColumns.length * 100}px` }}>
                         <thead>
-                          <tr className="bg-[#252525]">
+                          <tr className="bg-[#2c2c2c]">
                             {previewColumns.map((col) => (
-                              <th key={col} className="px-[12px] py-[8px] text-[0.6875rem] font-semibold text-[#9e9e9e] uppercase tracking-wide border-b border-[#333] whitespace-nowrap">
+                              <th key={col} className="px-[12px] py-[8px] text-[0.6875rem] font-semibold text-[#9e9e9e] uppercase tracking-wide border-b border-white/[0.08] whitespace-nowrap">
                                 {col}
                               </th>
                             ))}
@@ -3814,9 +3807,9 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         {previewRows.length > 0 && (
                           <tbody>
                             {previewRows.map((row, ri) => (
-                              <tr key={ri} className="border-b border-[#2a2a2a] hover:bg-[#232323] transition-colors">
+                              <tr key={ri} className="border-b border-[#3a3a3a] hover:bg-[#2c2c2c] transition-colors">
                                 {row.map((cell, ci) => (
-                                  <td key={ci} className="px-[12px] py-[7px] text-[0.75rem] text-[#ccc] whitespace-nowrap">{cell}</td>
+                                  <td key={ci} className="px-[12px] py-[7px] text-[0.75rem] text-[#9e9e9e] whitespace-nowrap">{cell}</td>
                                 ))}
                               </tr>
                             ))}
@@ -3833,16 +3826,16 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                 {/* Fallback if no column info yet */}
                 {previewColumns.length === 0 && (
                   <div className="bg-[#2c2c2c] rounded-[10px] p-[24px] flex items-center justify-center min-h-[120px]">
-                    <p className="text-[0.8125rem] text-[#555]">Column information not available yet — ask a question to begin analysis.</p>
+                    <p className="text-[0.8125rem] text-[#9e9e9e]">Column information not available yet — ask a question to begin analysis.</p>
                   </div>
                 )}
               </div>
 
               {/* Footer */}
-              <div className="px-[28px] pb-[20px] pt-[12px] border-t border-[#333] flex justify-end flex-shrink-0">
+              <div className="px-[28px] pb-[20px] pt-[12px] border-t border-white/[0.08] flex justify-end flex-shrink-0">
                 <button
                   onClick={() => setShowFilePreview(false)}
-                  className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[20px] py-[8px] transition-colors cursor-pointer"
+                  className="bg-[#7760bd] hover:bg-[#8a75d4] rounded-[8px] px-[20px] py-[8px] transition-colors cursor-pointer"
                 >
                   <p className="font-semibold text-[0.8125rem] text-white">Close</p>
                 </button>
@@ -3861,18 +3854,18 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             onClick={() => setSelectedSampleDataset(null)}
           >
             <div
-              className="bg-[#1a1a1a] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[700px] max-w-[92vw] max-h-[90vh] overflow-y-auto border border-[#333] animate-[modalFadeIn_0.2s_ease-out]"
+              className="bg-[#2c2c2c] rounded-[16px] shadow-[0_8px_32px_rgba(0,0,0,0.6)] w-[700px] max-w-[92vw] max-h-[90vh] overflow-y-auto border border-white/[0.08] animate-[modalFadeIn_0.2s_ease-out]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="px-[32px] pt-[32px] pb-[16px] border-b border-[#333] flex items-start justify-between gap-[16px]">
+              <div className="px-[32px] pt-[32px] pb-[16px] border-b border-white/[0.08] flex items-start justify-between gap-[16px]">
                 <div>
-                  <h2 className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[22px] text-white">{ds.name}</h2>
-                  <p className="text-[0.875rem] text-[#999] mt-[4px]">{ds.description}</p>
+                  <h2 className="font-sans font-semibold text-[22px] text-white">{ds.name}</h2>
+                  <p className="text-[0.875rem] text-[#9e9e9e] mt-[4px]">{ds.description}</p>
                 </div>
                 <button
                   onClick={() => setSelectedSampleDataset(null)}
-                  className="text-[#666] hover:text-white transition-colors mt-[2px] flex-shrink-0"
+                  className="text-[#9e9e9e] hover:text-white transition-colors mt-[2px] flex-shrink-0"
                 >
                   <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
                     <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -3883,21 +3876,21 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="px-[32px] py-[24px] flex flex-col gap-[24px]">
                 {/* Table preview */}
                 <div>
-                  <p className="text-[0.75rem] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Preview (first 5 rows)</p>
-                  <div className="overflow-x-auto rounded-[8px] border border-[#333]">
-                    <table className="text-[0.75rem] text-[#ccc] w-full border-collapse">
+                  <p className="text-[0.75rem] font-semibold text-[#9e9e9e] uppercase tracking-wide mb-[10px]">Preview (first 5 rows)</p>
+                  <div className="overflow-x-auto rounded-[8px] border border-white/[0.08]">
+                    <table className="text-[0.75rem] text-[#9e9e9e] w-full border-collapse">
                       <thead>
-                        <tr className="bg-[#252525]">
+                        <tr className="bg-[#2c2c2c]">
                           {ds.columns.map((col) => (
-                            <th key={col} className="px-[12px] py-[8px] text-left font-semibold text-white border-b border-[#333] whitespace-nowrap">{col}</th>
+                            <th key={col} className="px-[12px] py-[8px] text-left font-semibold text-white border-b border-white/[0.08] whitespace-nowrap">{col}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {ds.previewRows.map((row, i) => (
-                          <tr key={i} className={i % 2 === 0 ? 'bg-[#1e1e1e]' : 'bg-[#222]'}>
+                          <tr key={i} className={i % 2 === 0 ? 'bg-[#141414]' : 'bg-[#3a3a3a]'}>
                             {row.map((cell, j) => (
-                              <td key={j} className="px-[12px] py-[7px] border-b border-[#2a2a2a] whitespace-nowrap">{cell}</td>
+                              <td key={j} className="px-[12px] py-[7px] border-b border-[#3a3a3a] whitespace-nowrap">{cell}</td>
                             ))}
                           </tr>
                         ))}
@@ -3908,10 +3901,10 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                 {/* Suggested questions */}
                 <div>
-                  <p className="text-[0.75rem] font-semibold text-[#aaa] uppercase tracking-wide mb-[10px]">Suggested questions</p>
+                  <p className="text-[0.75rem] font-semibold text-[#9e9e9e] uppercase tracking-wide mb-[10px]">Suggested questions</p>
                   <div className="flex flex-col gap-[8px]">
                     {ds.suggestedQuestions.map((q) => (
-                      <div key={q} className="flex items-start gap-[10px] bg-[#252525] rounded-[8px] px-[14px] py-[10px]">
+                      <div key={q} className="flex items-start gap-[10px] bg-[#2c2c2c] rounded-[8px] px-[14px] py-[10px]">
                         <span className="text-[#7760bd] text-[0.875rem] font-bold mt-[1px] flex-shrink-0">›</span>
                         <p className="text-[0.8125rem] text-[#ddd]">{q}</p>
                       </div>
@@ -3924,7 +3917,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <div className="px-[32px] pb-[32px] flex items-center justify-between gap-[12px]">
                 <button
                   onClick={() => setSelectedSampleDataset(null)}
-                  className="bg-[#2c2c2c] hover:bg-[#333] rounded-[8px] px-[20px] py-[10px] transition-colors cursor-pointer"
+                  className="bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] px-[20px] py-[10px] transition-colors cursor-pointer"
                 >
                   <p className="font-semibold text-[0.875rem] text-white">Cancel</p>
                 </button>
@@ -3942,7 +3935,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       setToastMessage('Failed to load sample dataset. Please try again.');
                     }
                   }}
-                  className="bg-[#7760bd] hover:bg-[#8870cd] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer hover:shadow-[0_0_20px_rgba(119,96,189,0.4)]"
+                  className="bg-[#7760bd] hover:bg-[#8a75d4] rounded-[8px] px-[24px] py-[10px] transition-colors cursor-pointer hover:shadow-[0_0_20px_rgba(119,96,189,0.4)]"
                 >
                   <p className="font-semibold text-[0.875rem] text-white">Use this dataset</p>
                 </button>
@@ -4119,17 +4112,17 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* What-If Analysis Modal */}
       {showWhatIfModal && activeChat?.rawFeatureDefaults && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-[16px]">
-          <div className="bg-[#2c2c2c] border border-[#3a3a3a] rounded-[12px] w-full max-w-[560px] max-h-[90vh] flex flex-col shadow-2xl">
+          <div className="bg-[#2c2c2c] border border-white/[0.08] rounded-[12px] w-full max-w-[560px] max-h-[90vh] flex flex-col shadow-2xl">
 
             {/* Header */}
-            <div className="px-[24px] py-[16px] border-b border-[#3a3a3a] flex items-center justify-between">
+            <div className="px-[24px] py-[16px] border-b border-white/[0.08] flex items-center justify-between">
               <div>
-                <p className="font-['Inter:Semi_Bold',sans-serif] font-semibold text-[1rem] text-white">What-If Analysis</p>
-                <p className="font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#666] mt-[2px]">Adjust feature values to simulate a new prediction</p>
+                <p className="font-sans font-semibold text-[1rem] text-white">What-If Analysis</p>
+                <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[2px]">Adjust feature values to simulate a new prediction</p>
               </div>
-              <button onClick={() => setShowWhatIfModal(false)} className="p-[6px] hover:bg-[#333] rounded-[6px] transition-colors cursor-pointer">
+              <button onClick={() => setShowWhatIfModal(false)} className="p-[6px] hover:bg-[#3a3a3a] rounded-[6px] transition-colors cursor-pointer">
                 <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 16 16">
-                  <path d="M12 4L4 12M4 4L12 12" stroke="#B0B0B0" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  <path d="M12 4L4 12M4 4L12 12" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                 </svg>
               </button>
             </div>
@@ -4138,7 +4131,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
             <div className="flex-1 overflow-y-auto px-[24px] py-[16px] flex flex-col gap-[10px]">
               {Object.entries(whatIfValues).map(([feature, value]) => (
                 <div key={feature} className="flex items-center gap-[12px]">
-                  <label className="font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc] w-[140px] flex-shrink-0 truncate text-right">{feature}</label>
+                  <label className="font-sans text-[0.8125rem] text-[#9e9e9e] w-[140px] flex-shrink-0 truncate text-right">{feature}</label>
                   <input
                     type={typeof value === 'number' ? 'number' : 'text'}
                     value={String(value)}
@@ -4146,7 +4139,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       ...prev,
                       [feature]: typeof value === 'number' ? (parseFloat(e.target.value) || 0) : e.target.value,
                     }))}
-                    className="flex-1 bg-[#1a1a1a] border border-[#444] rounded-[6px] px-[10px] py-[6px] font-['Inter:Regular',sans-serif] text-[0.8125rem] text-white outline-none focus:border-[#7760bd] transition-colors"
+                    className="flex-1 bg-[#2c2c2c] border border-white/[0.08] rounded-[6px] px-[10px] py-[6px] font-sans text-[0.8125rem] text-white outline-none focus:border-[#7760bd] transition-colors"
                   />
                 </div>
               ))}
@@ -4154,41 +4147,41 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
             {/* Result Panel */}
             {whatIfResult && (
-              <div className="mx-[24px] mb-[12px] bg-[#1a1a1a] rounded-[10px] border border-[#3a3a3a] p-[16px]">
-                <p className="text-[0.625rem] text-[#666] uppercase tracking-wide mb-[12px]">Counterfactual Result</p>
+              <div className="mx-[24px] mb-[12px] bg-[#2c2c2c] rounded-[10px] border border-white/[0.08] p-[16px]">
+                <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[12px]">Counterfactual Result</p>
                 <div className="flex gap-[12px] mb-[14px]">
                   {/* Before */}
                   {whatIfOriginalPrediction && (
-                    <div className="flex-1 bg-[#252525] border border-[#3a3a3a] rounded-[8px] p-[10px]">
-                      <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[6px]">Before</p>
-                      <div className="bg-[#3a3a3a]/60 border border-[#555]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
-                        <p className="font-semibold text-[0.75rem] text-[#999]">{whatIfOriginalPrediction.prediction}</p>
+                    <div className="flex-1 bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] p-[10px]">
+                      <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[6px]">Before</p>
+                      <div className="bg-[#3a3a3a]/60 border border-white/[0.08] rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
+                        <p className="font-semibold text-[0.75rem] text-[#9e9e9e]">{whatIfOriginalPrediction.prediction}</p>
                       </div>
                       {whatIfOriginalPrediction.confidence !== null && (
-                        <p className="text-[0.6875rem] text-[#555]">{whatIfOriginalPrediction.confidence.toFixed(1)}%</p>
+                        <p className="font-tabular text-[0.6875rem] text-[#9e9e9e]">{whatIfOriginalPrediction.confidence.toFixed(1)}%</p>
                       )}
                     </div>
                   )}
                   {/* Arrow */}
                   {whatIfOriginalPrediction && (
-                    <div className="flex items-center text-[#555]">
+                    <div className="flex items-center text-[#9e9e9e]">
                       <svg className="w-[16px] h-[16px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </div>
                   )}
                   {/* After */}
-                  <div className="flex-1 bg-[#252525] border border-[#7760bd]/30 rounded-[8px] p-[10px]">
-                    <p className="text-[0.625rem] text-[#555] uppercase tracking-wide mb-[6px]">{whatIfOriginalPrediction ? 'After' : 'Prediction'}</p>
+                  <div className="flex-1 bg-[#2c2c2c] border border-[#7760bd]/30 rounded-[8px] p-[10px]">
+                    <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[6px]">{whatIfOriginalPrediction ? 'After' : 'Prediction'}</p>
                     <div className="bg-[#7760bd]/20 border border-[#7760bd]/40 rounded-full px-[10px] py-[3px] inline-block mb-[4px]">
                       <p className="font-semibold text-[0.75rem] text-[#7760bd]">{whatIfResult.prediction}</p>
                     </div>
                     {whatIfResult.confidence !== null && (
-                      <p className="text-[0.6875rem] text-[#9e9e9e]">{whatIfResult.confidence.toFixed(1)}%</p>
+                      <p className="font-tabular text-[0.6875rem] text-[#9e9e9e]">{whatIfResult.confidence.toFixed(1)}%</p>
                     )}
                   </div>
                 </div>
-                <p className="text-[0.625rem] text-[#666] uppercase tracking-wide mb-[8px]">Key Drivers</p>
+                <p className="text-[0.625rem] text-[#9e9e9e] uppercase tracking-wide mb-[8px]">Key Drivers</p>
                 {(() => {
                   const entries = Object.entries(whatIfResult.shapValues).slice(0, 5);
                   const maxAbs = Math.max(...entries.map(([, v]) => Math.abs(v)), 0.0001);
@@ -4197,7 +4190,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     const positive = val >= 0;
                     return (
                       <div key={feat} className="flex items-center gap-[10px] mb-[6px]">
-                        <p className="font-['Inter:Regular',sans-serif] text-[0.6875rem] text-[#9e9e9e] w-[100px] flex-shrink-0 truncate text-right">{feat}</p>
+                        <p className="font-sans text-[0.6875rem] text-[#9e9e9e] w-[100px] flex-shrink-0 truncate text-right">{feat}</p>
                         <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
                           <motion.div
                             className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
@@ -4206,7 +4199,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                             transition={{ duration: 0.5, ease: 'easeOut' }}
                           />
                         </div>
-                        <p className={`font-['Inter:Regular',sans-serif] text-[0.625rem] w-[34px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
+                        <p className={`font-tabular text-[0.625rem] w-[34px] flex-shrink-0 text-right ${positive ? 'text-[#7760bd]' : 'text-[#e05a5a]'}`}>
                           {positive ? '+' : ''}{val.toFixed(2)}
                         </p>
                       </div>
@@ -4218,14 +4211,14 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
             {/* Error */}
             {whatIfError && (
-              <p className="mx-[24px] mb-[8px] font-['Inter:Regular',sans-serif] text-[0.75rem] text-[#e05a5a]">{whatIfError}</p>
+              <p className="mx-[24px] mb-[8px] font-sans text-[0.75rem] text-[#e05a5a]">{whatIfError}</p>
             )}
 
             {/* Footer */}
-            <div className="px-[24px] py-[14px] border-t border-[#3a3a3a] flex justify-end gap-[10px]">
+            <div className="px-[24px] py-[14px] border-t border-white/[0.08] flex justify-end gap-[10px]">
               <button
                 onClick={() => setShowWhatIfModal(false)}
-                className="px-[16px] h-[36px] rounded-[8px] border border-[#555] font-['Inter:Regular',sans-serif] text-[0.8125rem] text-[#ccc] hover:bg-[#333] transition-colors cursor-pointer"
+                className="px-[16px] h-[36px] rounded-[8px] border border-[#9e9e9e] font-sans text-[0.8125rem] text-[#9e9e9e] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
               >
                 Close
               </button>
@@ -4246,7 +4239,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     setIsWhatIfLoading(false);
                   }
                 }}
-                className="bg-[#7760bd] disabled:opacity-50 px-[20px] h-[36px] rounded-[8px] font-['Inter:Semi_Bold',sans-serif] text-[0.8125rem] text-white hover:bg-[#8870cd] transition-all flex items-center gap-[8px] cursor-pointer"
+                className="bg-[#7760bd] disabled:opacity-50 px-[20px] h-[36px] rounded-[8px] font-sans text-[0.8125rem] text-white hover:bg-[#8a75d4] transition-all flex items-center gap-[8px] cursor-pointer"
               >
                 {isWhatIfLoading && <div className="w-[12px] h-[12px] border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 Run Simulation

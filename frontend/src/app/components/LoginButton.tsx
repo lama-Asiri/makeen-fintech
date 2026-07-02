@@ -20,8 +20,8 @@ export function LoginButton({
   const variants = {
     primary: "bg-[#7760bd] text-white hover:bg-[#8b7dd8] active:scale-[0.98] disabled:bg-[#4a3c7a] disabled:opacity-50 shadow-lg shadow-[#7760bd]/20",
     secondary: "bg-white/5 text-white border border-white/10 hover:bg-white/10 active:scale-[0.98] disabled:opacity-50",
-    google: "bg-white text-[#333] hover:bg-[#f5f5f5] active:scale-[0.98] disabled:opacity-50 shadow-sm",
-    apple: "bg-black text-white hover:bg-[#1a1a1a] active:scale-[0.98] disabled:opacity-50 border border-white/10 shadow-sm"
+    google: "bg-white text-[#3a3a3a] hover:bg-[#f5f5f5] active:scale-[0.98] disabled:opacity-50 shadow-sm",
+    apple: "bg-black text-white hover:bg-[#2c2c2c] active:scale-[0.98] disabled:opacity-50 border border-white/10 shadow-sm"
   };
 
   return (
