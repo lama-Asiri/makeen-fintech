@@ -455,15 +455,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Usage Summary */}
                     <div className="space-y-[12px] mb-[16px]">
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Datasets used</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Applicant pools analyzed</span>
                         <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.datasetsUsed} / {usageData.datasetsLimit}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Exports used</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Risk reports exported</span>
                         <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.exportsUsed} / {usageData.exportsLimit}</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Saved chats</span>
+                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Credit assessments saved</span>
                         <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.savedChats} / {usageData.savedChatsLimit}</span>
                       </div>
                     </div>
@@ -903,8 +903,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Row A - Auto-summarize uploaded files */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Auto-summarize uploaded files</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Generate a short summary after upload.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Auto-summarize applicant profiles</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Generate a risk summary after applicant data upload.</p>
                       </div>
                       <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
                         <input type="checkbox" className="sr-only peer" checked={autoSummarize} onChange={(e) => {
@@ -943,8 +943,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Row C - Preferred analysis depth */}
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Preferred analysis depth</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls how detailed file analysis should be.</p>
+                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Preferred risk analysis depth</p>
+                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls how detailed credit risk analysis should be.</p>
                       </div>
                       <CustomSelect
                         value={analysisDepth}

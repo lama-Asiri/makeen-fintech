@@ -349,7 +349,7 @@ export function HelpCenter({ onClose, source = 'menu', initialSection }: HelpCen
               </div>
             </div>
             <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#666] mt-[8px] ml-[4px]">
-              Try: upload CSV, explanation methods, exporting results…
+              Try: upload applicant data, credit risk factors, exporting compliance reports…
             </p>
           </div>
 

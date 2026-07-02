@@ -11,58 +11,58 @@ interface WelcomeHeaderProps {
 const ENTRY_LOGIN_GREETINGS = [
   {
     headline: (name: string) => `Welcome back, ${name}`,
-    subtext: "Ready to explain your latest prediction?",
+    subtext: "Ready to evaluate your next credit decision?",
   },
   {
     headline: (name: string) => `Good to see you, ${name}.`,
-    subtext: "Upload a dataset to generate predictions + explanations.",
+    subtext: "Upload applicant data to generate risk assessments + explanations.",
   },
   {
     headline: (name: string) => `Back again, ${name}`,
-    subtext: "Let's turn your data into clear decisions.",
+    subtext: "Let's turn borrower data into defensible credit decisions.",
   },
 ];
 
 const ENTRY_SIGNUP_GREETINGS = [
   {
-    headline: (name: string) => `Welcome to Makeen, ${name}`,
-    subtext: "Upload a dataset to start predicting and explaining.",
+    headline: (name: string) => `Welcome to Makeen Fintech, ${name}`,
+    subtext: "Upload applicant data to start assessing credit risk with clear explanations.",
   },
   {
     headline: (name: string) => `Hi ${name}`,
-    subtext: "You're in Makeen where predictions come with clear reasons.",
+    subtext: "Every credit decision comes with a clear, explainable reason.",
   },
   {
     headline: (name: string) => `Welcome, ${name}.`,
-    subtext: "Let's generate your first prediction and interpret it.",
+    subtext: "Let's generate your first credit risk assessment and break it down.",
   },
 ];
 
 // Rotating New Chat prompts (cycle on every New Chat click)
 const ROTATING_PROMPTS = [
   {
-    headline: () => "Upload one dataset to generate predictions with clear explanations.",
-    subtext: "Each chat works with a single file for focused analysis.",
+    headline: () => "Upload applicant data to assess credit risk with clear explanations.",
+    subtext: "Each session works with a single applicant file for focused analysis.",
   },
   {
-    headline: () => "Want to know why the model decided that?",
-    subtext: "Start by uploading your file.",
+    headline: () => "Want to know why that credit decision was made?",
+    subtext: "Start by uploading your applicant data.",
   },
   {
-    headline: () => "Make a prediction, then break it down feature-by-feature.",
-    subtext: "Upload your dataset to begin explainable AI analysis.",
+    headline: () => "Assess credit risk, then break it down factor-by-factor.",
+    subtext: "Upload your loan data to begin explainable AI analysis.",
   },
   {
-    headline: () => "Explore patterns, then ask for an explanation you can trust.",
-    subtext: "Start with one CSV or XLSX file.",
+    headline: () => "Explore credit patterns, then ask for an explanation you can defend.",
+    subtext: "Start with one CSV or XLSX file of applicant data.",
   },
   {
-    headline: () => "Start a fresh analysis",
-    subtext: "One file per chat for clean results.",
+    headline: () => "Start a fresh credit risk assessment",
+    subtext: "One applicant file per session for clean, focused results.",
   },
   {
-    headline: () => "Ready for decision insights?",
-    subtext: "Upload your dataset to begin.",
+    headline: () => "Ready for credit risk insights?",
+    subtext: "Upload your applicant data to begin.",
   },
 ];
 

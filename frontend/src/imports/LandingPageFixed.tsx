@@ -58,7 +58,7 @@ function Header() {
             <div className="h-12 w-12 rounded-md overflow-hidden">
               <img src={imgImage39} alt="Makeen" className="w-full h-full object-cover" />
             </div>
-            <span className="font-['Roboto'] font-semibold text-xl text-white">Makeen</span>
+            <span className="font-['Roboto'] font-semibold text-xl text-white">Makeen Fintech</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -150,7 +150,7 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.2, ease: MOTION_EASE }}
             className="font-['Inter'] font-semibold text-[clamp(3.5rem,8vw,6.5rem)] leading-[1.05] text-white mb-4"
           >
-            Your Data,
+            Your Credit Decisions,
             <br /><span className="italic text-[#f8ec93]">Explained.</span>
           </motion.h1>
 
@@ -160,7 +160,7 @@ function HeroSection() {
             transition={{ duration: 0.8, delay: 0.4, ease: MOTION_EASE }}
             className="font-['Roboto'] text-[clamp(1.1rem,1.5vw,1.35rem)] leading-relaxed text-white/90 mb-10 max-w-[650px]"
           >
-            Upload your data. Ask a question in plain language. Get a prediction — and a clear explanation of exactly why the AI answered that way. No technical background needed.
+            Upload applicant data. Ask a question in plain language. Get a credit risk assessment — and a clear explanation of exactly why the AI made that decision. No technical background needed.
           </motion.p>
 
           <motion.button
@@ -198,21 +198,21 @@ function FeaturesSection() {
 
   const features = [
     {
-      title: "Ask Questions in Plain Language",
-      description: "Type your questions in natural English, no coding or technical skills needed. Get answers that are easy to follow and understand.",
+      title: "Ask Questions About Credit Risk",
+      description: "Ask about applicant creditworthiness in natural English — no coding needed. Get clear answers about credit risk you can defend to regulators and credit committees.",
       image: imgDarkMetallic,
       bg: "#fffcfe",
       color: "#00000a"
     },
     {
-      title: "Predictions Generation",
-      description: "Generate AI predictions instantly for text, images, or tables. Each result comes with clear explanations and confidence indicators.",
+      title: "Credit Risk Assessment",
+      description: "Generate loan risk assessments instantly from applicant data. Each result comes with clear factor-by-factor explanations and confidence scores for defensible decisions.",
       image: imgTorusKnot,
       gradient: "linear-gradient(22.21deg, #141414 41.94%, #2b1e56 114.53%)"
     },
     {
-      title: "Designed for Everyone",
-      description: "A simple, intuitive interface built for beginners, students, and non-technical users. Explore AI transparently and confidently without feeling lost.",
+      title: "Built for Credit Teams",
+      description: "A simple, intuitive interface built for loan officers, risk analysts, and credit committees. Evaluate applicant risk transparently and with confidence for every lending decision.",
       image: imgIcosahedron,
       gradient: "linear-gradient(22.21deg, #141414 41.94%, #2b1e56 114.53%)"
     }
@@ -334,7 +334,7 @@ function HowItWorksSection() {
     {
       number: "01",
       title: "Upload your file",
-      description: "Drop in a CSV or Excel file — your sales data, survey results, medical records, anything tabular. Makeen reads it instantly.",
+      description: "Drop in a CSV or Excel file of applicant data — loan applications, credit profiles, financial records. The platform processes it instantly.",
       icon: (
         <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -344,7 +344,7 @@ function HowItWorksSection() {
     {
       number: "02",
       title: "Ask your question",
-      description: "Type whatever you want to know in plain English. \"Which product will sell out first?\" \"What drives customer churn?\" No SQL, no code.",
+      description: "Type whatever you want to know in plain English. \"Which applicants will default?\" \"What drives high-risk profiles?\" No SQL, no code.",
       icon: (
         <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-3.155-.502l-4.345 2.17v-3.233C3.612 15.55 3 13.86 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
@@ -354,7 +354,7 @@ function HowItWorksSection() {
     {
       number: "03",
       title: "Get an explanation",
-      description: "Makeen trains a model on your data, returns a prediction, and shows you exactly which columns drove that answer — with a chart you can actually read.",
+      description: "The platform trains a model on applicant data, returns a risk score, and shows you exactly which financial factors drove that assessment — with a chart you can actually read.",
       icon: (
         <svg className="w-[32px] h-[32px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5" />
@@ -388,7 +388,7 @@ function HowItWorksSection() {
             How it works
           </h2>
           <p className="font-['Inter'] text-[18px] text-[#9e9e9e] max-w-[520px] mx-auto">
-            Three steps from raw data to a result you can trust and explain.
+            Three steps from applicant data to a credit decision you can trust and defend.
           </p>
         </motion.div>
 
@@ -603,7 +603,7 @@ function MissionSection() {
               transition={{ duration: 1, delay: 0.6, ease: SECTION_EASE }}
               className="font-['Roboto'] text-[16px] leading-[1.7] text-white/90 max-w-[520px]"
             >
-              AI predictions are only useful if you can understand and justify them. We built Makeen because students, researchers, and decision-makers shouldn't need a data science degree to trust — or challenge — what a model tells them. Every result comes with a plain-language explanation of why.
+              Credit decisions are only defensible if you can understand and justify them. We built Makeen Fintech because loan officers, risk analysts, and credit committees shouldn't need a data science degree to trust — or challenge — what a risk model predicts. Every credit assessment comes with a plain-language explanation backed by SHAP attributions.
             </motion.p>
           </motion.div>
 

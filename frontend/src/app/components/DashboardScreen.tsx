@@ -26,15 +26,15 @@ export function DashboardScreen({ onLogout }: DashboardScreenProps) {
           className="font-['Roboto:Bold',sans-serif] font-bold text-[2.5rem] leading-[48px] text-[#fffcfe] mb-4"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
-          Welcome to Dashboard!
+          Welcome to Makeen Fintech!
         </h1>
 
         <p
           className="font-['Roboto:Regular',sans-serif] font-normal text-[1.125rem] leading-[28px] text-[#fffcfe] mb-8 opacity-80"
           style={{ fontVariationSettings: "'wdth' 100" }}
         >
-          You have successfully logged in. This is a placeholder dashboard screen for the
-          prototype.
+          You have successfully logged in. Upload applicant data to start assessing credit risk with
+          AI-powered, explainable decisions.
         </p>
 
         <button
