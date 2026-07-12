@@ -7,6 +7,7 @@ import svgPathsAnswer from '@/imports/svg-durn51uks6';
 import svgPathsSettings from '@/imports/svg-92ly2gkslu';
 import imgImage39 from '@/assets/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
+import { AppRail } from '@/app/components/AppRail';
 import { Tooltip } from '@/app/components/Tooltip';
 import { FeedbackModal } from '@/app/components/FeedbackModal';
 import { SettingsModal } from '@/app/components/SettingsModal';
@@ -186,6 +187,7 @@ const SAMPLE_DATASETS = [
 interface ChatPageProps {
   onLogout?: () => void;
   entryMode?: 'login' | 'signup' | null; // Indicates if user just logged in or signed up
+  onNavigateDashboard?: () => void;
 }
 
 interface XaiData {
@@ -396,7 +398,7 @@ const loadFromLocalStorage = (): { chats: Chat[]; activeChatId: string | null } 
   };
 };
 
-export function ChatPage({ onLogout, entryMode = null }: ChatPageProps) {
+export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: ChatPageProps) {
   const { user, session } = useAuth();
   // Load initial state from localStorage
   const initialState = loadFromLocalStorage();
@@ -2133,6 +2135,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
       {/* Main Chat Page */}
       <div className="bg-[#141414] relative w-full h-screen overflow-hidden">
+      <AppRail active="chat" onNavigateDashboard={onNavigateDashboard ?? (() => {})} onNavigateChat={() => {}} />
+
       {/* Mobile backdrop — tap outside to close sidebar */}
       {!isSidebarCollapsed && (
         <div
@@ -2143,7 +2147,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
       {/* Left Sidebar */}
       <div
-        className={`fixed md:absolute left-0 top-0 bottom-0 z-50 md:z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
+        className={`fixed md:absolute left-0 md:left-[72px] top-0 bottom-0 z-50 md:z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
           isSidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-[80px]' : 'translate-x-0 w-[300px]'
         }`}
       >
@@ -2492,7 +2496,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
       {/* Main Content Area */}
       <div
         className={`h-full flex flex-col relative transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'ml-0 md:ml-[80px]' : 'ml-0 md:ml-[300px]'
+          isSidebarCollapsed ? 'ml-0 md:ml-[152px]' : 'ml-0 md:ml-[372px]'
         }`}
       >
         {/* Mobile hamburger — only visible on small screens */}

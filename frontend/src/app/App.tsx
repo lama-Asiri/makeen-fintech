@@ -34,7 +34,7 @@ function MainApp() {
       return;
     }
     if (!loading && user) {
-      setCurrentScreen('chat');
+      setCurrentScreen('dashboard');
     }
   }, [loading, user, isRecoveryMode]);
 
@@ -49,7 +49,7 @@ function MainApp() {
 
   const handleLoginSuccess = () => {
     setEntryMode('login');
-    setCurrentScreen('chat');
+    setCurrentScreen('dashboard');
   };
 
   const handleLogout = async () => {
@@ -80,7 +80,7 @@ function MainApp() {
 
   const handleSignUpSuccess = () => {
     setEntryMode('signup');
-    setCurrentScreen('chat');
+    setCurrentScreen('dashboard');
   };
 
   const handleForgotPasswordSuccess = (_email: string) => {
@@ -93,6 +93,14 @@ function MainApp() {
 
   const handleResetPasswordSuccess = () => {
     setCurrentScreen('login');
+  };
+
+  const handleGoToDashboard = () => {
+    setCurrentScreen('dashboard');
+  };
+
+  const handleGoToChat = () => {
+    setCurrentScreen('chat');
   };
 
   const pageVariants = {
@@ -215,7 +223,7 @@ function MainApp() {
             transition={pageTransition}
             className="w-full h-full"
           >
-            <DashboardScreen onLogout={handleLogout} />
+            <DashboardScreen onLogout={handleLogout} onNavigateChat={handleGoToChat} />
           </motion.div>
         )}
 
@@ -229,7 +237,7 @@ function MainApp() {
             transition={pageTransition}
             className="w-full h-full"
           >
-            <ChatPage onLogout={handleLogout} entryMode={entryMode} />
+            <ChatPage onLogout={handleLogout} entryMode={entryMode} onNavigateDashboard={handleGoToDashboard} />
           </motion.div>
         )}
       </AnimatePresence>
