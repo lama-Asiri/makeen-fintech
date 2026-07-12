@@ -212,3 +212,4 @@
   [x] Error display — frontend now shows backend detail message instead of generic "Something went wrong"
   [x] XAI card persistence — SHAP data saved to Response.explanation column in DB; restored after logout/login
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Reem in git
