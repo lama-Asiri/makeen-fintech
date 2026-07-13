@@ -1,5 +1,6 @@
 import svgPathsSettings from '@/imports/svg-92ly2gkslu';
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 import { Palette, Shield, Database, Settings as SettingsIcon, X, ChevronRight, ArrowLeft, Eye, EyeOff, Key } from 'lucide-react';
 import { DefaultAvatar } from '@/app/components/DefaultAvatar';
@@ -307,7 +308,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-[12px] sm:p-[24px]">
-      <div className="bg-[#141414] rounded-[16px] w-full max-w-[690px] h-[90vh] max-h-[514px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="bg-[#141414] rounded-[16px] w-full max-w-[760px] h-[85vh] max-h-[720px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
+      >
         {/* Left Sidebar */}
         <div className="bg-[#2c2c2c] w-[89px] rounded-l-[16px] flex flex-col items-center py-[18px] flex-shrink-0 relative">
           <div className="flex flex-col items-center gap-[24px] pt-[3px]">
@@ -429,7 +435,11 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
           <div className="flex-1 overflow-y-auto relative">
             {/* General Tab Content */}
             {activeTab === 'general' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[32px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]">
                 {/* General section */}
                 <div>
                   <Eyebrow>General</Eyebrow>
@@ -499,17 +509,22 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* Toast for General section */}
                 {comingSoonMessage && (
-                  <Toast 
+                  <Toast
                     message={comingSoonMessage}
                     onClose={() => setComingSoonMessage(null)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Security Tab Content */}
             {activeTab === 'security' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[32px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]"
+              >
                 {/* Security Overview */}
                 {securityView === 'overview' && (
                   <div>
@@ -690,12 +705,17 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Data Management Tab Content */}
             {activeTab === 'data' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[20px]"
+              >
                 <div>
                   <Eyebrow>Data Management</Eyebrow>
                   <HairlineDivider />
@@ -741,17 +761,22 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 
                 {/* Delete all chats success toast */}
                 {deleteAllChatsSuccess && (
-                  <Toast 
+                  <Toast
                     message="All chats deleted"
                     onClose={() => setDeleteAllChatsSuccess(false)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Personalization Tab Content */}
             {activeTab === 'personalization' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[32px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]"
+              >
 
                 {/* Appearance: Font Size, Theme, Accent Color */}
                 <div>
@@ -996,16 +1021,16 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
                 {/* Coming Soon toast for Personalization */}
                 {comingSoonMessage && (
-                  <Toast 
+                  <Toast
                     message={comingSoonMessage}
                     onClose={() => setComingSoonMessage(null)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Clear Context Confirmation Modal */}
       {showClearContextConfirm && (

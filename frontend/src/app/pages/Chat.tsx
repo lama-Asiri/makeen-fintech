@@ -2519,7 +2519,12 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
               <WelcomeHeader displayName={displayName} messageIndex={welcomeMessageIndex} mode={welcomeMode} />
               
               {/* Upload Card */}
-              <div className="bg-[#2c2c2c] rounded-[8px] w-full shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }}
+                className="bg-[#2c2c2c] rounded-[8px] w-full shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex flex-col"
+              >
                 {/* Modal Header — title changes per step */}
                 <div className="bg-[#2c2c2c] px-[20px] md:px-[24px] py-[14px] md:py-[16px] rounded-t-[8px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
                   <p className="font-sans font-semibold text-[1rem] md:text-[1.125rem] text-white">
@@ -2580,21 +2585,24 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     </div>
 
                     <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#9e9e9e]">Formats accepted are .csv and .xlsx</p>
-                    <div className="h-[1px] bg-black opacity-20" />
+                    <HairlineDivider />
                     <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
 
                     {/* Sample dataset cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
-                      {SAMPLE_DATASETS.map((ds) => (
-                        <button
+                      {SAMPLE_DATASETS.map((ds, i) => (
+                        <motion.button
                           key={ds.id}
                           type="button"
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.35, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
                           onClick={() => setSelectedSampleDataset(ds.id)}
-                          className="bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all hover:border-[#7760bd] hover:bg-[#3a3a3a]"
+                          className="bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all duration-300 hover:border-[#7760bd] hover:bg-[#3a3a3a] hover:-translate-y-[2px] hover:shadow-xl"
                         >
                           <p className="font-semibold text-[0.8125rem] text-white leading-tight">{ds.name}</p>
                           <p className="text-[0.6875rem] text-[#9e9e9e] leading-tight">{ds.description}</p>
-                        </button>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -2620,7 +2628,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                     </p>
                   </button>
               </div>
-            </div>
+              </motion.div>
             </div>
           </div>
         )}
@@ -2630,7 +2638,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
           <div className="h-full flex flex-col p-[16px] md:p-[40px]">
             {/* Chat Messages Area — cards + messages all scroll together */}
             <div className="flex-1 overflow-y-auto pr-[4px] md:pr-[8px]" ref={chatContainerRef}>
-              <div className="px-[12px] md:px-[40px]">
+              <div className="px-[12px] md:px-[40px] max-w-[880px] mx-auto">
 
               {/* File bar */}
               {activeChat.fileAttachment && <div className="mb-[16px] flex justify-end">
@@ -2896,8 +2904,11 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       {message.suggestions && message.suggestions.length > 0 && (
                         <div className="mt-[12px] flex flex-col gap-[8px] max-w-[700px]">
                           {message.suggestions.map((suggestion, i) => (
-                            <button
+                            <motion.button
                               key={i}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
                               onClick={() => {
                                 setInputValue('');
                                 sendMessage(suggestion);
@@ -2906,7 +2917,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                               style={{ fontSize: 'var(--ui-font-size)' }}
                             >
                               {suggestion}
-                            </button>
+                            </motion.button>
                           ))}
                         </div>
                       )}
@@ -2984,7 +2995,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                           {/* LIME Feature Importance Chart — local_single only */}
                           {message.xaiData.mode === 'local_single' && message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
                             <div className="px-[20px] pb-[16px] border-t border-white/[0.08] pt-[16px]">
-                              <p className="font-sans text-[10px] text-[#9e9e9e] font-semibold uppercase tracking-[0.2em]">Feature Importance · LIME</p>
+                              <Eyebrow>Feature Importance · LIME</Eyebrow>
                               <div className="mt-[12px]">
                               {(() => {
                                 const entries = Object.entries(message.xaiData.limeValues).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
@@ -3384,7 +3395,7 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
 
                     {/* Character counter — only visible when user has typed something */}
                     {inputValue.length > 0 && (
-                      <p className={`text-right text-[0.6875rem] font-sans transition-colors ${
+                      <p className={`text-right text-[0.6875rem] font-tabular transition-colors ${
                         inputValue.length > 450
                           ? inputValue.length >= 500 ? 'text-red-400' : 'text-yellow-400'
                           : 'text-[#9e9e9e]'
