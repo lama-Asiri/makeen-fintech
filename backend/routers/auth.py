@@ -517,10 +517,10 @@ def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, l
     df = df.drop_duplicates(keep='first')
     df = df.dropna(axis=1, thresh=len(df) * 0.4)
 
-    for col in df.select_dtypes(include=['object', 'str']).columns:
+    for col in df.select_dtypes(include=['object']).columns:
         df[col] = df[col].astype(str).str.strip()
 
-    for col in df.select_dtypes(include=['object', 'str']).columns:
+    for col in df.select_dtypes(include=['object']).columns:
         if col in id_columns:
             continue
         try:

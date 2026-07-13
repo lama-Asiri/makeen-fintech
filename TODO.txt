@@ -43,6 +43,44 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  SECTION 10 — BRING YOUR OWN MODEL (backend, this session)
+  Owner: Lama | Priority: MED — one manual DB step needed for full effect
+
+  [ ] S. Manual Supabase schema change required (dashboard, not a migration file —
+        this repo manages schema by hand, same as the existing tables):
+        add nullable columns to the existing "File" table:
+          model_path            text
+          is_user_model         boolean default false
+          model_target_column   text
+          model_task_type       text
+        Without these columns, /uploadModel still works for the life of the
+        server process, but the fail-loud "please re-upload your model" guard
+        in /processQuestion silently no-ops after a restart instead of firing
+        (see _check_byom_cache_miss in routers/data_processor.py).
+  [x] New POST /uploadModel endpoint — pickle upload, restricted unpickling via
+        core/safe_unpickle.py, KernelSHAP explain path for non-tree models.
+        Existing self-trained RandomForest flow is completely unaffected.
+  [x] Unit + integration tests — test_safe_unpickle.py, test_model_adapter_pipeline.py,
+        test_upload_model_endpoint.py (118/118 backend tests passing).
+
+  [ ] T. Frontend: let the user choose "upload your own model" vs the normal
+        self-trained flow — backend-only in this pass, no frontend UI built yet.
+        Needs, roughly:
+          - A choice point in the upload/setup flow (Chat.tsx file-upload step):
+            "Train a model for me" (existing default, no change) vs
+            "Upload my own pretrained model" (new).
+          - If the user picks BYOM: a file picker accepting .pkl/.pickle only,
+            plus target_column + task_type inputs, POSTing to /uploadModel
+            (chat_id, target_column, task_type, file — multipart form, mirrors
+            the existing /auth/upload call shape in Chat.tsx).
+          - Surface /uploadModel's error messages directly (schema mismatch,
+            malicious/oversized file, no .predict() method, etc.) — they're
+            already written to be user-facing, not just for logs.
+          - If a user doesn't want to upload a model, nothing changes for them —
+            the normal flow must stay exactly as it is today.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 
