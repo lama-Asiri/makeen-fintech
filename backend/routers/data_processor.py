@@ -578,23 +578,42 @@ KERNEL_NSAMPLES = 100
 TREE_SAMPLE_CAP = 500
 
 
+def _is_tree_based_model(model: Any) -> bool:
+    """Best-effort detection for tree-based scikit-learn style models."""
+    if model is None:
+        return False
+
+    if hasattr(model, "estimators_") or hasattr(model, "feature_importances_"):
+        return True
+
+    class_name = type(model).__name__.lower()
+    return any(token in class_name for token in ["forest", "tree", "boost", "xgboost", "extratrees"])
+
+
 def get_shap_explainer(model_data: dict):
     """
-    Returns (explainer, sample_cap) — TreeExplainer for self-trained models (fast,
-    exact, no background data needed), KernelExplainer for user-uploaded models
-    (model-agnostic but slow, so paired with a much smaller sample_cap).
+    Returns (explainer, sample_cap) with a tree-first strategy for uploaded tree-based
+    models and KernelSHAP as a fallback for non-tree or unsupported models.
     """
+    model = model_data["model"]
+
     if model_data.get("is_user_provided"):
-        model, task_type = model_data["model"], model_data["task_type"]
+        if _is_tree_based_model(model):
+            try:
+                return shap.TreeExplainer(model), TREE_SAMPLE_CAP
+            except Exception:
+                pass
+
         predict_fn = (
             model.predict_proba
-            if (task_type == "classification" and hasattr(model, "predict_proba"))
+            if (model_data["task_type"] == "classification" and hasattr(model, "predict_proba"))
             else model.predict
         )
         X_train = model_data["X_train"]
         background = X_train.sample(min(KERNEL_BACKGROUND_CAP, len(X_train)), random_state=42)
         return shap.KernelExplainer(predict_fn, background), KERNEL_SAMPLE_CAP
-    return shap.TreeExplainer(model_data["model"]), TREE_SAMPLE_CAP
+
+    return shap.TreeExplainer(model), TREE_SAMPLE_CAP
 
 
 def _shap_values_for(explainer, data) -> Any:
