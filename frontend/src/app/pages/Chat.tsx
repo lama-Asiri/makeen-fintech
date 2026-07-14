@@ -24,7 +24,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, type ParseResult } from '@/lib/chatApi';
 
 // Tracks message IDs that have already finished the typewriter animation.
 // Module-level so it survives chat switches (component unmount/remount).
@@ -434,9 +434,25 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   const [showFilePreview, setShowFilePreview] = useState(false);
   const [selectedSampleDataset, setSelectedSampleDataset] = useState<string | null>(null);
   const [sampleSuggestedQuestions, setSampleSuggestedQuestions] = useState<string[]>([]);
-  // Upload modal step: 'file' = drop zone, 'loading' = uploading
-  const [uploadStep, setUploadStep] = useState<'file' | 'loading'>('file');
+  // Upload modal step: 'file' = drop zone, 'loading' = uploading, 'model-setup' = BYOM column/task/model picker
+  const [uploadStep, setUploadStep] = useState<'file' | 'loading' | 'model-setup'>('file');
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // BYOM ("bring your own model") — default 'auto' preserves today's self-trained flow
+  // untouched; everything below is transient upload-modal state, reset on success/cancel
+  // exactly like selectedFile/selectedSampleDataset already are.
+  const [uploadMode, setUploadMode] = useState<'auto' | 'byom'>('auto');
+  const [selectedModelFile, setSelectedModelFile] = useState<File | null>(null);
+  const [isModelDragging, setIsModelDragging] = useState(false);
+  const [selectedTargetColumn, setSelectedTargetColumn] = useState<string | null>(null);
+  const [selectedTaskType, setSelectedTaskType] = useState<'classification' | 'regression'>('classification');
+  const [modelUploadError, setModelUploadError] = useState<string | null>(null);
+  const [isModelUploading, setIsModelUploading] = useState(false);
+  // Captured directly from the /auth/parse result at the moment the BYOM CSV step succeeds —
+  // read from local variables in scope there, not re-derived from activeChat.datasetInfo later.
+  const [byomColumns, setByomColumns] = useState<string[]>([]);
+  const [byomIdColumns, setByomIdColumns] = useState<string[]>([]);
+  const [byomBackendId, setByomBackendId] = useState<number | null>(null);
   const [processingStage, setProcessingStage] = useState(0);
   const [isDictating, setIsDictating] = useState(false);
   const [isDatasetCardExpanded, setIsDatasetCardExpanded] = useState(false);
@@ -480,6 +496,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modelFileInputRef = useRef<HTMLInputElement>(null);
   const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -678,18 +695,39 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
       const token = fresh?.access_token ?? session?.access_token ?? '';
       try {
         await uploadFileAPI(token, selectedFile, delayedBackendId);
+        let parseResult: ParseResult | null = null;
         try {
-          const parseResult = await parseFileAPI(token, delayedBackendId);
+          parseResult = await parseFileAPI(token, delayedBackendId);
           setChats((prev) => prev.map((c) =>
             c.id === delayedChatId
-              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns, previewRows: parseResult.preview_rows } }
+              ? { ...c, datasetInfo: { rows: parseResult!.rows, columns: parseResult!.columns, idColumns: parseResult!.id_columns, previewRows: parseResult!.preview_rows } }
               : c
           ));
         } catch (e) { console.warn('[parse] skipped:', e); }
-        setUploadStep('file');
-        setSelectedFile(null);
-        setShowUploadModal(false); setUploadError(null);
-        setToastMessage('File uploaded successfully!');
+
+        if (uploadMode === 'byom') {
+          if (parseResult) {
+            setByomColumns(parseResult.columns);
+            setByomIdColumns(parseResult.id_columns);
+            setByomBackendId(delayedBackendId);
+            setUploadStep('model-setup');
+            setSelectedFile(null);
+            setUploadError(null);
+          } else {
+            // Parse failed — BYOM has no columns to offer and the backend cache isn't
+            // populated. Fall back to the same close-modal behavior as 'auto'; self-trained
+            // will lazily kick in on the first question, same as it always does.
+            setUploadStep('file');
+            setSelectedFile(null);
+            setShowUploadModal(false); setUploadError(null);
+            setToastMessage('File uploaded, but column detection failed — using automatic training instead.');
+          }
+        } else {
+          setUploadStep('file');
+          setSelectedFile(null);
+          setShowUploadModal(false); setUploadError(null);
+          setToastMessage('File uploaded successfully!');
+        }
       } catch (err) {
         console.error('[uploadFile] Backend upload failed (delayed):', err);
         setUploadStep('file');
@@ -697,7 +735,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
         setUploadError(parseUploadError(err));
       }
     })();
-  }, [chats]);
+  }, [chats, uploadMode]);
 
   // Cycle through pipeline stages while processing
   useEffect(() => {
@@ -1046,18 +1084,39 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
       const token = fresh?.access_token ?? session.access_token;
       try {
         await uploadFileAPI(token, selectedFile, backendId);
+        let parseResult: ParseResult | null = null;
         try {
-          const parseResult = await parseFileAPI(token, backendId!);
+          parseResult = await parseFileAPI(token, backendId!);
           setChats((prev) => prev.map((c) =>
             c.id === activeChatId
-              ? { ...c, datasetInfo: { rows: parseResult.rows, columns: parseResult.columns, idColumns: parseResult.id_columns, previewRows: parseResult.preview_rows } }
+              ? { ...c, datasetInfo: { rows: parseResult!.rows, columns: parseResult!.columns, idColumns: parseResult!.id_columns, previewRows: parseResult!.preview_rows } }
               : c
           ));
         } catch (e) { console.warn('[parse] skipped:', e); }
-        setUploadStep('file');
-        setSelectedFile(null);
-        setShowUploadModal(false); setUploadError(null);
-        setToastMessage('File uploaded successfully!');
+
+        if (uploadMode === 'byom') {
+          if (parseResult) {
+            setByomColumns(parseResult.columns);
+            setByomIdColumns(parseResult.id_columns);
+            setByomBackendId(backendId);
+            setUploadStep('model-setup');
+            setSelectedFile(null);
+            setUploadError(null);
+          } else {
+            // Parse failed — BYOM has no columns to offer and the backend cache isn't
+            // populated. Fall back to the same close-modal behavior as 'auto'; self-trained
+            // will lazily kick in on the first question, same as it always does.
+            setUploadStep('file');
+            setSelectedFile(null);
+            setShowUploadModal(false); setUploadError(null);
+            setToastMessage('File uploaded, but column detection failed — using automatic training instead.');
+          }
+        } else {
+          setUploadStep('file');
+          setSelectedFile(null);
+          setShowUploadModal(false); setUploadError(null);
+          setToastMessage('File uploaded successfully!');
+        }
       } catch (err) {
         console.error('[uploadFile] Backend upload failed:', err);
         setUploadStep('file');
@@ -1092,6 +1151,28 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
 
     setSelectedFile(file);
     setToastMessage(`File "${file.name}" selected. Click Send to upload.`);
+  };
+
+  // BYOM model file picker — mirrors handleFileSelect but restricted to .pkl/.pickle and
+  // the backend's 20MB cap (MODEL_UPLOAD_MAX_BYTES in data_processor.py), not the 10MB CSV cap.
+  const handleModelFileSelect = (file: File) => {
+    setModelUploadError(null);
+    const fileName = file.name.toLowerCase();
+    const isValid = fileName.endsWith('.pkl') || fileName.endsWith('.pickle');
+
+    if (!isValid) {
+      setToastMessage('Invalid file type. Please upload a .pkl or .pickle file.');
+      return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      // 20MB limit — matches MODEL_UPLOAD_MAX_BYTES on the backend
+      setToastMessage('File size too large. Maximum size is 20MB.');
+      return;
+    }
+
+    setSelectedModelFile(file);
+    setToastMessage(`Model file "${file.name}" selected.`);
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1161,6 +1242,86 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+  };
+
+  // BYOM model dropzone — separate state/ref from the CSV dropzone above (isModelDragging,
+  // modelFileInputRef), not shared, so nothing here can perturb the CSV path's behavior.
+  const handleModelFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleModelFileSelect(file);
+    }
+  };
+
+  const handleModelDropZoneClick = () => {
+    modelFileInputRef.current?.click();
+  };
+
+  const handleModelDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsModelDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleModelFileSelect(file);
+    }
+  };
+
+  const handleModelDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsModelDragging(true);
+  };
+
+  const handleModelDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsModelDragging(false);
+  };
+
+  // Bail out of BYOM at the model-setup step — the CSV is already uploaded/parsed either
+  // way (nothing to undo server-side), so this lands the user in the exact same chat view
+  // the default self-trained flow does; training activates lazily on their first question.
+  const handleCancelModelSetup = () => {
+    setUploadMode('auto');
+    setUploadStep('file');
+    setSelectedModelFile(null);
+    setSelectedTargetColumn(null);
+    setSelectedTaskType('classification');
+    setModelUploadError(null);
+    setByomColumns([]);
+    setByomIdColumns([]);
+    setByomBackendId(null);
+    setShowUploadModal(false);
+    setToastMessage('File uploaded successfully!');
+  };
+
+  const handleModelUpload = async () => {
+    if (!selectedTargetColumn || !selectedModelFile || byomBackendId === null || !session?.access_token) {
+      setModelUploadError('Please select a target column and a model file.');
+      return;
+    }
+    setIsModelUploading(true);
+    setModelUploadError(null);
+    try {
+      const { data: { session: fresh } } = await supabase.auth.refreshSession();
+      const token = fresh?.access_token ?? session.access_token;
+      await uploadModelAPI(token, byomBackendId, selectedTargetColumn, selectedTaskType, selectedModelFile);
+      setIsModelUploading(false);
+      setUploadMode('auto');
+      setUploadStep('file');
+      setSelectedModelFile(null);
+      setSelectedTargetColumn(null);
+      setSelectedTaskType('classification');
+      setByomColumns([]);
+      setByomIdColumns([]);
+      setByomBackendId(null);
+      setShowUploadModal(false);
+      setUploadError(null);
+      setModelUploadError(null);
+      setToastMessage('Model uploaded and ready!');
+    } catch (err) {
+      console.error('[uploadModel] failed:', err);
+      setIsModelUploading(false);
+      setModelUploadError(parseUploadError(err));
+    }
   };
 
   const handleNewChat = () => {
@@ -2566,6 +2727,56 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                       </div>
                     )}
 
+                    {/* Train-for-me vs bring-your-own-model choice — defaults to 'auto',
+                        which preserves today's flow exactly. */}
+                    <div className="flex items-center gap-[8px]">
+                      <button
+                        type="button"
+                        onClick={() => setUploadMode('auto')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setUploadMode('auto');
+                          }
+                        }}
+                        aria-pressed={uploadMode === 'auto'}
+                        className={`flex-1 px-[16px] py-[10px] rounded-[8px] font-sans font-semibold text-[0.8125rem] transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c] ${
+                          uploadMode === 'auto'
+                            ? 'bg-[#7760bd]/[0.12] text-[#8a75d4] border-[#7760bd]'
+                            : 'bg-transparent text-[#8a8780] border-[#444] hover:border-[#3a3a3f] hover:text-[#9e9e9e]'
+                        }`}
+                      >
+                        Train a model for me
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setUploadMode('byom')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setUploadMode('byom');
+                          }
+                        }}
+                        aria-pressed={uploadMode === 'byom'}
+                        className={`flex-1 px-[16px] py-[10px] rounded-[8px] font-sans font-semibold text-[0.8125rem] transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c] ${
+                          uploadMode === 'byom'
+                            ? 'bg-[#7760bd]/[0.12] text-[#8a75d4] border-[#7760bd]'
+                            : 'bg-transparent text-[#8a8780] border-[#444] hover:border-[#3a3a3f] hover:text-[#9e9e9e]'
+                        }`}
+                      >
+                        Upload my own pretrained model
+                      </button>
+                    </div>
+
+                    {/* BYOM still needs the applicant data first (schema validation + SHAP
+                        background) — make that two-step order explicit so "Upload my own
+                        pretrained model" doesn't read as "the next dropzone is for my model". */}
+                    {uploadMode === 'byom' && (
+                      <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
+                        Step 1 of 2 — upload the applicant data your model expects. You'll upload the model file itself next.
+                      </p>
+                    )}
+
                     {/* Upload Drop Zone */}
                     <div
                       onClick={handleDropZoneClick}
@@ -2583,31 +2794,40 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                         <path d="M12 12V21" stroke={selectedFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
                       </svg>
                       <p className={`font-sans text-[0.875rem] md:text-[1rem] ${selectedFile ? 'text-[#08B839]' : 'text-white'}`}>
-                        {selectedFile ? `Selected: ${selectedFile.name}` : 'Click or drag file to this area to upload'}
+                        {selectedFile
+                          ? `Selected: ${selectedFile.name}`
+                          : uploadMode === 'byom'
+                            ? 'Click or drag your applicant data (.csv or .xlsx) to this area to upload'
+                            : 'Click or drag file to this area to upload'}
                       </p>
                     </div>
 
                     <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#9e9e9e]">Formats accepted are .csv and .xlsx</p>
-                    <HairlineDivider />
-                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
 
-                    {/* Sample dataset cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
-                      {SAMPLE_DATASETS.map((ds, i) => (
-                        <motion.button
-                          key={ds.id}
-                          type="button"
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.35, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
-                          onClick={() => setSelectedSampleDataset(ds.id)}
-                          className="bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all duration-300 hover:border-[#7760bd] hover:bg-[#3a3a3a] hover:-translate-y-[2px] hover:shadow-xl"
-                        >
-                          <p className="font-semibold text-[0.8125rem] text-white leading-tight">{ds.name}</p>
-                          <p className="text-[0.6875rem] text-[#9e9e9e] leading-tight">{ds.description}</p>
-                        </motion.button>
-                      ))}
-                    </div>
+                    {uploadMode === 'auto' && (
+                      <>
+                        <HairlineDivider />
+                        <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">No file? Try one of our sample datasets:</p>
+
+                        {/* Sample dataset cards */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-[10px]">
+                          {SAMPLE_DATASETS.map((ds, i) => (
+                            <motion.button
+                              key={ds.id}
+                              type="button"
+                              initial={{ opacity: 0, y: 12 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.35, delay: i * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
+                              onClick={() => setSelectedSampleDataset(ds.id)}
+                              className="bg-[#2c2c2c] border border-white/[0.08] rounded-[8px] px-[12px] py-[10px] flex flex-col gap-[4px] text-left cursor-pointer transition-all duration-300 hover:border-[#7760bd] hover:bg-[#3a3a3a] hover:-translate-y-[2px] hover:shadow-xl"
+                            >
+                              <p className="font-semibold text-[0.8125rem] text-white leading-tight">{ds.name}</p>
+                              <p className="text-[0.6875rem] text-[#9e9e9e] leading-tight">{ds.description}</p>
+                            </motion.button>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -2619,18 +2839,148 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </div>
                 )}
 
-              {/* Modal Footer */}
-              <div className="bg-[#2c2c2c] border-t border-black px-[20px] md:px-[24px] py-[10px] md:py-[12px] rounded-b-[8px] flex justify-end">
+                {/* ── Step 3 (BYOM only): column / task-type / model-file picker ── */}
+                {uploadStep === 'model-setup' && (
+                  <div className="px-[20px] md:px-[24px] py-[20px] md:py-[26px] flex flex-col gap-[14px] md:gap-[16px]">
+                    {/* Hidden model file input */}
+                    <input
+                      ref={modelFileInputRef}
+                      type="file"
+                      aria-label="Upload pretrained model file"
+                      accept=".pkl,.pickle,application/octet-stream"
+                      onChange={handleModelFileInputChange}
+                      className="hidden"
+                    />
+
+                    {/* Model-upload error banner — same visual pattern as the CSV one above */}
+                    {modelUploadError && (
+                      <div className="flex items-start gap-[10px] bg-[#e05a5a]/10 border border-[#e05a5a]/40 rounded-[8px] px-[14px] py-[12px]">
+                        <svg className="w-[16px] h-[16px] text-[#e05a5a] flex-shrink-0 mt-[1px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[0.8125rem] font-semibold text-[#e05a5a] mb-[2px]">Upload failed</p>
+                          <p className="text-[0.75rem] text-[#e05a5a]/80 leading-[1.4]">{modelUploadError}</p>
+                        </div>
+                        <button onClick={() => setModelUploadError(null)} className="text-[#e05a5a]/60 hover:text-[#e05a5a] transition-colors flex-shrink-0">
+                          <svg className="w-[14px] h-[14px]" fill="none" viewBox="0 0 16 16">
+                            <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Target column picker */}
+                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">Which column do you want to predict?</p>
+                    <div className="flex flex-wrap gap-[6px]">
+                      {byomColumns.filter((col) => !byomIdColumns.includes(col)).map((col) => (
+                        <motion.button
+                          key={col}
+                          type="button"
+                          onClick={() => setSelectedTargetColumn(col)}
+                          className={`px-[10px] py-[4px] rounded-full text-[0.75rem] border transition-all duration-200 hover:-translate-y-[1px] ${
+                            selectedTargetColumn === col
+                              ? 'bg-[#7760bd]/[0.12] border-[#7760bd] text-[#8a75d4]'
+                              : 'bg-[#2c2c2c] border-white/[0.08] text-[#9e9e9e] hover:border-[#7760bd] hover:text-white'
+                          }`}
+                        >
+                          {col}
+                        </motion.button>
+                      ))}
+                    </div>
+
+                    {/* Task type toggle */}
+                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#f5f5f5]">What kind of problem is this?</p>
+                    <div className="flex items-center gap-[8px]">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTaskType('classification')}
+                        aria-pressed={selectedTaskType === 'classification'}
+                        className={`flex-1 px-[16px] py-[10px] rounded-[8px] font-sans font-semibold text-[0.8125rem] transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c] ${
+                          selectedTaskType === 'classification'
+                            ? 'bg-[#7760bd]/[0.12] text-[#8a75d4] border-[#7760bd]'
+                            : 'bg-transparent text-[#8a8780] border-[#444] hover:border-[#3a3a3f] hover:text-[#9e9e9e]'
+                        }`}
+                      >
+                        Classification
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTaskType('regression')}
+                        aria-pressed={selectedTaskType === 'regression'}
+                        className={`flex-1 px-[16px] py-[10px] rounded-[8px] font-sans font-semibold text-[0.8125rem] transition-all duration-200 border-2 focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c] ${
+                          selectedTaskType === 'regression'
+                            ? 'bg-[#7760bd]/[0.12] text-[#8a75d4] border-[#7760bd]'
+                            : 'bg-transparent text-[#8a8780] border-[#444] hover:border-[#3a3a3f] hover:text-[#9e9e9e]'
+                        }`}
+                      >
+                        Regression
+                      </button>
+                    </div>
+
+                    <HairlineDivider />
+
+                    {/* Model file dropzone — deliberate duplicate of the CSV dropzone above,
+                        not a shared/parameterized component (see plan rationale). */}
+                    <div
+                      onClick={handleModelDropZoneClick}
+                      className={`bg-[#2c2c2c] border-2 border-dashed rounded-[8px] px-[20px] md:px-[80px] py-[24px] md:py-[32px] flex flex-col gap-[10px] md:gap-[12px] items-center text-center cursor-pointer transition-all ${
+                        isModelDragging ? 'border-[#7760bd] bg-[#3a3a3a]' : 'border-[#9e9e9e] hover:border-[#7760bd] hover:bg-[#3a3a3a]'
+                      } ${selectedModelFile ? 'border-[#08B839] bg-[#08B839]/10' : ''}`}
+                      onDragEnter={(e) => { e.preventDefault(); setIsModelDragging(true); }}
+                      onDragLeave={handleModelDragLeave}
+                      onDragOver={handleModelDragOver}
+                      onDrop={handleModelDrop}
+                    >
+                      <svg className="w-[24px] h-[24px]" fill="none" viewBox="0 0 24 24">
+                        <path d={svgPaths.p2fe12e80} stroke={selectedModelFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        <path d="M9 15L12 12L15 15" stroke={selectedModelFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                        <path d="M12 12V21" stroke={selectedModelFile ? '#08B839' : 'white'} strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                      <p className={`font-sans text-[0.875rem] md:text-[1rem] ${selectedModelFile ? 'text-[#08B839]' : 'text-white'}`}>
+                        {selectedModelFile ? `Selected: ${selectedModelFile.name}` : 'Click or drag your .pkl or .pickle file here'}
+                      </p>
+                    </div>
+                    <p className="font-sans text-[0.875rem] md:text-[1rem] text-[#9e9e9e]">Formats accepted are .pkl and .pickle (max 20MB)</p>
+                  </div>
+                )}
+
+              {/* Modal Footer — self-trained / loading steps, unchanged internally */}
+              {(uploadStep === 'file' || uploadStep === 'loading') && (
+                <div className="bg-[#2c2c2c] border-t border-black px-[20px] md:px-[24px] py-[10px] md:py-[12px] rounded-b-[8px] flex justify-end">
                   <button
                     onClick={handleFileUpload}
-                    disabled={uploadStep === 'loading'}
+                    disabled={uploadStep === 'loading' || (uploadMode === 'byom' && !selectedFile)}
                     className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8a75d4] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
                   >
                     <p className="font-sans font-medium text-[0.875rem] md:text-[1rem] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
                       Send
                     </p>
                   </button>
-              </div>
+                </div>
+              )}
+
+              {/* Modal Footer — BYOM model-setup step */}
+              {uploadStep === 'model-setup' && (
+                <div className="bg-[#2c2c2c] border-t border-black px-[20px] md:px-[24px] py-[10px] md:py-[12px] rounded-b-[8px] flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={handleCancelModelSetup}
+                    className="bg-[#2c2c2c] hover:bg-[#3a3a3a] rounded-[8px] px-[20px] h-[38px] md:h-[42px] transition-colors cursor-pointer"
+                  >
+                    <p className="font-sans font-semibold text-[0.875rem] text-[#9e9e9e]">Use normal flow instead</p>
+                  </button>
+                  <button
+                    onClick={handleModelUpload}
+                    disabled={isModelUploading || !selectedTargetColumn || !selectedModelFile}
+                    className="bg-[#7760bd] disabled:opacity-50 rounded-[8px] px-[24px] md:px-[28px] h-[38px] md:h-[42px] flex items-center justify-center cursor-pointer hover:bg-[#8a75d4] hover:shadow-[0_0_20px_rgba(119,96,189,0.5)] hover:scale-105 transition-all"
+                  >
+                    <p className="font-sans font-medium text-[0.875rem] md:text-[1rem] text-white" style={{ fontVariationSettings: "'wdth' 100" }}>
+                      {isModelUploading ? 'Uploading…' : 'Upload Model'}
+                    </p>
+                  </button>
+                </div>
+              )}
               </motion.div>
             </div>
           </div>

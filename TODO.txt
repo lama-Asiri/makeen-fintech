@@ -69,21 +69,20 @@
   [x] Unit + integration tests — test_safe_unpickle.py, test_model_adapter_pipeline.py,
         test_upload_model_endpoint.py (118/118 backend tests passing).
 
-  [ ] T. Frontend: let the user choose "upload your own model" vs the normal
-        self-trained flow — backend-only in this pass, no frontend UI built yet.
-        Needs, roughly:
-          - A choice point in the upload/setup flow (Chat.tsx file-upload step):
-            "Train a model for me" (existing default, no change) vs
-            "Upload my own pretrained model" (new).
-          - If the user picks BYOM: a file picker accepting .pkl/.pickle only,
-            plus target_column + task_type inputs, POSTing to /uploadModel
-            (chat_id, target_column, task_type, file — multipart form, mirrors
-            the existing /auth/upload call shape in Chat.tsx).
-          - Surface /uploadModel's error messages directly (schema mismatch,
-            malicious/oversized file, no .predict() method, etc.) — they're
-            already written to be user-facing, not just for logs.
-          - If a user doesn't want to upload a model, nothing changes for them —
-            the normal flow must stay exactly as it is today.
+  [x] T. DONE: Frontend choice — "Train a model for me" vs "Upload my own pretrained
+        model", in the Chat.tsx upload modal. Toggle defaults to the existing self-trained
+        flow (verified byte-identical: lands straight in chat, zero extra steps, zero
+        console errors). Picking BYOM adds a new in-modal step after the CSV parses —
+        target-column picker (chips, ID columns excluded), classification/regression
+        toggle, and a separate .pkl/.pickle dropzone (20MB cap) — that POSTs to
+        /uploadModel via the new uploadModelAPI in chatApi.ts. Verified live end-to-end:
+        uploaded a real fitted LogisticRegression against a real CSV, got
+        "Model uploaded and ready!", then asked a question and got a real answer +
+        SHAP explanation driven by the uploaded model, not a fresh RandomForest.
+        "Use normal flow instead" on that step bails out into the same chat view the
+        default path lands in. Known accepted limitation (not fixed here, pre-existing
+        backend gap): if a later question's LLM-inferred target column doesn't match what
+        was picked at upload time, the backend will silently retrain a fresh RandomForest.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
