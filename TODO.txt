@@ -21,12 +21,18 @@
         placeholder.supabase.co/auth/v1/user, leaving no active session —
         which is also why sendMessage() then throws "No active session or chat".
 
-  [ ] O. Investigate 400 Bad Request on sample-dataset CSV downloads
-        GET https://qekzvieqlzhlzrjwrdcc.supabase.co/storage/v1/object/public/
-            sample-datasets/loan_default.csv  → 400
-            sample-datasets/credit_fraud.csv  → 400
-        Not yet root-caused — check the bucket's public access policy / whether
-        the object actually exists at that path in that Supabase project.
+  [x] O. FIXED: 400 Bad Request on sample-dataset CSV downloads was a missing-file
+        problem, not a permissions problem. The "sample-datasets" bucket was public and
+        working fine, but only contained 3 unrelated leftover files (stroke data, insurance,
+        mall customers) — Chat.tsx's 3 fintech-themed sample cards (German Credit Risk /
+        Loan Default Prediction / Credit Card Fraud Detection) hardcode URLs for
+        german_credit.csv / loan_default.csv / credit_fraud.csv, which had never been
+        uploaded. Generated 300-row synthetic datasets matching each card's exact declared
+        schema (columns, target balance) and uploaded them to the bucket at those exact
+        filenames — verified all 3 public URLs now return 200 with correct headers, and the
+        full "Use this dataset" → Send flow works end-to-end. Frontend also now logs the
+        failing URL + status to console on this kind of failure instead of failing silently
+        (Chat.tsx sample-dataset "Use this dataset" handler).
 
   [ ] P. Re-verify chat send end-to-end once N is fixed
         Confirm "No active session or chat" is gone and a real message round-trips

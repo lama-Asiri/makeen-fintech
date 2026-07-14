@@ -986,6 +986,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
         .catch((err) => {
           let message = 'Failed to create chat.';
           try { const p = JSON.parse(err.message); if (p?.detail) message = p.detail; } catch { message = err.message; }
+          console.error('[addChatAPI] failed (waitingForBackendId branch):', message, err);
           setToastMessage(message);
           setChats((prev) => prev.filter((c) => c.id !== capturedChatId));
           waitingForBackendIdRef.current = false;
@@ -1020,6 +1021,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
       } catch (err: unknown) {
         let message = 'Failed to create chat.';
         try { const parsed = JSON.parse((err as Error).message); if (parsed?.detail) message = parsed.detail; } catch { message = (err as Error).message; }
+        console.error('[addChatAPI] failed (handleFileUpload branch):', message, err);
         setToastMessage(message);
         setUploadStep('file');
         return;
@@ -1226,6 +1228,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
             const parsed = JSON.parse(err.message);
             if (parsed?.detail) message = parsed.detail;
           } catch { message = err.message; }
+          console.error('[addChatAPI] failed (handleNewChat branch):', message, err);
           setToastMessage(message);
           setChats((prev) => prev.filter((c) => c.id !== newChatId));
           setPendingNewChat(null);
@@ -3940,13 +3943,21 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   onClick={async () => {
                     try {
                       const response = await fetch(ds.url);
+                      if (!response.ok) {
+                        // Supabase storage returns 400 for an object that doesn't exist at this
+                        // path (not 404) — log the URL so a missing/renamed file in the bucket is
+                        // obvious from devtools instead of a generic "please try again" toast.
+                        console.error(`[sample dataset] ${response.status} fetching ${ds.url}`);
+                        throw new Error(`HTTP ${response.status}`);
+                      }
                       const blob = await response.blob();
                       const file = new File([blob], ds.filename, { type: 'text/csv' });
                       handleFileSelect(file);
                       setSampleSuggestedQuestions([...ds.suggestedQuestions]);
                       setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, suggestedQuestions: [...ds.suggestedQuestions] } : c));
                       setSelectedSampleDataset(null);
-                    } catch {
+                    } catch (err) {
+                      console.error('[sample dataset] load failed:', err);
                       setToastMessage('Failed to load sample dataset. Please try again.');
                     }
                   }}

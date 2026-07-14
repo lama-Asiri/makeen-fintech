@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { motion, AnimatePresence } from 'motion/react';
 import { LoginForm } from './components/LoginForm';
@@ -27,14 +27,27 @@ function MainApp() {
     document.documentElement.setAttribute('data-font-size', saved);
   }, []);
 
-  // Restore session on refresh, but not during password recovery
+  // Restore session on refresh, but not during password recovery.
+  // AuthContext's onAuthStateChange fires on every Supabase auth event — including
+  // TOKEN_REFRESHED, which Supabase does periodically in the background — and hands
+  // back a new `user` object each time even though it's the same logical user. Keying
+  // this effect on `user` alone re-ran it on those refreshes and forced the screen back
+  // to 'dashboard' mid-session, kicking users out of Chat/Settings/whatever they were
+  // doing. Track the last user id we've already navigated for so this only fires on an
+  // actual sign-in/session-restore transition, not a token refresh of the same user.
+  const lastHandledUserId = useRef<string | null>(null);
   useEffect(() => {
     if (isRecoveryMode) {
       setCurrentScreen('resetPassword');
       return;
     }
-    if (!loading && user) {
+    if (loading) return;
+    const userId = user?.id ?? null;
+    if (userId && userId !== lastHandledUserId.current) {
+      lastHandledUserId.current = userId;
       setCurrentScreen('dashboard');
+    } else if (!userId) {
+      lastHandledUserId.current = null;
     }
   }, [loading, user, isRecoveryMode]);
 
