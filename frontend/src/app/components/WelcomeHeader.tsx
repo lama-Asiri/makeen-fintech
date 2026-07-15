@@ -91,9 +91,9 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className="relative mb-[32px] text-center"
     >
-      {/* Subtle glow background */}
+      {/* Subtle glow background — single restrained gold glow, not a rainbow */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[120px] bg-gradient-to-r from-[#FFB800]/10 via-[#7760bd]/10 to-[#FF6B35]/10 blur-[60px] opacity-40" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[120px] bg-[#7760bd]/10 blur-[60px] opacity-40" />
       </div>
 
       {/* Headline */}
@@ -101,11 +101,9 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-        className="font-['Inter:Bold',sans-serif] font-bold text-[1.75rem] md:text-[2rem] text-[#fffcfe] mb-[12px] relative"
+        className="font-serif font-medium text-[1.75rem] md:text-[2.25rem] text-[#fffcfe] mb-[12px] relative"
       >
-        <span className="bg-gradient-to-r from-[#fffcfe] via-[#fffcfe] to-[#fffcfe]/90 bg-clip-text text-transparent">
-          {currentMessage.headline(displayName)}
-        </span>
+        {currentMessage.headline(displayName)}
       </motion.h1>
 
       {/* Subtext */}
@@ -113,7 +111,7 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-        className="font-['Inter:Regular',sans-serif] text-[1rem] md:text-[1.125rem] text-[#999] max-w-[600px] mx-auto"
+        className="font-sans text-[1rem] md:text-[1.125rem] text-[#9e9e9e] max-w-[600px] mx-auto"
       >
         {currentMessage.subtext}
       </motion.p>
@@ -123,7 +121,7 @@ export function WelcomeHeader({ displayName = 'User', messageIndex, mode }: Welc
         initial={{ scaleX: 0 }}
         animate={{ scaleX: 1 }}
         transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-        className="mx-auto mt-[20px] h-[2px] w-[80px] bg-gradient-to-r from-[#FFB800] via-[#7760bd] to-[#FF6B35] rounded-full"
+        className="mx-auto mt-[20px] h-[2px] w-[80px] bg-gradient-to-r from-transparent via-[#7760bd] to-transparent rounded-full"
       />
     </motion.div>
   );

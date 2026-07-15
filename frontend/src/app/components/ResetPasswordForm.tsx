@@ -71,8 +71,8 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
           <KeyRound className="w-8 h-8 text-[#7760bd]" />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold text-white tracking-tight">Set new password</h2>
-          <p className="text-[#999] text-base font-normal max-w-sm mx-auto">
+          <h2 className="font-serif font-medium text-3xl text-white tracking-tight">Set new password</h2>
+          <p className="text-[#9e9e9e] text-base font-normal max-w-sm mx-auto">
             Your new password must be different from previously used passwords.
           </p>
         </div>
@@ -124,7 +124,7 @@ export function ResetPasswordForm({ onSuccess }: ResetPasswordFormProps) {
         />
 
         {errorMessage && (
-          <p className="text-[#dc2626] text-sm text-center">{errorMessage}</p>
+          <p className="text-[#e05a5a] text-sm text-center">{errorMessage}</p>
         )}
 
         <LoginButton

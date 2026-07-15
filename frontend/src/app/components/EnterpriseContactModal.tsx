@@ -47,15 +47,15 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
     e.preventDefault();
     // In a real app, this would send the form data
     console.log('Enterprise inquiry submitted:', formData);
-    
+
     // Close modal immediately
     onClose();
-    
+
     // Show toast after modal closes
     setTimeout(() => {
       setShowSuccessToast(true);
     }, 200);
-    
+
     // Reset form after modal animation completes
     setTimeout(() => {
       setFormData({
@@ -94,38 +94,46 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
             role="dialog"
             aria-modal="true"
             aria-labelledby="enterprise-contact-title"
-            className="relative bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,252,254,0.1)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-full max-w-[520px] z-[201]"
+            className="relative bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,255,255,0.08)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-full max-w-[520px] z-[201]"
           >
             {/* Header */}
-            <div className="border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between">
-              <h2
-                id="enterprise-contact-title"
-                className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
-                style={{ fontVariationSettings: "'wdth' 100" }}
-              >
-                Contact Us - Enterprise Plan
-              </h2>
-              <button
-                onClick={onClose}
-                className="text-[#999] hover:text-[#fffcfe] transition-colors p-2 -mr-2 rounded-lg hover:bg-[#333] active:bg-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
-                aria-label="Close modal"
-              >
-                <X className="w-[20px] h-[20px]" />
-              </button>
+            <div className="px-[28px] pt-[26px] pb-[20px]">
+              <div className="flex items-start justify-between gap-[16px]">
+                <div>
+                  <p className="text-[#7760bd] text-[11px] font-sans font-semibold uppercase tracking-[0.2em] mb-[10px]">
+                    Enterprise
+                  </p>
+                  <h2
+                    id="enterprise-contact-title"
+                    className="font-sans font-bold text-[1.25rem] text-[#fffcfe]"
+                  >
+                    Contact Us - Enterprise Plan
+                  </h2>
+                </div>
+                <button
+                  onClick={onClose}
+                  className="text-[#9e9e9e] hover:text-[#fffcfe] transition-colors p-2 -mr-2 -mt-1 rounded-lg hover:bg-[#3a3a3a] active:bg-[#444] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
+                  aria-label="Close modal"
+                >
+                  <X className="w-[20px] h-[20px]" />
+                </button>
+              </div>
             </div>
 
+            <div className="h-px bg-white/[0.08]" />
+
             {/* Content */}
-            <form onSubmit={handleSubmit} className="px-[24px] py-[24px]">
-              <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#b0b0b0] mb-[20px] leading-[1.6]">
+            <form onSubmit={handleSubmit} className="px-[28px] py-[26px]">
+              <p className="font-sans text-[0.875rem] text-[#9e9e9e] mb-[28px] leading-[1.6]">
                 Interested in our Enterprise plan? Fill out the form below and our team will get in touch with you shortly.
               </p>
 
-              <div className="space-y-[16px]">
+              <div className="flex flex-col gap-[22px]">
                 {/* Name Field */}
                 <div>
                   <label
                     htmlFor="contact-name"
-                    className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#e0e0e0] mb-[6px]"
+                    className="block font-sans text-[11px] uppercase tracking-[0.1em] text-[#9e9e9e] mb-[10px]"
                   >
                     Name *
                   </label>
@@ -135,7 +143,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-[#333] text-white rounded-[8px] px-[14px] py-[10px] border border-[#555] focus:outline-none focus:border-[#7760bd] focus:ring-1 focus:ring-[#7760bd] transition-colors font-['Roboto:Regular',sans-serif] text-[0.875rem]"
+                    className="w-full bg-transparent text-[#fffcfe] px-0 py-[10px] border-0 border-b border-[rgba(255,255,255,0.14)] focus:outline-none focus:border-[#7760bd] transition-colors font-sans text-[0.9375rem]"
                     placeholder="Your name"
                   />
                 </div>
@@ -144,7 +152,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                 <div>
                   <label
                     htmlFor="contact-email"
-                    className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#e0e0e0] mb-[6px]"
+                    className="block font-sans text-[11px] uppercase tracking-[0.1em] text-[#9e9e9e] mb-[10px]"
                   >
                     Email *
                   </label>
@@ -154,7 +162,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-[#333] text-white rounded-[8px] px-[14px] py-[10px] border border-[#555] focus:outline-none focus:border-[#7760bd] focus:ring-1 focus:ring-[#7760bd] transition-colors font-['Roboto:Regular',sans-serif] text-[0.875rem]"
+                    className="w-full bg-transparent text-[#fffcfe] px-0 py-[10px] border-0 border-b border-[rgba(255,255,255,0.14)] focus:outline-none focus:border-[#7760bd] transition-colors font-sans text-[0.9375rem]"
                     placeholder="your.email@company.com"
                   />
                 </div>
@@ -163,7 +171,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                 <div>
                   <label
                     htmlFor="contact-company"
-                    className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#e0e0e0] mb-[6px]"
+                    className="block font-sans text-[11px] uppercase tracking-[0.1em] text-[#9e9e9e] mb-[10px]"
                   >
                     Company *
                   </label>
@@ -173,7 +181,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                     required
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full bg-[#333] text-white rounded-[8px] px-[14px] py-[10px] border border-[#555] focus:outline-none focus:border-[#7760bd] focus:ring-1 focus:ring-[#7760bd] transition-colors font-['Roboto:Regular',sans-serif] text-[0.875rem]"
+                    className="w-full bg-transparent text-[#fffcfe] px-0 py-[10px] border-0 border-b border-[rgba(255,255,255,0.14)] focus:outline-none focus:border-[#7760bd] transition-colors font-sans text-[0.9375rem]"
                     placeholder="Your company name"
                   />
                 </div>
@@ -182,7 +190,7 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                 <div>
                   <label
                     htmlFor="contact-message"
-                    className="block font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#e0e0e0] mb-[6px]"
+                    className="block font-sans text-[11px] uppercase tracking-[0.1em] text-[#9e9e9e] mb-[10px]"
                   >
                     Message
                   </label>
@@ -191,44 +199,36 @@ export function EnterpriseContactModal({ isOpen, onClose }: EnterpriseContactMod
                     rows={4}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    className="w-full bg-[#333] text-white rounded-[8px] px-[14px] py-[10px] border border-[#555] focus:outline-none focus:border-[#7760bd] focus:ring-1 focus:ring-[#7760bd] transition-colors font-['Roboto:Regular',sans-serif] text-[0.875rem] resize-none"
+                    className="w-full bg-transparent text-[#fffcfe] rounded-[8px] px-[14px] py-[12px] border border-[rgba(255,255,255,0.14)] focus:outline-none focus:border-[#7760bd] transition-colors font-sans text-[0.9375rem] resize-none"
                     placeholder="Tell us about your needs..."
                   />
                 </div>
               </div>
 
               {/* Buttons */}
-              <div className="flex gap-[12px] mt-[24px]">
+              <div className="flex gap-[12px] mt-[32px]">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 border border-[#7760bd] text-[#7760bd] rounded-[10px] px-[20px] py-[12px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] hover:bg-[#7760bd]/10 active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
+                  className="flex-1 border border-white/20 text-white/80 rounded-full px-[20px] py-[12px] font-sans font-semibold text-[13px] uppercase tracking-[0.08em] hover:text-[#7760bd] hover:border-[#7760bd]/60 transition-colors focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-[#7760bd] text-white rounded-[10px] px-[20px] py-[12px] font-['Inter:Semi_Bold',sans-serif] font-semibold text-[0.875rem] hover:bg-[#8870cd] active:scale-[0.98] transition-all focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
+                  className="flex-1 bg-[#7760bd] text-[#141414] rounded-full px-[20px] py-[12px] font-sans font-semibold text-[13px] uppercase tracking-[0.08em] hover:bg-[#8a75d4] transition-colors focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
                 >
                   Send Inquiry
                 </button>
               </div>
             </form>
-
-            {/* Accent gradient line at bottom */}
-            <div 
-              className="h-[2px] rounded-b-[16px]"
-              style={{
-                background: 'linear-gradient(90deg, transparent, #7760bd, transparent)'
-              }}
-            />
           </motion.div>
         </motion.div>
       )}
 
       {/* Success Toast - renders independently of modal state */}
       {showSuccessToast && (
-        <Toast 
+        <Toast
           message="Inquiry sent successfully"
           onClose={() => setShowSuccessToast(false)}
         />

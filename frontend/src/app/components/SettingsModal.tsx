@@ -1,5 +1,6 @@
 import svgPathsSettings from '@/imports/svg-92ly2gkslu';
 import { useState, useRef, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { supabase } from '@/lib/supabase';
 import { Palette, Shield, Database, Settings as SettingsIcon, X, ChevronRight, ArrowLeft, Eye, EyeOff, Key } from 'lucide-react';
 import { DefaultAvatar } from '@/app/components/DefaultAvatar';
@@ -7,6 +8,20 @@ import { Toast } from '@/app/components/Toast';
 import { PasswordInput } from '@/app/components/PasswordInput';
 import { CustomSelect } from '@/app/components/CustomSelect';
 import { ColorSelect } from '@/app/components/ColorSelect';
+
+// Small tracked-out eyebrow label used above each settings section for editorial rhythm
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[#7760bd] text-[11px] font-sans font-semibold uppercase tracking-[0.2em] mb-[4px]">
+      {children}
+    </p>
+  );
+}
+
+// Hairline divider used between editorial list rows
+function HairlineDivider({ className = '' }: { className?: string }) {
+  return <div className={`h-px bg-white/[0.08] ${className}`} />;
+}
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -293,7 +308,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-[12px] sm:p-[24px]">
-      <div className="bg-[#262626] rounded-[16px] w-full max-w-[690px] h-[90vh] max-h-[514px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
+        className="bg-[#141414] rounded-[16px] w-full max-w-[760px] h-[85vh] max-h-[720px] flex shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]"
+      >
         {/* Left Sidebar */}
         <div className="bg-[#2c2c2c] w-[89px] rounded-l-[16px] flex flex-col items-center py-[18px] flex-shrink-0 relative">
           <div className="flex flex-col items-center gap-[24px] pt-[3px]">
@@ -301,15 +321,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             <div className="relative group">
               <button
                 onClick={() => handleTabChange('general')}
-                className={`w-[46px] h-[46px] rounded-[8px] flex items-center justify-center cursor-pointer transition-all shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] ${
-                  activeTab === 'general' ? 'bg-[#484848]' : 'bg-[#2c2c2c] hover:bg-[#333]'
+                className={`w-[46px] h-[46px] rounded-[6px] flex items-center justify-center cursor-pointer transition-all border-l-2 ${
+                  activeTab === 'general' ? 'bg-[rgba(119,96,189,0.08)] border-l-[#7760bd]' : 'bg-transparent hover:bg-[#3a3a3a] border-l-transparent'
                 }`}
                 aria-label="General settings"
               >
-                <SettingsIcon className={`w-[20px] h-[20px] ${activeTab === 'general' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
+                <SettingsIcon className={`w-[20px] h-[20px] ${activeTab === 'general' ? 'text-[#7760bd]' : 'text-[#fffcfe]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#2c2c2c] text-[#fffcfe] text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 General
               </div>
             </div>
@@ -318,15 +338,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             <div className="relative group">
               <button
                 onClick={() => handleTabChange('security')}
-                className={`w-[46px] h-[46px] rounded-[8px] flex items-center justify-center cursor-pointer transition-all ${
-                  activeTab === 'security' ? 'bg-[#484848]' : 'bg-[#2c2c2c] hover:bg-[#333]'
+                className={`w-[46px] h-[46px] rounded-[6px] flex items-center justify-center cursor-pointer transition-all border-l-2 ${
+                  activeTab === 'security' ? 'bg-[rgba(119,96,189,0.08)] border-l-[#7760bd]' : 'bg-transparent hover:bg-[#3a3a3a] border-l-transparent'
                 }`}
                 aria-label="Security settings"
               >
-                <Shield className={`w-[20px] h-[20px] ${activeTab === 'security' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
+                <Shield className={`w-[20px] h-[20px] ${activeTab === 'security' ? 'text-[#7760bd]' : 'text-[#fffcfe]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#2c2c2c] text-[#fffcfe] text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Security
               </div>
             </div>
@@ -335,15 +355,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             <div className="relative group">
               <button
                 onClick={() => handleTabChange('data')}
-                className={`w-[46px] h-[46px] rounded-[8px] flex items-center justify-center cursor-pointer transition-all ${
-                  activeTab === 'data' ? 'bg-[#484848]' : 'bg-[#2c2c2c] hover:bg-[#333]'
+                className={`w-[46px] h-[46px] rounded-[6px] flex items-center justify-center cursor-pointer transition-all border-l-2 ${
+                  activeTab === 'data' ? 'bg-[rgba(119,96,189,0.08)] border-l-[#7760bd]' : 'bg-transparent hover:bg-[#3a3a3a] border-l-transparent'
                 }`}
                 aria-label="Data management settings"
               >
-                <Database className={`w-[20px] h-[20px] ${activeTab === 'data' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
+                <Database className={`w-[20px] h-[20px] ${activeTab === 'data' ? 'text-[#7760bd]' : 'text-[#fffcfe]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#2c2c2c] text-[#fffcfe] text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Data Management
               </div>
             </div>
@@ -352,15 +372,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             <div className="relative group">
               <button
                 onClick={() => handleTabChange('personalization')}
-                className={`w-[46px] h-[46px] rounded-[8px] flex items-center justify-center cursor-pointer transition-all ${
-                  activeTab === 'personalization' ? 'bg-[#484848]' : 'bg-[#2c2c2c] hover:bg-[#333]'
+                className={`w-[46px] h-[46px] rounded-[6px] flex items-center justify-center cursor-pointer transition-all border-l-2 ${
+                  activeTab === 'personalization' ? 'bg-[rgba(119,96,189,0.08)] border-l-[#7760bd]' : 'bg-transparent hover:bg-[#3a3a3a] border-l-transparent'
                 }`}
                 aria-label="Personalization settings"
               >
-                <Palette className={`w-[20px] h-[20px] ${activeTab === 'personalization' ? 'text-[#7760bd]' : 'text-[#FFFCFE]'}`} strokeWidth={2} />
+                <Palette className={`w-[20px] h-[20px] ${activeTab === 'personalization' ? 'text-[#7760bd]' : 'text-[#fffcfe]'}`} strokeWidth={2} />
               </button>
               {/* Tooltip */}
-              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
+              <div className="absolute left-full ml-[12px] top-1/2 -translate-y-1/2 px-[12px] py-[6px] bg-[#2c2c2c] text-[#fffcfe] text-[0.75rem] rounded-[6px] whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all pointer-events-none shadow-lg z-50">
                 Personalization
               </div>
             </div>
@@ -375,9 +395,9 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             }}
             className="absolute bottom-[16px] w-full px-[8px] cursor-pointer group"
           >
-            <div className="flex flex-col items-center gap-[8px] p-[8px] rounded-[8px] hover:bg-[#333] transition-colors">
+            <div className="flex flex-col items-center gap-[8px] p-[8px] rounded-[8px] hover:bg-[#3a3a3a] transition-colors">
               {avatarUrl ? (
-                <div className="w-[40px] h-[40px] rounded-full overflow-hidden border border-[rgba(255,252,254,0.15)]">
+                <div className="w-[40px] h-[40px] rounded-full overflow-hidden border border-[rgba(255,255,255,0.08)]">
                   <img
                     className="w-full h-full object-cover"
                     alt="Profile avatar"
@@ -392,10 +412,10 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
         </div>
 
         {/* Right Content Area */}
-        <div className="flex-1 flex flex-col bg-[#262626] rounded-r-[16px] min-w-0">
+        <div className="flex-1 flex flex-col bg-[#141414] rounded-r-[16px] min-w-0">
           {/* Header */}
-          <div className="bg-[#262626] h-[64px] px-[24px] flex items-center justify-between rounded-tr-[16px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)] flex-shrink-0">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.25rem] leading-[28px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
+          <div className="bg-[#141414] h-[64px] px-[24px] flex items-center justify-between rounded-tr-[16px] border-b border-white/[0.08] flex-shrink-0">
+            <p className="font-sans font-semibold text-[1.25rem] leading-[28px] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>
               {activeTab === 'general' && 'General'}
               {activeTab === 'security' && 'Security & Privacy'}
               {activeTab === 'data' && 'Data Management'}
@@ -404,10 +424,10 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
             {/* Close X button */}
             <button
               onClick={onClose}
-              className="w-[32px] h-[32px] flex items-center justify-center rounded-[8px] hover:bg-[#333] transition-colors cursor-pointer"
+              className="w-[32px] h-[32px] flex items-center justify-center rounded-[8px] hover:bg-[#3a3a3a] transition-colors cursor-pointer"
               aria-label="Close settings"
             >
-              <X className="w-[20px] h-[20px] text-[#999] hover:text-[#fffcfe]" />
+              <X className="w-[20px] h-[20px] text-[#9e9e9e] hover:text-[#fffcfe]" />
             </button>
           </div>
 
@@ -415,13 +435,19 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
           <div className="flex-1 overflow-y-auto relative">
             {/* General Tab Content */}
             {activeTab === 'general' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
-                {/* Language Card */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <div className="flex items-center justify-between gap-[16px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]">
+                {/* General section */}
+                <div>
+                  <Eyebrow>General</Eyebrow>
+                  <HairlineDivider />
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Language</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Choose your preferred language</p>
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Language</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Choose your preferred language</p>
                     </div>
                     <CustomSelect
                       value={language}
@@ -438,131 +464,134 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                       onLockedClick={() => setComingSoonMessage('Coming soon')}
                     />
                   </div>
+                  <HairlineDivider />
                 </div>
 
-                {/* Subscription Card */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                    <div className="flex items-start justify-between mb-[16px]">
-                      <div>
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-[#fffcfe]" style={{ fontVariationSettings: "'wdth' 100" }}>Subscription</p>
-                        <div className="flex items-center gap-[12px] mt-[6px]">
-                          <span className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#b0b0b0]">Current plan: <span className="text-[#fffcfe]">Free</span></span>
-                          <span className="px-[8px] py-[2px] rounded-[4px] bg-[#7760bd]/20 border border-[#7760bd]/30 font-['Roboto:Regular',sans-serif] text-[0.6875rem] text-[#a89bd9] uppercase tracking-wide">Active</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Usage Summary */}
-                    <div className="space-y-[12px] mb-[16px]">
-                      <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Applicant pools analyzed</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.datasetsUsed} / {usageData.datasetsLimit}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Risk reports exported</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.exportsUsed} / {usageData.exportsLimit}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999]">Credit assessments saved</span>
-                        <span className="font-['Roboto:Medium',sans-serif] font-medium text-[0.8125rem] text-[#fffcfe]">{usageData.savedChats} / {usageData.savedChatsLimit}</span>
-                      </div>
-                    </div>
-
-                    {/* View Plans Button */}
-                    {onViewPlansClick && (
-                      <button
-                        onClick={() => {
-                          onViewPlansClick();
-                          onClose();
-                        }}
-                        className="w-full bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem]"
-                      >
-                        View Plans
-                      </button>
-                    )}
+                {/* Subscription section */}
+                <div>
+                  <Eyebrow>Subscription</Eyebrow>
+                  <div className="flex items-center gap-[12px] mb-[20px]">
+                    <span className="font-sans text-[0.875rem] text-[#9e9e9e]">Current plan: <span className="text-[#fffcfe]">Free</span></span>
+                    <span className="px-[8px] py-[2px] rounded-[4px] bg-[#7760bd]/20 border border-[#7760bd]/30 font-sans text-[0.6875rem] text-[#8a75d4] uppercase tracking-wide">Active</span>
                   </div>
+
+                  {/* Usage Summary */}
+                  <HairlineDivider />
+                  <div className="flex items-center justify-between py-[12px]">
+                    <span className="font-sans text-[0.8125rem] text-[#9e9e9e]">Applicant pools analyzed</span>
+                    <span className="font-tabular text-[0.8125rem] text-[#fffcfe]">{usageData.datasetsUsed} / {usageData.datasetsLimit}</span>
+                  </div>
+                  <HairlineDivider />
+                  <div className="flex items-center justify-between py-[12px]">
+                    <span className="font-sans text-[0.8125rem] text-[#9e9e9e]">Risk reports exported</span>
+                    <span className="font-tabular text-[0.8125rem] text-[#fffcfe]">{usageData.exportsUsed} / {usageData.exportsLimit}</span>
+                  </div>
+                  <HairlineDivider />
+                  <div className="flex items-center justify-between py-[12px]">
+                    <span className="font-sans text-[0.8125rem] text-[#9e9e9e]">Credit assessments saved</span>
+                    <span className="font-tabular text-[0.8125rem] text-[#fffcfe]">{usageData.savedChats} / {usageData.savedChatsLimit}</span>
+                  </div>
+                  <HairlineDivider />
+
+                  {/* View Plans Button */}
+                  {onViewPlansClick && (
+                    <button
+                      onClick={() => {
+                        onViewPlansClick();
+                        onClose();
+                      }}
+                      className="w-full mt-[20px] bg-[#7760bd] hover:bg-[#8a75d4] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-sans font-medium text-[0.875rem]"
+                    >
+                      View Plans
+                    </button>
+                  )}
+                </div>
 
                 {/* Toast for General section */}
                 {comingSoonMessage && (
-                  <Toast 
+                  <Toast
                     message={comingSoonMessage}
                     onClose={() => setComingSoonMessage(null)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Security Tab Content */}
             {activeTab === 'security' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]"
+              >
                 {/* Security Overview */}
                 {securityView === 'overview' && (
-                  <>
-                    <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                      <div className="flex flex-col gap-[14px]">
-                        <div className="flex items-center justify-between">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Change Password</p>
-                          <button
-                            onClick={() => setSecurityView('changePassword')}
-                            className="bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem]"
-                          >
-                            Change
-                          </button>
-                        </div>
-                      </div>
+                  <div>
+                    <Eyebrow>Security</Eyebrow>
+                    <HairlineDivider />
+
+                    {/* Change Password */}
+                    <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Change Password</p>
+                      <button
+                        onClick={() => setSecurityView('changePassword')}
+                        className="bg-[#7760bd] hover:bg-[#8a75d4] text-white rounded-[6px] px-[16px] py-[10px] transition-colors font-sans font-medium text-[0.875rem]"
+                      >
+                        Change
+                      </button>
                     </div>
+                    <HairlineDivider />
 
                     {/* Save chat history */}
-                    <div 
+                    <div
                       ref={saveChatHistoryRef}
-                      className={`bg-[#2c2c2c] rounded-[8px] border p-[20px] transition-all duration-300 ${
-                        highlightSaveChatHistory 
-                          ? 'border-[#7760bd] shadow-[0_0_0_3px_rgba(119,96,189,0.5)]' 
-                          : 'border-[rgba(255,252,254,0.1)]'
+                      className={`flex items-center justify-between gap-[16px] py-[16px] pl-[12px] -ml-[12px] border-l-2 transition-all duration-300 ${
+                        highlightSaveChatHistory
+                          ? 'border-l-[#7760bd] bg-[rgba(119,96,189,0.06)]'
+                          : 'border-l-transparent'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-[16px]">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Save chat history</p>
-                          <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">When off, chats are not stored in history.</p>
-                        </div>
-                        <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
-                          <input 
-                            type="checkbox" 
-                            className="sr-only peer" 
-                            checked={saveChatHistory} 
-                            onChange={(e) => {
-                              const newValue = e.target.checked;
-                              setSaveChatHistoryFeedback(newValue ? 'Saved' : 'Not saved');
-                              if (onSaveChatHistoryChange) {
-                                onSaveChatHistoryChange(newValue);
-                              }
-                            }} 
-                          />
-                          <span className="absolute inset-0 bg-[#555] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
-                          <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-white rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
-                        </label>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Save chat history</p>
+                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">When off, chats are not stored in history.</p>
                       </div>
+                      <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={saveChatHistory}
+                          onChange={(e) => {
+                            const newValue = e.target.checked;
+                            setSaveChatHistoryFeedback(newValue ? 'Saved' : 'Not saved');
+                            if (onSaveChatHistoryChange) {
+                              onSaveChatHistoryChange(newValue);
+                            }
+                          }}
+                        />
+                        <span className="absolute inset-0 bg-[#444] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
+                        <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-[#fffcfe] rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
+                      </label>
                     </div>
+                    <HairlineDivider />
 
                     {/* Clear conversation context */}
-                    <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                      <div className="flex items-center justify-between gap-[16px]">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Clear conversation context</p>
-                          <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Resets the current conversation memory in this session.</p>
-                        </div>
-                        <button
-                          onClick={() => setShowClearContextConfirm(true)}
-                          className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
-                        >
-                          Clear context
-                        </button>
+                    <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Clear conversation context</p>
+                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Resets the current conversation memory in this session.</p>
                       </div>
+                      <button
+                        onClick={() => setShowClearContextConfirm(true)}
+                        className="bg-[#3a3a3a] hover:bg-[#444] text-[#fffcfe] rounded-[6px] px-[16px] py-[8px] border border-[rgba(255,255,255,0.08)] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
+                      >
+                        Clear context
+                      </button>
                     </div>
-                  </>
+                    <HairlineDivider />
+                  </div>
                 )}
-                
+
                 {/* Save chat history feedback toast */}
                 {saveChatHistoryFeedback && (
                   <Toast 
@@ -589,8 +618,9 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 
                 {/* Change Password Section */}
                 {securityView === 'changePassword' && (
-                  <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                    <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Change Password</p>
+                  <div>
+                    <Eyebrow>Change Password</Eyebrow>
+                    <HairlineDivider className="mb-[20px]" />
                     <div className="flex flex-col gap-[8px]">
                       <PasswordInput
                         label="Current Password"
@@ -639,16 +669,16 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     <div className="flex justify-end gap-[12px] mt-[20px]">
                       <button
                         onClick={handleCancelPasswordChange}
-                        className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
+                        className="border border-[rgba(255,255,255,0.08)] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#3a3a3a] transition-all"
                       >
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
+                        <p className="font-sans text-[0.875rem] text-[#fffcfe]">Cancel</p>
                       </button>
                       <button
                         onClick={handlePasswordSubmit}
                         className={`rounded-[8px] px-[20px] h-[40px] flex items-center justify-center transition-all ${
                           isSubmittingPassword || !isPasswordFormValid()
                             ? 'bg-[#7760bd]/40 cursor-not-allowed'
-                            : 'bg-[#7760bd] cursor-pointer hover:bg-[#8870cd]'
+                            : 'bg-[#7760bd] cursor-pointer hover:bg-[#8a75d4]'
                         }`}
                         disabled={isSubmittingPassword || !isPasswordFormValid()}
                       >
@@ -658,7 +688,7 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                             <path className="opacity-75" fill="#FFFCFE" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.928l3-2.647z" />
                           </svg>
                         ) : (
-                          <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Confirm</p>
+                          <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Confirm</p>
                         )}
                       </button>
                     </div>
@@ -666,8 +696,8 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     {/* Password Change Toast */}
                     {passwordToast && (
                       <div
-                        className={`absolute left-1/2 bottom-[20px] -translate-x-1/2 px-[16px] py-[10px] rounded-[8px] text-[0.875rem] font-['Roboto:Regular',sans-serif] ${
-                          passwordToast.type === 'success' ? 'bg-[#16a34a] text-[#fffcfe]' : 'bg-[#dc2626] text-[#fffcfe]'
+                        className={`absolute left-1/2 bottom-[20px] -translate-x-1/2 px-[16px] py-[10px] rounded-[8px] text-[0.875rem] font-sans ${
+                          passwordToast.type === 'success' ? 'bg-[#08B839] text-[#fffcfe]' : 'bg-[#e05a5a] text-[#fffcfe]'
                         }`}
                       >
                         {passwordToast.message}
@@ -675,44 +705,52 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                     )}
                   </div>
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Data Management Tab Content */}
             {activeTab === 'data' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
-                {/* Card 1: Clear local cache */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <div className="flex items-center justify-between gap-[16px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[20px]"
+              >
+                <div>
+                  <Eyebrow>Data Management</Eyebrow>
+                  <HairlineDivider />
+
+                  {/* Clear local cache */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Clear local cache</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Removes temporary files and cached previews from this device. Your chats won't be deleted.</p>
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Clear local cache</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Removes temporary files and cached previews from this device. Your chats won't be deleted.</p>
                     </div>
                     <button
                       onClick={() => setShowClearCacheConfirm(true)}
-                      className="bg-[#333] hover:bg-[#444] text-white rounded-[6px] px-[16px] py-[8px] border border-[#555] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
+                      className="bg-[#3a3a3a] hover:bg-[#444] text-[#fffcfe] rounded-[6px] px-[16px] py-[8px] border border-[rgba(255,255,255,0.08)] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
                     >
                       Clear
                     </button>
                   </div>
-                </div>
+                  <HairlineDivider />
 
-                {/* Card 2: Delete all chats */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <div className="flex items-center justify-between gap-[16px]">
+                  {/* Delete all chats */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
                     <div className="flex-1 min-w-0">
-                      <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Delete all chats</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Permanently removes all saved conversations from your account.</p>
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Delete all chats</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Permanently removes all saved conversations from your account.</p>
                     </div>
                     <button
                       onClick={() => setShowDeleteAllChatsConfirm(true)}
-                      className="bg-[#dc2626] hover:bg-[#ef4444] text-white rounded-[6px] px-[16px] py-[8px] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
+                      className="bg-[#e05a5a] hover:bg-[#d3564d] text-[#fffcfe] rounded-[6px] px-[16px] py-[8px] cursor-pointer transition-colors text-[0.875rem] flex-shrink-0"
                     >
                       Delete
                     </button>
                   </div>
+                  <HairlineDivider />
                 </div>
-                
+
                 {/* Cache cleared success toast */}
                 {clearCacheSuccess && (
                   <Toast 
@@ -723,101 +761,111 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 
                 {/* Delete all chats success toast */}
                 {deleteAllChatsSuccess && (
-                  <Toast 
+                  <Toast
                     message="All chats deleted"
                     onClose={() => setDeleteAllChatsSuccess(false)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
 
             {/* Personalization Tab Content */}
             {activeTab === 'personalization' && (
-              <div className="px-[24px] py-[20px] flex flex-col gap-[20px]">
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="px-[24px] py-[20px] flex flex-col gap-[32px]"
+              >
 
-                {/* 0) Font Size */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[4px]" style={{ fontVariationSettings: "'wdth' 100" }}>Font Size</p>
-                  <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mb-[16px]">Controls the size of message text across the chat.</p>
-                  <div className="flex gap-[10px]">
-                    {(['small', 'medium', 'large'] as const).map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => applyFontSize(size)}
-                        className={`flex-1 py-[10px] rounded-[8px] border transition-all cursor-pointer flex flex-col items-center gap-[6px] ${
-                          fontSize === size
-                            ? 'bg-[#7760bd]/20 border-[#7760bd] text-white'
-                            : 'bg-transparent border-white/10 text-[#999] hover:border-white/30 hover:text-white'
-                        }`}
-                      >
-                        <span style={{ fontSize: size === 'small' ? '12px' : size === 'medium' ? '15px' : '19px' }}>Aa</span>
-                        <span className="text-[0.6875rem] capitalize font-['Roboto:Medium',sans-serif]">{size}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                {/* Appearance: Font Size, Theme, Accent Color */}
+                <div>
+                  <Eyebrow>Appearance</Eyebrow>
+                  <HairlineDivider />
 
-                {/* 1) Theme / Appearance */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Theme / Appearance</p>
-                  <div className="flex flex-col gap-[16px]">
-                    {/* Row A - Theme */}
-                    <div className="flex items-center justify-between gap-[16px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Theme</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Choose the overall app theme.</p>
-                      </div>
-                      <CustomSelect
-                        value={theme}
-                        onChange={(value) => {
-                          if (value !== 'Dark') {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setTheme('Dark'), 0);
-                          } else {
-                            setTheme(value);
-                          }
-                        }}
-                        options={['Dark']}
-                        lockedOptions={['Light']}
-                        onLockedClick={() => setComingSoonMessage('Coming soon')}
-                      />
-                    </div>
-
-                    {/* Row B - Accent Color */}
-                    <div className="flex items-center justify-between gap-[16px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Accent Color</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Changes buttons, highlights, and active states.</p>
-                      </div>
-                      <ColorSelect
-                        value={accentColor}
-                        onChange={(value) => {
-                          if (value !== 'Purple (Default)') {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setAccentColor('Purple (Default)'), 0);
-                          } else {
-                            setAccentColor(value);
-                          }
-                        }}
-                        options={[{ label: 'Purple (Default)', value: '#7760BC' }]}
-                        lockedOptions={[
-                          { label: 'Yellow', value: '#F5EA92' },
-                          { label: 'Orange', value: '#D9876B' }
-                        ]}
-                        onLockedClick={() => setComingSoonMessage('Coming soon')}
-                      />
+                  {/* Font Size */}
+                  <div className="py-[16px]">
+                    <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Font Size</p>
+                    <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px] mb-[16px]">Controls the size of message text across the chat.</p>
+                    <div className="flex gap-[10px]">
+                      {(['small', 'medium', 'large'] as const).map((size) => (
+                        <button
+                          key={size}
+                          onClick={() => applyFontSize(size)}
+                          className={`flex-1 py-[10px] rounded-[8px] border transition-all cursor-pointer flex flex-col items-center gap-[6px] ${
+                            fontSize === size
+                              ? 'bg-[rgba(119,96,189,0.08)] border-[#7760bd] text-[#7760bd]'
+                              : 'bg-transparent border-[rgba(255,255,255,0.08)] text-[#9e9e9e] hover:border-[rgba(255,255,255,0.24)] hover:text-[#fffcfe]'
+                          }`}
+                        >
+                          <span style={{ fontSize: size === 'small' ? '12px' : size === 'medium' ? '15px' : '19px' }}>Aa</span>
+                          <span className="text-[0.6875rem] capitalize font-sans font-medium">{size}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
+                  <HairlineDivider />
+
+                  {/* Theme */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Theme</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Choose the overall app theme.</p>
+                    </div>
+                    <CustomSelect
+                      value={theme}
+                      onChange={(value) => {
+                        if (value !== 'Dark') {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setTheme('Dark'), 0);
+                        } else {
+                          setTheme(value);
+                        }
+                      }}
+                      options={['Dark']}
+                      lockedOptions={['Light']}
+                      onLockedClick={() => setComingSoonMessage('Coming soon')}
+                    />
+                  </div>
+                  <HairlineDivider />
+
+                  {/* Accent Color */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Accent Color</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Changes buttons, highlights, and active states.</p>
+                    </div>
+                    <ColorSelect
+                      value={accentColor}
+                      onChange={(value) => {
+                        if (value !== 'Purple (Default)') {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setAccentColor('Purple (Default)'), 0);
+                        } else {
+                          setAccentColor(value);
+                        }
+                      }}
+                      options={[{ label: 'Purple (Default)', value: '#7760BC' }]}
+                      lockedOptions={[
+                        { label: 'Yellow', value: '#F5EA92' },
+                        { label: 'Orange', value: '#D9876B' }
+                      ]}
+                      onLockedClick={() => setComingSoonMessage('Coming soon')}
+                    />
+                  </div>
+                  <HairlineDivider />
                 </div>
 
-                {/* 2) Response Style */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Response Style</p>
-                  <div className="flex flex-col gap-[16px]">
-                    {/* Row A - Response Length */}
+                {/* Response Style: Response Length, Tone */}
+                <div>
+                  <Eyebrow>Response Style</Eyebrow>
+                  <HairlineDivider />
+
+                  {/* Response Length */}
+                  <div className="py-[16px]">
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Response Length</p>
+                        <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Response Length</p>
                       </div>
                       <CustomSelect
                         value={responseLength}
@@ -834,44 +882,47 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                         onLockedClick={() => setComingSoonMessage('Coming soon')}
                       />
                     </div>
-                    <div className="pl-[16px] border-l-2 border-[#555]">
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999]">More: Use clear formatting and lists</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Less: More paragraphs instead of lists</p>
-                    </div>
-
-                    {/* Row B - Tone */}
-                    <div className="flex items-center justify-between gap-[16px] mt-[8px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Tone</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls the writing tone of answers.</p>
-                      </div>
-                      <CustomSelect
-                        value={tone}
-                        onChange={(value) => {
-                          if (value !== 'Neutral (Default)') {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setTone('Neutral (Default)'), 0);
-                          } else {
-                            setTone(value);
-                          }
-                        }}
-                        options={['Neutral (Default)']}
-                        lockedOptions={['Friendly', 'Professional']}
-                        onLockedClick={() => setComingSoonMessage('Coming soon')}
-                      />
+                    <div className="pl-[16px] border-l-2 border-[rgba(255,255,255,0.08)] mt-[12px]">
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e]">More: Use clear formatting and lists</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Balanced: Balanced formatting</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Less: More paragraphs instead of lists</p>
                     </div>
                   </div>
+                  <HairlineDivider />
+
+                  {/* Tone */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Tone</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Controls the writing tone of answers.</p>
+                    </div>
+                    <CustomSelect
+                      value={tone}
+                      onChange={(value) => {
+                        if (value !== 'Neutral (Default)') {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setTone('Neutral (Default)'), 0);
+                        } else {
+                          setTone(value);
+                        }
+                      }}
+                      options={['Neutral (Default)']}
+                      lockedOptions={['Friendly', 'Professional']}
+                      onLockedClick={() => setComingSoonMessage('Coming soon')}
+                    />
+                  </div>
+                  <HairlineDivider />
                 </div>
 
-                {/* 3) Headers & Lists */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>Headers & Lists</p>
-                  <div className="flex flex-col gap-[16px]">
-                    {/* Row - Formatting Preference */}
+                {/* Headers & Lists: Formatting Preference */}
+                <div>
+                  <Eyebrow>Headers & Lists</Eyebrow>
+                  <HairlineDivider />
+
+                  <div className="py-[16px]">
                     <div className="flex items-center justify-between gap-[16px]">
                       <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Formatting Preference</p>
+                        <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Formatting Preference</p>
                       </div>
                       <CustomSelect
                         value={formattingPref}
@@ -888,107 +939,111 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                         onLockedClick={() => setComingSoonMessage('Coming soon')}
                       />
                     </div>
-                    <div className="pl-[16px] border-l-2 border-[#555]">
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999]">More lists: Use clear formatting and lists</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Balanced: Balanced formatting</p>
-                      <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">More paragraphs: More paragraphs instead of lists</p>
+                    <div className="pl-[16px] border-l-2 border-[rgba(255,255,255,0.08)] mt-[12px]">
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e]">More lists: Use clear formatting and lists</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Balanced: Balanced formatting</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">More paragraphs: More paragraphs instead of lists</p>
                     </div>
                   </div>
+                  <HairlineDivider />
                 </div>
 
-                {/* 4) File-related Behavior */}
-                <div className="bg-[#2c2c2c] rounded-[8px] border border-[rgba(255,252,254,0.1)] p-[20px]">
-                  <p className="font-['Roboto:Medium',sans-serif] font-medium text-[1rem] text-white mb-[16px]" style={{ fontVariationSettings: "'wdth' 100" }}>File-related Behavior</p>
-                  <div className="flex flex-col gap-[16px]">
-                    {/* Row A - Auto-summarize uploaded files */}
-                    <div className="flex items-center justify-between gap-[16px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Auto-summarize applicant profiles</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Generate a risk summary after applicant data upload.</p>
-                      </div>
-                      <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
-                        <input type="checkbox" className="sr-only peer" checked={autoSummarize} onChange={(e) => {
-                          if (e.target.checked) {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setAutoSummarize(false), 0);
-                          } else {
-                            setAutoSummarize(false);
-                          }
-                        }} />
-                        <span className="absolute inset-0 bg-[#555] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
-                        <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-white rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
-                      </label>
-                    </div>
+                {/* File Behavior */}
+                <div>
+                  <Eyebrow>File Behavior</Eyebrow>
+                  <HairlineDivider />
 
-                    {/* Row B - Ask before using file data */}
-                    <div className="flex items-center justify-between gap-[16px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Ask before using file data</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Ask for confirmation before referencing uploaded data.</p>
-                      </div>
-                      <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
-                        <input type="checkbox" className="sr-only peer" checked={askBeforeUse} onChange={(e) => {
-                          if (e.target.checked) {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setAskBeforeUse(false), 0);
-                          } else {
-                            setAskBeforeUse(false);
-                          }
-                        }} />
-                        <span className="absolute inset-0 bg-[#555] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
-                        <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-white rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
-                      </label>
+                  {/* Auto-summarize applicant profiles */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Auto-summarize applicant profiles</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Generate a risk summary after applicant data upload.</p>
                     </div>
-
-                    {/* Row C - Preferred analysis depth */}
-                    <div className="flex items-center justify-between gap-[16px]">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-white">Preferred risk analysis depth</p>
-                        <p className="font-['Roboto:Regular',sans-serif] text-[0.75rem] text-[#999] mt-[4px]">Controls how detailed credit risk analysis should be.</p>
-                      </div>
-                      <CustomSelect
-                        value={analysisDepth}
-                        onChange={(value) => {
-                          if (value !== 'Balanced') {
-                            setComingSoonMessage('Coming soon');
-                            setTimeout(() => setAnalysisDepth('Balanced'), 0);
-                          } else {
-                            setAnalysisDepth(value);
-                          }
-                        }}
-                        options={['Balanced']}
-                        lockedOptions={['Quick', 'Deep']}
-                        onLockedClick={() => setComingSoonMessage('Coming soon')}
-                      />
-                    </div>
+                    <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
+                      <input type="checkbox" className="sr-only peer" checked={autoSummarize} onChange={(e) => {
+                        if (e.target.checked) {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setAutoSummarize(false), 0);
+                        } else {
+                          setAutoSummarize(false);
+                        }
+                      }} />
+                      <span className="absolute inset-0 bg-[#444] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
+                      <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-[#fffcfe] rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
+                    </label>
                   </div>
+                  <HairlineDivider />
+
+                  {/* Ask before using file data */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Ask before using file data</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Ask for confirmation before referencing uploaded data.</p>
+                    </div>
+                    <label className="relative inline-block w-[44px] h-[24px] cursor-pointer flex-shrink-0">
+                      <input type="checkbox" className="sr-only peer" checked={askBeforeUse} onChange={(e) => {
+                        if (e.target.checked) {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setAskBeforeUse(false), 0);
+                        } else {
+                          setAskBeforeUse(false);
+                        }
+                      }} />
+                      <span className="absolute inset-0 bg-[#444] rounded-full peer-checked:bg-[#7760bd] transition-colors"></span>
+                      <span className="absolute left-[2px] top-[2px] w-[20px] h-[20px] bg-[#fffcfe] rounded-full transition-transform peer-checked:translate-x-[20px]"></span>
+                    </label>
+                  </div>
+                  <HairlineDivider />
+
+                  {/* Preferred risk analysis depth */}
+                  <div className="flex items-center justify-between gap-[16px] py-[16px]">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Preferred risk analysis depth</p>
+                      <p className="font-sans text-[0.75rem] text-[#9e9e9e] mt-[4px]">Controls how detailed credit risk analysis should be.</p>
+                    </div>
+                    <CustomSelect
+                      value={analysisDepth}
+                      onChange={(value) => {
+                        if (value !== 'Balanced') {
+                          setComingSoonMessage('Coming soon');
+                          setTimeout(() => setAnalysisDepth('Balanced'), 0);
+                        } else {
+                          setAnalysisDepth(value);
+                        }
+                      }}
+                      options={['Balanced']}
+                      lockedOptions={['Quick', 'Deep']}
+                      onLockedClick={() => setComingSoonMessage('Coming soon')}
+                    />
+                  </div>
+                  <HairlineDivider />
                 </div>
 
                 {/* Coming Soon toast for Personalization */}
                 {comingSoonMessage && (
-                  <Toast 
+                  <Toast
                     message={comingSoonMessage}
                     onClose={() => setComingSoonMessage(null)}
                   />
                 )}
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Clear Context Confirmation Modal */}
       {showClearContextConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[400px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Clear conversation context?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[24px]">This will reset the current session context.</p>
+            <p className="font-sans font-semibold text-[1.125rem] text-[#fffcfe] mb-[12px]">Clear conversation context?</p>
+            <p className="font-sans text-[0.875rem] text-[#9e9e9e] mb-[24px]">This will reset the current session context.</p>
             <div className="flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowClearContextConfirm(false)}
-                className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
+                className="border border-[rgba(255,255,255,0.08)] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#3a3a3a] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
+                <p className="font-sans text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -996,9 +1051,9 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                   setClearContextSuccess(true);
                   // Clear context logic here
                 }}
-                className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] transition-all"
+                className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8a75d4] transition-all"
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
+                <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
               </button>
             </div>
           </div>
@@ -1009,14 +1064,14 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
       {showClearCacheConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[400px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Clear local cache?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[24px]">This will remove temporary files from this device. Your chats will not be affected.</p>
+            <p className="font-sans font-semibold text-[1.125rem] text-[#fffcfe] mb-[12px]">Clear local cache?</p>
+            <p className="font-sans text-[0.875rem] text-[#9e9e9e] mb-[24px]">This will remove temporary files from this device. Your chats will not be affected.</p>
             <div className="flex justify-end gap-[12px]">
               <button
                 onClick={() => setShowClearCacheConfirm(false)}
-                className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
+                className="border border-[rgba(255,255,255,0.08)] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#3a3a3a] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
+                <p className="font-sans text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -1026,9 +1081,9 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                   setClearCacheSuccess(true);
                   setTimeout(() => window.location.reload(), 1000);
                 }}
-                className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8870cd] transition-all"
+                className="bg-[#7760bd] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#8a75d4] transition-all"
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
+                <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Clear</p>
               </button>
             </div>
           </div>
@@ -1039,15 +1094,15 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
       {showDeleteAllChatsConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
           <div className="bg-[#2c2c2c] rounded-[16px] w-[440px] p-[24px] shadow-[0px_4px_4px_0px_rgba(0,0,0,0.25)]">
-            <p className="font-['Roboto:SemiBold',sans-serif] font-semibold text-[1.125rem] text-white mb-[12px]">Delete all chats?</p>
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#999] mb-[16px]">This action cannot be undone. All your saved conversations will be permanently removed.</p>
+            <p className="font-sans font-semibold text-[1.125rem] text-[#fffcfe] mb-[12px]">Delete all chats?</p>
+            <p className="font-sans text-[0.875rem] text-[#9e9e9e] mb-[16px]">This action cannot be undone. All your saved conversations will be permanently removed.</p>
             <div className="mb-[24px]">
-              <p className="font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#999] mb-[8px]">Type <span className="font-['Roboto:SemiBold',sans-serif] text-white">DELETE</span> to confirm:</p>
+              <p className="font-sans text-[0.8125rem] text-[#9e9e9e] mb-[8px]">Type <span className="font-sans font-semibold text-[#fffcfe]">DELETE</span> to confirm:</p>
               <input
                 type="text"
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="w-full bg-[#1a1a1a] border border-[#555] rounded-[6px] px-[12px] py-[10px] text-white font-['Roboto:Regular',sans-serif] text-[0.875rem] focus:outline-none focus:border-[#dc2626] transition-colors"
+                className="w-full bg-[#2c2c2c] border border-[rgba(255,255,255,0.08)] rounded-[6px] px-[12px] py-[10px] text-[#fffcfe] font-sans text-[0.875rem] focus:outline-none focus:border-[#e05a5a] transition-colors"
                 placeholder="Type DELETE"
               />
             </div>
@@ -1057,9 +1112,9 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                   setShowDeleteAllChatsConfirm(false);
                   setDeleteConfirmText('');
                 }}
-                className="border border-[#555] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#333] transition-all"
+                className="border border-[rgba(255,255,255,0.08)] rounded-[8px] px-[20px] h-[40px] flex items-center justify-center cursor-pointer hover:bg-[#3a3a3a] transition-all"
               >
-                <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#fffcfe]">Cancel</p>
+                <p className="font-sans text-[0.875rem] text-[#fffcfe]">Cancel</p>
               </button>
               <button
                 onClick={() => {
@@ -1076,12 +1131,12 @@ export function SettingsModal({ isOpen, onClose, activeTab, onTabChange, onViewP
                 }}
                 className={`rounded-[8px] px-[20px] h-[40px] flex items-center justify-center transition-all ${
                   deleteConfirmText === 'DELETE'
-                    ? 'bg-[#dc2626] hover:bg-[#ef4444] cursor-pointer'
-                    : 'bg-[#dc2626]/40 cursor-not-allowed'
+                    ? 'bg-[#e05a5a] hover:bg-[#d3564d] cursor-pointer'
+                    : 'bg-[#e05a5a]/40 cursor-not-allowed'
                 }`}
                 disabled={deleteConfirmText !== 'DELETE'}
               >
-                <p className="font-['Roboto:Medium',sans-serif] font-medium text-[0.875rem] text-[#fffcfe]">Delete All</p>
+                <p className="font-sans font-medium text-[0.875rem] text-[#fffcfe]">Delete All</p>
               </button>
             </div>
           </div>

@@ -13,6 +13,11 @@ interface TermsAndPoliciesProps {
   onClose: () => void;
 }
 
+// Hairline divider used between editorial list rows
+function HairlineDivider({ className = '' }: { className?: string }) {
+  return <div className={`h-px bg-white/[0.08] ${className}`} />;
+}
+
 const sections: Section[] = [
   {
     id: 'introduction',
@@ -185,11 +190,11 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
   const scrollToSection = (sectionId: string) => {
     const element = sectionRefs.current[sectionId];
     const container = scrollContainerRef.current;
-    
+
     if (element && container) {
       const elementTop = element.offsetTop;
       const offset = 100; // Offset for fixed header
-      
+
       container.scrollTo({
         top: elementTop - offset,
         behavior: 'smooth',
@@ -235,7 +240,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
       (entries) => {
         // Find the most visible section
         const visibleEntries = entries.filter((entry) => entry.isIntersecting);
-        
+
         if (visibleEntries.length > 0) {
           // Choose the section with the highest intersection ratio
           const mostVisible = visibleEntries.reduce((prev, current) =>
@@ -276,18 +281,18 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
   }, [onClose]);
 
   return (
-    <div ref={scrollContainerRef} className="fixed inset-0 bg-[#1a1a1a] z-[100] overflow-y-auto">
-      {/* Subtle gradient background */}
+    <div ref={scrollContainerRef} className="fixed inset-0 bg-[#141414] z-[100] overflow-y-auto">
+      {/* Subtle gradient background — single champagne-gold accent */}
       <div
-        className="fixed inset-0 opacity-[0.08] pointer-events-none"
+        className="fixed inset-0 opacity-[0.06] pointer-events-none"
         style={{
           background:
-            'radial-gradient(circle at 20% 10%, #FFC107 0%, transparent 40%), radial-gradient(circle at 80% 30%, #E59866 0%, transparent 50%)',
+            'radial-gradient(circle at 20% 10%, #7760bd 0%, transparent 40%), radial-gradient(circle at 80% 30%, #7760bd 0%, transparent 50%)',
         }}
       />
 
       {/* Top bar */}
-      <div className="sticky top-0 z-40 bg-[#1a1a1a]/95 backdrop-blur-md border-b border-[rgba(255,252,254,0.1)]">
+      <div className="sticky top-0 z-40 bg-[#141414]/95 backdrop-blur-md border-b border-[rgba(255,255,255,0.08)]">
         <div className="max-w-[1400px] mx-auto px-[24px] py-[16px] flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-[12px]">
@@ -298,7 +303,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                 src={imgImage39}
               />
             </div>
-            <span className="font-['Roboto:SemiBold',sans-serif] text-[1.5rem] text-[#fffcfe]">
+            <span className="font-sans font-semibold text-[1.5rem] text-[#fffcfe]">
               Makeen
             </span>
           </div>
@@ -306,10 +311,10 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
           {/* Close X button */}
           <button
             onClick={onClose}
-            className="w-[40px] h-[40px] flex items-center justify-center rounded-[8px] hover:bg-[#2c2c2c] transition-colors"
+            className="w-[40px] h-[40px] flex items-center justify-center rounded-[8px] hover:bg-[#3a3a3a] transition-colors"
             aria-label="Close terms and policies"
           >
-            <X className="w-[20px] h-[20px] text-[#999] hover:text-[#fffcfe] transition-colors" />
+            <X className="w-[20px] h-[20px] text-[#9e9e9e] hover:text-[#fffcfe] transition-colors" />
           </button>
         </div>
       </div>
@@ -318,17 +323,17 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
       <div className="max-w-[1400px] mx-auto px-[24px] pt-[60px] pb-[40px]">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-[16px] mb-[12px]">
           <div>
-            <h1 className="font-['Roboto:Bold',sans-serif] text-[42px] md:text-[52px] text-[#fffcfe] mb-[12px] relative inline-block">
+            <h1 className="font-serif font-medium text-[42px] md:text-[52px] text-[#fffcfe] mb-[12px] relative inline-block">
               Terms & Policies
-              <div className="absolute bottom-[-4px] left-0 right-0 h-[3px] bg-gradient-to-r from-[#7760bd] to-[#9580d4] rounded-full" />
+              <div className="absolute bottom-[-4px] left-0 right-0 h-[3px] bg-gradient-to-r from-[#7760bd] to-[#8a75d4] rounded-full" />
             </h1>
-            <p className="font-['Roboto:Regular',sans-serif] text-[1rem] text-[#999] mt-[20px]">
+            <p className="font-sans text-[1rem] text-[#9e9e9e] mt-[20px]">
               Transparent policies designed to keep your data safe and your experience clear.
             </p>
           </div>
           <div className="flex-shrink-0">
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#666]">
-              Last updated: <span className="text-[#999]">February 1, 2026</span>
+            <p className="font-sans text-[0.875rem] text-[#666]">
+              Last updated: <span className="text-[#9e9e9e]">February 1, 2026</span>
             </p>
           </div>
         </div>
@@ -340,10 +345,10 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
           {/* Left: Table of Contents (Desktop - Sticky) */}
           <div className="hidden lg:block">
             <div className="sticky top-[100px]">
-              <div className="bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] p-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                <h2 className="font-['Roboto:SemiBold',sans-serif] text-[1rem] text-[#fffcfe] mb-[16px]">
-                  On this page
-                </h2>
+              <div className="bg-[#2c2c2c] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-[20px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                <p className="text-[#7760bd] text-[11px] font-sans font-semibold uppercase tracking-[0.2em] mb-[16px]">
+                  On This Page
+                </p>
 
                 {/* Search TOC */}
                 <div className="relative mb-[16px] group/search">
@@ -358,12 +363,11 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                     <div className="h-full w-full bg-transparent rounded-[8px]"></div>
                   </div>
 
-                  {/* Blurred glow */}
+                  {/* Blurred glow — single restrained gold, no rainbow */}
                   <div
                     className="absolute inset-[-3px] rounded-[11px] opacity-0 group-focus-within/search:opacity-25 transition-opacity duration-[180ms] pointer-events-none"
                     style={{
-                      background:
-                        'linear-gradient(135deg, #7760bd 0%, #9580d4 25%, #FFC107 50%, #E59866 75%, #7760bd 100%)',
+                      background: '#7760bd',
                       filter: 'blur(18px)',
                     }}
                   />
@@ -375,30 +379,38 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search in this page…"
-                      className="w-full bg-[#2c2c2c] border border-[rgba(255,252,254,0.1)] rounded-[8px] pl-[36px] pr-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
+                      className="w-full bg-[#3a3a3a] border border-[rgba(255,255,255,0.08)] rounded-[8px] pl-[36px] pr-[12px] py-[8px] font-sans text-[0.8125rem] text-[#fffcfe] placeholder:text-[#666] focus:outline-none focus:border-[#7760bd] transition-all relative z-[1]"
                     />
                   </div>
                 </div>
 
-                {/* TOC Links */}
-                <nav className="space-y-[4px]" role="navigation" aria-label="Table of contents">
+                {/* TOC Links — tracked hairline list instead of filled pill buttons */}
+                <nav role="navigation" aria-label="Table of contents">
                   {filteredSections.length > 0 ? (
-                    filteredSections.map((section) => (
-                      <button
-                        key={section.id}
-                        onClick={() => scrollToSection(section.id)}
-                        aria-current={activeSection === section.id ? 'true' : undefined}
-                        className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[0.875rem] transition-all cursor-pointer ${
-                          activeSection === section.id
-                            ? 'bg-[#7760bd]/20 text-[#7760bd] border-l-2 border-[#7760bd]'
-                            : 'text-[#999] hover:bg-[#2c2c2c] hover:text-[#fffcfe]'
-                        }`}
-                      >
-                        {section.title}
-                      </button>
-                    ))
+                    <>
+                      <HairlineDivider />
+                      {filteredSections.map((section, i) => (
+                        <div key={section.id}>
+                          <button
+                            onClick={() => scrollToSection(section.id)}
+                            aria-current={activeSection === section.id ? 'true' : undefined}
+                            className={`w-full text-left flex items-baseline gap-[10px] py-[10px] pl-[10px] -ml-[2px] border-l-2 font-sans text-[0.8125rem] tracking-[0.01em] transition-colors cursor-pointer ${
+                              activeSection === section.id
+                                ? 'border-[#7760bd] text-[#7760bd]'
+                                : 'border-transparent text-[#9e9e9e] hover:text-[#fffcfe]'
+                            }`}
+                          >
+                            <span className="font-tabular text-[10px] text-[#666] flex-shrink-0">
+                              {String(i + 1).padStart(2, '0')}
+                            </span>
+                            <span className="flex-1">{section.title}</span>
+                          </button>
+                          <HairlineDivider />
+                        </div>
+                      ))}
+                    </>
                   ) : (
-                    <p className="px-[12px] py-[8px] font-['Roboto:Regular',sans-serif] text-[0.8125rem] text-[#666] italic">
+                    <p className="px-[12px] py-[8px] font-sans text-[0.8125rem] text-[#666] italic">
                       No matching sections.
                     </p>
                   )}
@@ -411,13 +423,13 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
           <div className="lg:hidden mb-[24px]">
             <button
               onClick={() => setIsTOCOpen(!isTOCOpen)}
-              className="w-full bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] px-[20px] py-[16px] flex items-center justify-between"
+              className="w-full bg-[#2c2c2c] border border-[rgba(255,255,255,0.08)] rounded-[12px] px-[20px] py-[16px] flex items-center justify-between"
             >
-              <span className="font-['Roboto:SemiBold',sans-serif] text-[1rem] text-[#fffcfe]">
+              <span className="font-sans font-semibold text-[1rem] text-[#fffcfe]">
                 On this page
               </span>
               <svg
-                className={`w-[20px] h-[20px] text-[#999] transition-transform ${
+                className={`w-[20px] h-[20px] text-[#9e9e9e] transition-transform ${
                   isTOCOpen ? 'rotate-180' : ''
                 }`}
                 fill="none"
@@ -429,20 +441,27 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
             </button>
 
             {isTOCOpen && (
-              <div className="mt-[8px] bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] p-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
-                <nav className="space-y-[4px]">
-                  {sections.map((section) => (
-                    <button
-                      key={section.id}
-                      onClick={() => scrollToSection(section.id)}
-                      className={`w-full text-left px-[12px] py-[8px] rounded-[6px] font-['Roboto:Regular',sans-serif] text-[0.875rem] transition-all cursor-pointer ${
-                        activeSection === section.id
-                          ? 'bg-[#7760bd]/20 text-[#7760bd] border-l-2 border-[#7760bd]'
-                          : 'text-[#999] hover:bg-[#2c2c2c] hover:text-[#fffcfe]'
-                      }`}
-                    >
-                      {section.title}
-                    </button>
+              <div className="mt-[8px] bg-[#2c2c2c] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-[16px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+                <nav>
+                  <HairlineDivider />
+                  {sections.map((section, i) => (
+                    <div key={section.id}>
+                      <button
+                        onClick={() => scrollToSection(section.id)}
+                        aria-current={activeSection === section.id ? 'true' : undefined}
+                        className={`w-full text-left flex items-baseline gap-[10px] py-[10px] pl-[10px] -ml-[2px] border-l-2 font-sans text-[0.875rem] tracking-[0.01em] transition-colors cursor-pointer ${
+                          activeSection === section.id
+                            ? 'border-[#7760bd] text-[#7760bd]'
+                            : 'border-transparent text-[#9e9e9e] hover:text-[#fffcfe]'
+                        }`}
+                      >
+                        <span className="font-tabular text-[10px] text-[#666] flex-shrink-0">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className="flex-1">{section.title}</span>
+                      </button>
+                      <HairlineDivider />
+                    </div>
                   ))}
                 </nav>
               </div>
@@ -451,7 +470,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
 
           {/* Right: Main document */}
           <div className="lg:col-start-2">
-            <div className="bg-[#1e1e1e] border border-[rgba(255,252,254,0.1)] rounded-[12px] p-[32px] md:p-[48px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
+            <div className="bg-[#2c2c2c] border border-[rgba(255,255,255,0.08)] rounded-[12px] p-[32px] md:p-[48px] shadow-[0_2px_8px_rgba(0,0,0,0.3)]">
               {sections.map((section, index) => (
                 <section
                   key={section.id}
@@ -459,7 +478,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                   ref={(el) => { sectionRefs.current[section.id] = el; }}
                   className={index !== 0 ? 'mt-[48px]' : ''}
                 >
-                  <h2 className="font-['Roboto:SemiBold',sans-serif] text-[1.5rem] text-[#fffcfe] mb-[16px]">
+                  <h2 className="font-sans font-semibold text-[1.5rem] text-[#fffcfe] mb-[16px]">
                     {section.title}
                   </h2>
 
@@ -467,7 +486,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                     {section.content.map((paragraph, pIndex) => (
                       <p
                         key={pIndex}
-                        className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#999] leading-[1.7]"
+                        className="font-sans text-[0.9375rem] text-[#9e9e9e] leading-[1.7]"
                       >
                         {paragraph}
                       </p>
@@ -475,7 +494,7 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
                   </div>
 
                   {index !== sections.length - 1 && (
-                    <div className="mt-[32px] h-[1px] bg-[rgba(255,252,254,0.1)]" />
+                    <div className="mt-[32px] h-[1px] bg-[rgba(255,255,255,0.08)]" />
                   )}
                 </section>
               ))}
@@ -488,18 +507,18 @@ export function TermsAndPolicies({ onClose }: TermsAndPoliciesProps) {
       {showBackToTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-[32px] right-[32px] bg-[#7760bd] hover:bg-[#8870cd] text-white rounded-[12px] px-[20px] py-[12px] flex items-center gap-[8px] shadow-[0_4px_16px_rgba(119,96,189,0.4)] transition-all z-50 group"
+          className="fixed bottom-[32px] right-[32px] bg-[#7760bd] hover:bg-[#8a75d4] text-white rounded-[12px] px-[20px] py-[12px] flex items-center gap-[8px] shadow-[0_4px_16px_rgba(119,96,189,0.35)] transition-all z-50 group"
         >
           <ArrowUp className="w-[18px] h-[18px]" />
-          <span className="font-['Roboto:Medium',sans-serif] text-[0.875rem]">Back to top</span>
+          <span className="font-sans font-medium text-[0.875rem]">Back to top</span>
         </button>
       )}
 
       {/* Footer */}
-      <footer className="border-t border-[rgba(255,252,254,0.1)] bg-[#1a1a1a]">
+      <footer className="border-t border-[rgba(255,255,255,0.08)] bg-[#141414]">
         <div className="max-w-[1400px] mx-auto px-[24px] py-[24px]">
           <div className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-[16px]">
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.875rem] text-[#666]">
+            <p className="font-sans text-[0.875rem] text-[#666]">
               Copyright © 2026 Makeen | All Rights Reserved
             </p>
             <div className="flex items-center gap-[24px]">

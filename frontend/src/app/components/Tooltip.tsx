@@ -128,13 +128,13 @@ export function Tooltip({ text, children, position = 'right', disabled = false }
   const getArrowClasses = () => {
     switch (actualPosition) {
       case 'right':
-        return 'absolute right-full top-1/2 transform -translate-y-1/2 mr-[-1px] w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-[#1a1a1a]';
+        return 'absolute right-full top-1/2 transform -translate-y-1/2 mr-[-1px] w-0 h-0 border-t-[6px] border-b-[6px] border-r-[6px] border-t-transparent border-b-transparent border-r-[#2c2c2c]';
       case 'left':
-        return 'absolute left-full top-1/2 transform -translate-y-1/2 ml-[-1px] w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#1a1a1a]';
+        return 'absolute left-full top-1/2 transform -translate-y-1/2 ml-[-1px] w-0 h-0 border-t-[6px] border-b-[6px] border-l-[6px] border-t-transparent border-b-transparent border-l-[#2c2c2c]';
       case 'top':
-        return 'absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px] w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#1a1a1a]';
+        return 'absolute top-full left-1/2 transform -translate-x-1/2 -mt-[1px] w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#2c2c2c]';
       case 'bottom':
-        return 'absolute bottom-full left-1/2 transform -translate-x-1/2 -mb-[1px] w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-[#1a1a1a]';
+        return 'absolute bottom-full left-1/2 transform -translate-x-1/2 -mb-[1px] w-0 h-0 border-l-[6px] border-r-[6px] border-b-[6px] border-l-transparent border-r-transparent border-b-[#2c2c2c]';
       default:
         return '';
     }
@@ -156,7 +156,7 @@ export function Tooltip({ text, children, position = 'right', disabled = false }
         createPortal(
           <div
             ref={tooltipRef}
-            className="fixed px-[12px] py-[6px] bg-[#1a1a1a] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200"
+            className="fixed px-[12px] py-[6px] bg-[#2c2c2c] text-white text-[0.75rem] rounded-[6px] whitespace-nowrap shadow-lg pointer-events-none transition-opacity duration-200"
             style={{
               left: `${coords.x}px`,
               top: `${coords.y}px`,

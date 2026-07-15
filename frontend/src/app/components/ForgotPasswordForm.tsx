@@ -48,8 +48,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           <Mail className="w-8 h-8 text-[#7760bd]" />
         </div>
         <div className="flex flex-col gap-2">
-          <h2 className="text-3xl font-bold text-white tracking-tight">Check your email</h2>
-          <p className="text-[#999] text-base">
+          <h2 className="font-serif font-medium text-3xl text-white tracking-tight">Check your email</h2>
+          <p className="text-[#9e9e9e] text-base">
             We sent a password reset link to <span className="text-white font-medium">{sentToEmail}</span>.
             Click the link in the email to set a new password.
           </p>
@@ -57,7 +57,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center justify-center gap-2 text-sm font-medium text-[#999] hover:text-white transition-colors group"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-[#9e9e9e] hover:text-white transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           Back to log in
@@ -69,8 +69,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
   return (
     <div className="flex flex-col gap-8 w-full">
       <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold text-white tracking-tight">Forgot password?</h2>
-        <p className="text-[#999] text-base font-normal">No worries, we'll send you reset instructions.</p>
+        <h2 className="font-serif font-medium text-3xl text-white tracking-tight">Forgot password?</h2>
+        <p className="text-[#9e9e9e] text-base font-normal">No worries, we'll send you reset instructions.</p>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
@@ -95,7 +95,7 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center justify-center gap-2 text-sm font-medium text-[#999] hover:text-white transition-colors group"
+          className="flex items-center justify-center gap-2 text-sm font-medium text-[#9e9e9e] hover:text-white transition-colors group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           Back to log in

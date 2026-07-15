@@ -149,6 +149,38 @@ export async function parseFileAPI(token: string, chatId: number): Promise<Parse
   return { rows: data.rows, columns: data.columns, id_columns: data.id_columns, preview_rows: data.preview_rows ?? [] };
 }
 
+export interface UploadModelResult {
+  taskType: 'classification' | 'regression';
+  classLabels: string[] | null;
+  topFeatures: { name: string; importance: number }[] | null;
+}
+
+// "Bring your own model" — mirrors uploadFileAPI's multipart pattern. Hits /uploadModel
+// directly (no /auth prefix — matches whatIfAPI's /whatif below, both mounted at
+// data_processor.py's router root). Requires /auth/parse to have already succeeded
+// for this chat_id server-side.
+export async function uploadModelAPI(
+  token: string,
+  chatId: number,
+  targetColumn: string,
+  taskType: 'classification' | 'regression',
+  file: File
+): Promise<UploadModelResult> {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('chat_id', chatId.toString());
+  formData.append('target_column', targetColumn);
+  formData.append('task_type', taskType);
+  const res = await fetch(`${BASE}/uploadModel`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` }, // no Content-Type — browser handles it
+    body: formData,
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return { taskType: data.task_type, classLabels: data.class_labels ?? null, topFeatures: data.top_features ?? null };
+}
+
 export interface WhatIfResult {
   prediction: string;
   confidence: number | null;

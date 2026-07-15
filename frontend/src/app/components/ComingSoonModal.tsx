@@ -9,8 +9,8 @@ interface ComingSoonModalProps {
   message?: string;
 }
 
-export function ComingSoonModal({ 
-  isOpen, 
+export function ComingSoonModal({
+  isOpen,
   onClose,
   title = "Coming Soon",
   message = "Subscriptions are planned for a future release. Your current plan is Free."
@@ -102,40 +102,36 @@ export function ComingSoonModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby="coming-soon-title"
-          className="relative bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,252,254,0.1)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-full max-w-[440px] z-[201]"
+          className="relative bg-[#2c2c2c] rounded-[16px] border border-[rgba(255,255,255,0.08)] shadow-[0px_8px_32px_0px_rgba(0,0,0,0.6)] w-full max-w-[440px] z-[201]"
         >
           {/* Header */}
-          <div className="border-b border-[rgba(255,252,254,0.1)] px-[24px] py-[20px] flex items-center justify-between">
+          <div className="px-[26px] pt-[24px] pb-[18px] flex items-center justify-between">
             <h2
               id="coming-soon-title"
-              className="font-['Roboto:Bold',sans-serif] font-bold text-[1.25rem] text-[#fffcfe]"
-              style={{ fontVariationSettings: "'wdth' 100" }}
+              className="font-sans font-bold text-[1.25rem] text-[#fffcfe]"
             >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="text-[#999] hover:text-[#fffcfe] transition-colors p-2 -mr-2 rounded-lg hover:bg-[#333] active:bg-[#3a3a3a] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
+              className="text-[#9e9e9e] hover:text-[#fffcfe] transition-colors p-2 -mr-2 rounded-lg hover:bg-[#3a3a3a] active:bg-[#444] focus:outline-none focus:ring-2 focus:ring-[#7760bd] focus:ring-offset-2 focus:ring-offset-[#2c2c2c]"
               aria-label="Close modal"
             >
               <X className="w-[20px] h-[20px]" />
             </button>
           </div>
 
+          <div className="h-px bg-white/[0.08]" />
+
           {/* Content */}
-          <div className="px-[24px] py-[24px]">
-            <p className="font-['Roboto:Regular',sans-serif] text-[0.9375rem] text-[#e0e0e0] leading-[1.6]">
+          <div className="px-[26px] py-[24px]">
+            <p className="font-sans text-[0.9375rem] text-[#d8d6cf] leading-[1.6]">
               {message}
             </p>
           </div>
 
-          {/* Accent gradient line at bottom */}
-          <div 
-            className="h-[2px] rounded-b-[16px]"
-            style={{
-              background: 'linear-gradient(90deg, transparent, #7760bd, transparent)'
-            }}
-          />
+          {/* Accent line at bottom — understated, single hairline of gold */}
+          <div className="h-px bg-[#7760bd]/25 rounded-b-[16px]" />
         </motion.div>
       </motion.div>
     </AnimatePresence>

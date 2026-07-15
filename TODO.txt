@@ -7,6 +7,81 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  SECTION 9 — LOCAL DEV ENVIRONMENT (blocking local testing after redesign) — CLOSED
+  Owner: Lama | Priority: HIGH — nothing local works until these are done
+
+  [x] N. Replace placeholder Supabase creds in frontend/.env.local with real values
+        Currently: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are fake
+        (placeholder.supabase.co) — was only set so the app wouldn't crash during
+        a design QA pass. Get real values from Supabase dashboard → Project
+        Settings → API, then RESTART the Vite dev server (env vars are only
+        read at startup, hot-reload won't pick them up).
+        Symptom if not fixed: login "succeeds" against the backend but then
+        supabase.auth.setSession() fails with ERR_NAME_NOT_RESOLVED on
+        placeholder.supabase.co/auth/v1/user, leaving no active session —
+        which is also why sendMessage() then throws "No active session or chat".
+
+  [x] O. FIXED: 400 Bad Request on sample-dataset CSV downloads was a missing-file
+        problem, not a permissions problem. The "sample-datasets" bucket was public and
+        working fine, but only contained 3 unrelated leftover files (stroke data, insurance,
+        mall customers) — Chat.tsx's 3 fintech-themed sample cards (German Credit Risk /
+        Loan Default Prediction / Credit Card Fraud Detection) hardcode URLs for
+        german_credit.csv / loan_default.csv / credit_fraud.csv, which had never been
+        uploaded. Generated 300-row synthetic datasets matching each card's exact declared
+        schema (columns, target balance) and uploaded them to the bucket at those exact
+        filenames — verified all 3 public URLs now return 200 with correct headers, and the
+        full "Use this dataset" → Send flow works end-to-end. Frontend also now logs the
+        failing URL + status to console on this kind of failure instead of failing silently
+        (Chat.tsx sample-dataset "Use this dataset" handler).
+
+  [x] P. Re-verify chat send end-to-end once N is fixed
+        Confirm "No active session or chat" is gone and a real message round-trips
+        through /processQuestion with a valid session.
+
+  [x] Q. backend/.env now has real SUPABASE_URL/SUPABASE_SERVICE_KEY/OPENAI_API_KEY
+        (added this session) — confirm these are also set in Railway's env vars
+        for the deployed backend, not just locally.
+
+  [x] R. CORS allow_origins in backend/app.py now includes localhost:5173/5174/5175
+        as a local-dev convenience — if port 5173 stays occupied by something else
+        long-term, consider finding/closing whatever's holding it instead of
+        permanently widening the allow-list.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  SECTION 10 — BRING YOUR OWN MODEL (backend, this session)
+  Owner: Lama | Priority: MED — one manual DB step needed for full effect
+
+  [x] S. DONE: Manual Supabase schema change applied — added nullable columns to the
+        "File" table: model_path (text), is_user_model (boolean default false),
+        model_target_column (text), model_task_type (text). Verified live via the
+        service-role client — columns exist, is_user_model correctly defaults to false
+        on existing rows. The fail-loud "please re-upload your model" restart-recovery
+        guard in /processQuestion (_check_byom_cache_miss in routers/data_processor.py)
+        is now fully active, not just a no-op fallback.
+  [x] New POST /uploadModel endpoint — pickle upload, restricted unpickling via
+        core/safe_unpickle.py, KernelSHAP explain path for non-tree models.
+        Existing self-trained RandomForest flow is completely unaffected.
+  [x] Unit + integration tests — test_safe_unpickle.py, test_model_adapter_pipeline.py,
+        test_upload_model_endpoint.py (118/118 backend tests passing).
+
+  [x] T. DONE: Frontend choice — "Train a model for me" vs "Upload my own pretrained
+        model", in the Chat.tsx upload modal. Toggle defaults to the existing self-trained
+        flow (verified byte-identical: lands straight in chat, zero extra steps, zero
+        console errors). Picking BYOM adds a new in-modal step after the CSV parses —
+        target-column picker (chips, ID columns excluded), classification/regression
+        toggle, and a separate .pkl/.pickle dropzone (20MB cap) — that POSTs to
+        /uploadModel via the new uploadModelAPI in chatApi.ts. Verified live end-to-end:
+        uploaded a real fitted LogisticRegression against a real CSV, got
+        "Model uploaded and ready!", then asked a question and got a real answer +
+        SHAP explanation driven by the uploaded model, not a fresh RandomForest.
+        "Use normal flow instead" on that step bails out into the same chat view the
+        default path lands in. Known accepted limitation (not fixed here, pre-existing
+        backend gap): if a later question's LLM-inferred target column doesn't match what
+        was picked at upload time, the backend will silently retrain a fresh RandomForest.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 
@@ -176,3 +251,4 @@
   [x] Error display — frontend now shows backend detail message instead of generic "Something went wrong"
   [x] XAI card persistence — SHAP data saved to Response.explanation column in DB; restored after logout/login
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Reem in git

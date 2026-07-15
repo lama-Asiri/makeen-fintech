@@ -18,7 +18,7 @@ export const LoginInput = forwardRef<HTMLInputElement, LoginInputProps>(
         {/* Label */}
         <label
           className={`text-sm font-medium transition-colors duration-200 ${
-            error ? 'text-red-400' : isFocused ? 'text-[#7760bd]' : 'text-[#999]'
+            error ? 'text-red-400' : isFocused ? 'text-[#7760bd]' : 'text-[#9e9e9e]'
           }`}
         >
           {label}
@@ -31,7 +31,7 @@ export const LoginInput = forwardRef<HTMLInputElement, LoginInputProps>(
               error
                 ? 'border-red-500/50 bg-red-500/5 shadow-[0_0_10px_rgba(239,68,68,0.1)]'
                 : isFocused
-                ? 'border-[#7760bd]/50 bg-[#7760bd]/5 shadow-[0_0_15px_rgba(119,96,189,0.15)]'
+                ? 'border-[#7760bd]/50 bg-[#7760bd]/5 shadow-[0_0_15px_rgba(119, 96, 189,0.15)]'
                 : 'border-white/10 bg-white/5 group-hover:border-white/20'
             }`}
           >

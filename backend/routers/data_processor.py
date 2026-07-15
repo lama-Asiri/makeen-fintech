@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Any
 import pandas as pd
 import json
 import numpy as np
@@ -14,11 +15,13 @@ from sklearn.metrics import accuracy_score, r2_score
 from lime.lime_tabular import LimeTabularExplainer
 from core.openai_client import openai_client
 from core.supabase_client import supabase
+from core.safe_unpickle import safe_load_model, validate_uploaded_model
 from routers.auth import cleaned_data_cache, trained_models, prediction_cache, chat_history_cache, _get_user_id, _clean_dataframe
 
 router = APIRouter()
 
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+MODEL_UPLOAD_MAX_BYTES = 20 * 1024 * 1024  # 20 MB
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Training logic
@@ -28,9 +31,13 @@ class TrainRequest(BaseModel):
     target_column: str  # inferred by classifier or sent explicitly by frontend
 
 
-def _run_train(chat_id: int, target_column: str) -> dict:
+def _prepare_training_data(chat_id: int, target_column: str) -> dict:
     """
-    Called by /train endpoint and by /processQuestion when the target changes.
+    Steps 1-5 of the training pipeline: build X/y, encode features, encode target,
+    80/20 split. Shared by `_run_train` (self-trained RandomForest) and
+    `_run_model_adapter` (user-uploaded model) so both paths encode data identically —
+    that identical-encoding guarantee is the whole premise of "same schema, same
+    explanation pipeline" for bring-your-own-model.
     """
     cache   = cleaned_data_cache[chat_id]
     df      = cache["df"].copy()
@@ -65,7 +72,7 @@ def _run_train(chat_id: int, target_column: str) -> dict:
 
     # 2. encode categorical features in X
     encoders = {}
-    for col in X.select_dtypes(include=["object", "str"]).columns:
+    for col in X.select_dtypes(include=["object"]).columns:
         n_unique = X[col].nunique()
         if n_unique == 2:
             le = LabelEncoder()
@@ -101,6 +108,26 @@ def _run_train(chat_id: int, target_column: str) -> dict:
         X, y_encoded, test_size=0.2, random_state=42
     )
 
+    return {
+        "X": X, "y_encoded": y_encoded,
+        "X_train": X_train, "X_test": X_test, "y_train": y_train, "y_test": y_test,
+        "feature_names": feature_names, "feature_names_original": feature_names_orig,
+        "raw_feature_defaults": raw_feature_defaults,
+        "task_type": task_type, "class_labels": class_labels, "le_target": le_target,
+        "encoders": encoders,
+    }
+
+
+def _run_train(chat_id: int, target_column: str) -> dict:
+    """
+    Called by /train endpoint and by /processQuestion when the target changes.
+    Fits the app's own RandomForest. Unchanged behavior from before the
+    _prepare_training_data extraction — see test_ml_pipeline.py for the regression guard.
+    """
+    prep = _prepare_training_data(chat_id, target_column)
+    X, X_train, X_test, y_train, y_test = prep["X"], prep["X_train"], prep["X_test"], prep["y_train"], prep["y_test"]
+    task_type, feature_names = prep["task_type"], prep["feature_names"]
+
     # 6. train RandomForest
     if task_type == "classification":
         model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1, max_depth=15)
@@ -124,13 +151,14 @@ def _run_train(chat_id: int, target_column: str) -> dict:
         "X":                      X,        # all rows encoded — for SHAP batch/analysis
         "X_train":                X_train,  # training split
         "feature_names":          feature_names,
-        "feature_names_original": feature_names_orig,
-        "raw_feature_defaults":   raw_feature_defaults,
+        "feature_names_original": prep["feature_names_original"],
+        "raw_feature_defaults":   prep["raw_feature_defaults"],
         "target_column":          target_column,
         "task_type":              task_type,
-        "class_labels":           class_labels,
-        "le_target":              le_target,
-        "encoders":               encoders,
+        "class_labels":           prep["class_labels"],
+        "le_target":              prep["le_target"],
+        "encoders":               prep["encoders"],
+        "is_user_provided":       False,
     }
 
     metric_key = "accuracy" if task_type == "classification" else "r2_score"
@@ -139,6 +167,90 @@ def _run_train(chat_id: int, target_column: str) -> dict:
         "top_features": top_features,
         metric_key:     round(score, 4),
     }
+
+
+def _run_model_adapter(chat_id: int, target_column: str, task_type: str, uploaded_model) -> dict:
+    """
+    "Bring your own model": use a user-uploaded pretrained model instead of fitting a
+    new RandomForest, but reuse the exact same data-prep/encoding as _run_train so the
+    rest of the explanation pipeline (SHAP/LIME/predict) needs only minimal branching.
+
+    Does NOT re-fit a LabelEncoder for the target — class_labels comes directly from
+    the model's own `model.classes_`, since that's the model's actual, authoritative
+    label space. There's no guarantee a freshly-fit encoder's ordering would match it.
+    """
+    prep = _prepare_training_data(chat_id, target_column)
+    X, X_train, feature_names = prep["X"], prep["X_train"], prep["feature_names"]
+
+    # Smoke-test against one real row from this dataset — validates the model
+    # actually accepts this feature schema before we trust it for explanations.
+    validate_uploaded_model(uploaded_model, X.iloc[[0]])
+
+    class_labels = None
+    if task_type == "classification":
+        if not hasattr(uploaded_model, "classes_"):
+            raise HTTPException(
+                status_code=400,
+                detail="Model declared as 'classification' but has no `classes_` attribute "
+                       "— is this actually a fitted classifier?",
+            )
+        class_labels = [str(c) for c in uploaded_model.classes_]
+
+    top_features = None
+    if hasattr(uploaded_model, "feature_importances_"):
+        top_features = sorted(
+            zip(feature_names, uploaded_model.feature_importances_),
+            key=lambda x: x[1],
+            reverse=True,
+        )[:5]
+
+    trained_models[chat_id] = {
+        "model":                  uploaded_model,
+        "X":                      X,
+        "X_train":                X_train,
+        "feature_names":          feature_names,
+        "feature_names_original": prep["feature_names_original"],
+        "raw_feature_defaults":   prep["raw_feature_defaults"],
+        "target_column":          target_column,
+        "task_type":              task_type,
+        "class_labels":           class_labels,
+        "le_target":              None,  # no encoder — model.classes_ is authoritative
+        "encoders":               prep["encoders"],
+        "is_user_provided":       True,
+    }
+
+    return {"task_type": task_type, "top_features": top_features, "class_labels": class_labels}
+
+
+def _check_byom_cache_miss(chat_id: int, model_cache: dict | None) -> None:
+    """
+    If this chat's trained_models entry is missing (e.g. after a server restart) and the
+    File row says its model was user-uploaded, fail loudly instead of silently falling
+    back into _run_train — that would silently swap in a fresh RandomForest and produce
+    confidently-wrong explanations with no indication anything changed.
+
+    Graceful no-op if the model_path/is_user_model columns don't exist yet in Supabase —
+    that's a manual, out-of-repo schema addition (see TODO.txt); until it's done we can't
+    tell BYOM chats apart on a cache miss, so this just preserves prior (self-trained-only)
+    behavior rather than hard-erroring on a schema that may not exist.
+    """
+    if model_cache is not None:
+        return
+    try:
+        file_row = (
+            supabase.table("File")
+            .select("is_user_model")
+            .eq("CHAT_ID", chat_id)
+            .single()
+            .execute()
+        )
+    except Exception:
+        return
+    if (file_row.data or {}).get("is_user_model"):
+        raise HTTPException(
+            status_code=400,
+            detail="Your uploaded model was lost after a server restart — please re-upload it before asking prediction/analysis questions.",
+        )
 
 
 @router.post("/train")
@@ -181,6 +293,104 @@ async def train_model(body: TrainRequest, authorization: str = Header(None)):
         "task_type":    result["task_type"],
         metric_key:     result[metric_key],
         "top_features": [{"name": n, "importance": round(i, 4)} for n, i in result["top_features"]],
+    }
+
+
+@router.post("/uploadModel")
+async def upload_model(
+    chat_id: int = Form(...),
+    target_column: str = Form(...),
+    task_type: str = Form(...),
+    file: UploadFile = File(...),
+    authorization: str = Header(None),
+):
+    """
+    "Bring your own model": upload a pretrained pickle instead of training the app's
+    own RandomForest. Purely additive — the /train flow above is completely unaffected
+    for users who never call this.
+    """
+    user_id = _get_user_id(authorization)
+
+    if task_type not in ("classification", "regression"):
+        raise HTTPException(status_code=400, detail="task_type must be 'classification' or 'regression'")
+
+    # 1. verify chat ownership
+    try:
+        chat_check = (
+            supabase.table("Chat")
+            .select("CHAT_ID")
+            .eq("CHAT_ID", chat_id)
+            .eq("USER_ID", user_id)
+            .single()
+            .execute()
+        )
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
+
+    # 2. check /parse was run
+    if chat_id not in cleaned_data_cache:
+        raise HTTPException(status_code=400, detail="Must call /parse first to clean the file")
+
+    # 3. filename + size checks — .pkl/.pickle only for MVP, no .joblib
+    filename = os.path.basename(file.filename or "")
+    if not filename.lower().endswith((".pkl", ".pickle")):
+        raise HTTPException(status_code=400, detail="Only .pkl or .pickle files are allowed")
+
+    file_bytes = await file.read()
+    if len(file_bytes) > MODEL_UPLOAD_MAX_BYTES:
+        raise HTTPException(status_code=400, detail="Model file exceeds 20 MB limit")
+
+    # 4. safely unpickle — restricted allowlist + subprocess timeout, see core/safe_unpickle.py
+    try:
+        uploaded_model = safe_load_model(file_bytes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 5. validate against this chat's data + wire into the same trained_models cache
+    #    the rest of the explanation pipeline (SHAP/LIME/predict) already reads from
+    try:
+        result = _run_model_adapter(chat_id, target_column, task_type, uploaded_model)
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 6. persist raw bytes so the model survives a server restart (in-memory cache only)
+    model_path = f"{user_id}/models/{chat_id}.pkl"
+    try:
+        supabase.storage.from_("user-files").upload(
+            model_path, file_bytes, file_options={"upsert": "true"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Model upload failed: {e}")
+
+    # 7. record it against the File row so a post-restart cache miss can be detected
+    #    (see /processQuestion's retrain guard). Requires manual columns added in Supabase
+    #    — model_path/is_user_model/model_target_column/model_task_type — see TODO.txt.
+    #    Non-fatal if those columns don't exist yet: the model is already live for this
+    #    server process either way, this just skips the restart-recovery message.
+    try:
+        supabase.table("File").update({
+            "model_path": model_path,
+            "is_user_model": True,
+            "model_target_column": target_column,
+            "model_task_type": task_type,
+        }).eq("CHAT_ID", chat_id).execute()
+    except Exception:
+        pass
+
+    return {
+        "message":      "Model uploaded and ready",
+        "task_type":    result["task_type"],
+        "class_labels": result["class_labels"],
+        "top_features": (
+            [{"name": n, "importance": round(float(i), 4)} for n, i in result["top_features"]]
+            if result["top_features"] else None
+        ),
     }
 
 
@@ -269,10 +479,13 @@ def predict_local_single(
     predicted_class_index = None
 
     if task_type == "classification":
-        pred_label            = le_target.inverse_transform([pred_encoded])[0]
-        probas                = model.predict_proba(row_df)[0]
+        # BYOM models have no le_target (model.classes_ is already the raw label space,
+        # unlike the self-trained path where classes are LabelEncoder-encoded ints).
+        pred_label            = pred_encoded if le_target is None else le_target.inverse_transform([pred_encoded])[0]
         predicted_class_index = int(list(model.classes_).index(pred_encoded))
-        confidence            = round(float(probas[predicted_class_index]) * 100, 1)
+        if hasattr(model, "predict_proba"):
+            probas     = model.predict_proba(row_df)[0]
+            confidence = round(float(probas[predicted_class_index]) * 100, 1)
     else:
         pred_label = round(float(pred_encoded), 4)
 
@@ -310,12 +523,19 @@ def predict_local_batch(chat_id: int) -> dict:
     pred_encoded_arr = model.predict(X)
 
     if task_type == "classification":
-        pred_labels             = le_target.inverse_transform(pred_encoded_arr).tolist()
-        probas                  = model.predict_proba(X)
+        # BYOM models have no le_target — model.predict() already returns raw labels.
+        pred_labels = (
+            pred_encoded_arr.tolist() if le_target is None
+            else le_target.inverse_transform(pred_encoded_arr).tolist()
+        )
         classes                 = list(model.classes_)
-        confidences             = [round(float(probas[i, classes.index(pred_encoded_arr[i])]) * 100, 1)
-                                   for i in range(len(pred_encoded_arr))]
         predicted_class_indices = [int(classes.index(p)) for p in pred_encoded_arr]
+        if hasattr(model, "predict_proba"):
+            probas      = model.predict_proba(X)
+            confidences = [round(float(probas[i, predicted_class_indices[i]]) * 100, 1)
+                           for i in range(len(pred_encoded_arr))]
+        else:
+            confidences = [None] * len(pred_encoded_arr)
     else:
         pred_labels             = [round(float(p), 4) for p in pred_encoded_arr]
         confidences             = [None] * len(pred_encoded_arr)
@@ -347,6 +567,62 @@ def predict_local_batch(chat_id: int) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 # SHAP explanation logic
 # ─────────────────────────────────────────────────────────────────────────────
+# KernelExplainer (used for user-uploaded models — model-agnostic, unlike TreeExplainer)
+# is dramatically more expensive: it calls the model's predict function on the order of
+# thousands of perturbed coalitions PER explained row. Running it over the same 500-row
+# samples used for TreeExplainer would mean roughly 500 * ~2000 = ~1M model invocations
+# per request — a multi-minute-to-never HTTP response. These caps keep it demo-fast.
+KERNEL_BACKGROUND_CAP = 50
+KERNEL_SAMPLE_CAP = 30
+KERNEL_NSAMPLES = 100
+TREE_SAMPLE_CAP = 500
+
+
+def _is_tree_based_model(model: Any) -> bool:
+    """Best-effort detection for tree-based scikit-learn style models."""
+    if model is None:
+        return False
+
+    if hasattr(model, "estimators_") or hasattr(model, "feature_importances_"):
+        return True
+
+    class_name = type(model).__name__.lower()
+    return any(token in class_name for token in ["forest", "tree", "boost", "xgboost", "extratrees"])
+
+
+def get_shap_explainer(model_data: dict):
+    """
+    Returns (explainer, sample_cap) with a tree-first strategy for uploaded tree-based
+    models and KernelSHAP as a fallback for non-tree or unsupported models.
+    """
+    model = model_data["model"]
+
+    if model_data.get("is_user_provided"):
+        if _is_tree_based_model(model):
+            try:
+                return shap.TreeExplainer(model), TREE_SAMPLE_CAP
+            except Exception:
+                pass
+
+        predict_fn = (
+            model.predict_proba
+            if (model_data["task_type"] == "classification" and hasattr(model, "predict_proba"))
+            else model.predict
+        )
+        X_train = model_data["X_train"]
+        background = X_train.sample(min(KERNEL_BACKGROUND_CAP, len(X_train)), random_state=42)
+        return shap.KernelExplainer(predict_fn, background), KERNEL_SAMPLE_CAP
+
+    return shap.TreeExplainer(model), TREE_SAMPLE_CAP
+
+
+def _shap_values_for(explainer, data) -> Any:
+    """shap_values() call, passing nsamples only for the (slow) Kernel path."""
+    if isinstance(explainer, shap.KernelExplainer):
+        return explainer.shap_values(data, nsamples=KERNEL_NSAMPLES)
+    return explainer.shap_values(data)
+
+
 def _shap_vals_for_row(shap_values, row_idx: int, class_idx, task_type: str) -> np.ndarray:
     """
     Extract the SHAP value vector for one row.
@@ -376,8 +652,8 @@ def explain_shap_local_single(chat_id: int) -> list:
     model         = model_data["model"]
     feature_names = model_data["feature_names"]
 
-    explainer   = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(row_df)
+    explainer, _ = get_shap_explainer(model_data)
+    shap_values  = _shap_values_for(explainer, row_df)
 
     vals  = _shap_vals_for_row(shap_values, row_idx=0, class_idx=pred_idx, task_type=task_type)
     pairs = sorted(zip(feature_names, vals), key=lambda x: abs(x[1]), reverse=True)[:8]
@@ -387,28 +663,37 @@ def explain_shap_local_single(chat_id: int) -> list:
 def explain_shap_local_batch(chat_id: int, batch_result: dict) -> dict:
     model_data    = trained_models[chat_id]
     X             = model_data["X"]
-    model         = model_data["model"]
     feature_names = model_data["feature_names"]
     task_type     = model_data["task_type"]
     results       = batch_result["results"]
     class_indices = batch_result["predicted_class_indices"]
 
-    explainer   = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(X)   # computed once for all rows
+    # TreeExplainer keeps its original unbounded behavior (all rows) — no regression
+    # for the self-trained path. KernelExplainer is only ever capped for BYOM models;
+    # uncapped Kernel over an arbitrary row count would be minutes-to-never per request.
+    is_byom               = model_data.get("is_user_provided", False)
+    explainer, sample_cap = get_shap_explainer(model_data)
+    n_explain             = min(sample_cap, len(X)) if is_byom else len(X)
+    shap_values           = _shap_values_for(explainer, X.iloc[:n_explain])   # computed once, capped for BYOM
 
-    # per-row: top 3 factors
+    # per-row: top 3 factors (rows beyond the BYOM cap keep their prediction, no SHAP breakdown)
     per_row = []
     for i, row_result in enumerate(results):
+        base = {k: v for k, v in row_result.items() if k != "predicted_class_index"}
+        if i >= n_explain:
+            per_row.append(base)
+            continue
         vals  = _shap_vals_for_row(shap_values, row_idx=i, class_idx=class_indices[i], task_type=task_type)
         pairs = sorted(zip(feature_names, vals), key=lambda x: abs(x[1]), reverse=True)[:3]
         per_row.append({
-            **{k: v for k, v in row_result.items() if k != "predicted_class_index"},
+            **base,
             "shap_values": [{"feature": f, "shap_value": round(float(v), 4)} for f, v in pairs],
         })
 
-    # aggregate: mean(abs(SHAP)) across all rows for the overall summary
-    if task_type == "classification" and class_indices[0] is not None:
-        dominant_class = Counter(class_indices).most_common(1)[0][0]
+    # aggregate: mean(abs(SHAP)) across explained rows for the overall summary
+    explained_class_indices = class_indices[:n_explain]
+    if task_type == "classification" and explained_class_indices[0] is not None:
+        dominant_class = Counter(explained_class_indices).most_common(1)[0][0]
         if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
             all_vals = shap_values[:, :, dominant_class]
         else:
@@ -433,14 +718,13 @@ def explain_shap_global(chat_id: int) -> list:
     """
     model_data    = trained_models[chat_id]
     X             = model_data["X"]
-    model         = model_data["model"]
     feature_names = model_data["feature_names"]
     task_type     = model_data["task_type"]
     class_labels  = model_data["class_labels"]
 
-    sample      = X.sample(min(500, len(X)), random_state=42)
-    explainer   = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(sample)
+    explainer, sample_cap = get_shap_explainer(model_data)
+    sample      = X.sample(min(sample_cap, len(X)), random_state=42)
+    shap_values = _shap_values_for(explainer, sample)
 
     if task_type == "classification":
         # use class index 1 (positive class) for signed means — same convention as directional
@@ -466,14 +750,13 @@ def explain_shap_directional(chat_id: int, direction: str) -> list:
     """
     model_data   = trained_models[chat_id]
     X            = model_data["X"]
-    model        = model_data["model"]
     feature_names = model_data["feature_names"]
     task_type    = model_data["task_type"]
     class_labels = model_data["class_labels"]
 
-    sample      = X.sample(min(500, len(X)), random_state=42)
-    explainer   = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(sample)
+    explainer, sample_cap = get_shap_explainer(model_data)
+    sample      = X.sample(min(sample_cap, len(X)), random_state=42)
+    shap_values = _shap_values_for(explainer, sample)
 
     if task_type == "classification":
         # class index 1 = the "positive" class after LabelEncoder sorts alphabetically
@@ -500,7 +783,6 @@ def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
     """mean(abs(SHAP)) for one specific predicted class."""
     model_data    = trained_models[chat_id]
     X             = model_data["X"]
-    model         = model_data["model"]
     feature_names = model_data["feature_names"]
     task_type     = model_data["task_type"]
     class_labels  = model_data["class_labels"]
@@ -518,9 +800,9 @@ def explain_shap_class_specific(chat_id: int, target_class: str) -> list:
 
     class_idx = list(class_labels).index(target_class)
 
-    sample      = X.sample(min(500, len(X)), random_state=42)
-    explainer   = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(sample)
+    explainer, sample_cap = get_shap_explainer(model_data)
+    sample      = X.sample(min(sample_cap, len(X)), random_state=42)
+    shap_values = _shap_values_for(explainer, sample)
 
     if isinstance(shap_values, np.ndarray) and shap_values.ndim == 3:
         vals = shap_values[:, :, class_idx]
@@ -1165,6 +1447,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         # retrain if target changed or no model exists yet
         cached_target = (model_cache or {}).get("target_column")
         if cached_target != inferred_target:
+            _check_byom_cache_miss(chat_id, model_cache)
             if inferred_target not in df.columns:
                 raise HTTPException(
                     status_code=400,
@@ -1229,6 +1512,7 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
         # retrain if target changed or no model exists yet
         cached_target = (model_cache or {}).get("target_column")
         if cached_target != inferred_target:
+            _check_byom_cache_miss(chat_id, model_cache)
             if inferred_target not in df.columns:
                 raise HTTPException(
                     status_code=400,
@@ -1396,12 +1680,19 @@ async def whatif(body: WhatIfRequest, authorization: str = Header(None)):
 
 
 SYSTEM_PROMPT = """
-You are an AI assistant inside a program called Makeen.
+You are an AI assistant inside a financial system called Makeen.
 
 Your role:
-Explain results to non-technical users in a clear, direct, and natural way.
+Explain financial decisions (such as credit approval, fraud alerts, or risk outcomes) to non-technical users in a clear, direct, and responsible way.
+
+Your explanations must:
+
+- Be easy to understand for customers, analysts, and compliance teams
+- Clearly justify the decision in a transparent and accountable manner
+- MUST Support regulatory expectations (GDPR transparency, SAMA governance, EU AI Act explainability)
 
 You receive structured input including:
+
 - result_type
 - prediction_mode or analysis_mode
 - prediction, confidence
@@ -1411,11 +1702,19 @@ You receive structured input including:
 - target_column, target_class
 
 Hard rules (never break):
+
 - Do NOT use technical terms (no SHAP, LIME, model, algorithm, etc.)
-- Do NOT explain how the system works
+- Do NOT explain how the system works internally
 - Do NOT use uncertainty words
 - Do NOT use bullet points
+- Do NOT invent information
 - 60–120 words only
+
+Tone and intent:
+
+- Be clear, factual, and professional
+- Focus on explaining the decision and its main drivers
+- Ensure the explanation can be used for review, audit, or customer communication
 
 ---
 
@@ -1430,7 +1729,7 @@ question: "How many customers churned?"
 raw_result: "127"
 
 Output example:
-127 customers have churned so far, which represents a significant portion of the customer base. This indicates that a noticeable number of users are leaving, which may require attention to retention strategies. Overall, churn is at a level that should not be ignored.
+127 customers have churned so far, which represents a notable portion of the customer base. This level of churn indicates a clear pattern that requires attention, as it may impact business stability and customer retention. Overall, the result highlights an area that should be monitored and addressed.
 
 ---
 
@@ -1440,18 +1739,18 @@ Input example:
 prediction: "Approved"
 confidence: 87
 shap_values: [
-  {"feature": "credit_score", "shap_value": 0.42},
-  {"feature": "income", "shap_value": 0.28},
-  {"feature": "debt_ratio", "shap_value": -0.15}
+{"feature": "credit_score", "shap_value": 0.42},
+{"feature": "income", "shap_value": 0.28},
+{"feature": "debt_ratio", "shap_value": -0.15}
 ]
 lime_values: [
-  {"feature": "credit_score > 700", "impact": 0.35},
-  {"feature": "income high", "impact": 0.20},
-  {"feature": "debt_ratio high", "impact": -0.10}
+{"feature": "credit_score > 700", "impact": 0.35},
+{"feature": "income high", "impact": 0.20},
+{"feature": "debt_ratio high", "impact": -0.10}
 ]
 
 Output example:
-This application is approved with 87% confidence. The strongest reason is a high credit score, which strongly supports the decision, followed by a solid income level that further strengthens approval. A higher debt level works slightly against the outcome, but not enough to change the result. Overall, strong financial stability clearly outweighs the risks, leading to approval.
+This application is approved with 87% confidence. The main reason is a strong credit profile, supported by a solid income level that indicates good repayment ability. A higher debt level slightly weakens the case but does not outweigh the strengths. Overall, the decision reflects a stable financial position, making the approval justified and aligned with standard risk considerations.
 
 ---
 
@@ -1460,17 +1759,17 @@ This application is approved with 87% confidence. The strongest reason is a high
 Input example:
 summary: {"total": 500, "Churn": 187, "No Churn": 313}
 shap_aggregate: [
-  {"feature": "monthly_charges", "shap_value": 0.38},
-  {"feature": "contract_type", "shap_value": 0.31},
-  {"feature": "tenure", "shap_value": -0.24}
+{"feature": "monthly_charges", "shap_value": 0.38},
+{"feature": "contract_type", "shap_value": 0.31},
+{"feature": "tenure", "shap_value": -0.24}
 ]
 results: [
-  {"id_value": "C001", "prediction": "Churn", "confidence": 91.2},
-  {"id_value": "C002", "prediction": "No Churn", "confidence": 84.5}
+{"id_value": "C001", "prediction": "Churn", "confidence": 91.2},
+{"id_value": "C002", "prediction": "No Churn", "confidence": 84.5}
 ]
 
 Output example:
-187 out of 500 customers are expected to churn, while 313 are likely to stay. High monthly charges are the biggest reason customers leave, with short-term contracts also increasing the risk. On the other hand, longer customer history helps keep customers from leaving. For example, customer C001 is very likely to churn due to high charges, while C002 is expected to stay because of longer engagement. Overall, pricing and contract length play the biggest role in customer retention.
+187 out of 500 customers are expected to leave, while 313 are likely to stay. Higher monthly costs are the main reason behind customers leaving, with short-term commitments increasing this risk. Longer relationships help customers remain stable. For example, customer C001 is very likely to leave due to high costs, while C002 is expected to stay because of longer engagement. Overall, pricing and commitment level strongly influence customer outcomes.
 
 ---
 
@@ -1479,13 +1778,13 @@ Output example:
 Input example:
 target_column: "loan_status"
 shap_values: [
-  {"feature": "credit_score", "shap_value": 0.42},
-  {"feature": "income", "shap_value": 0.31},
-  {"feature": "debt_ratio", "shap_value": 0.21}
+{"feature": "credit_score", "shap_value": 0.42},
+{"feature": "income", "shap_value": 0.31},
+{"feature": "debt_ratio", "shap_value": 0.21}
 ]
 
 Output example:
-Credit score is the most important factor influencing loan approval, standing out clearly above all others. Income also plays a major role, helping determine whether an applicant is financially capable. Debt level is another key factor, affecting decisions depending on how high it is. Overall, financial strength and risk indicators are the main drivers behind approval decisions.
+Credit strength is the most important factor influencing loan decisions, standing out clearly above others. Income also plays a major role in determining financial capability, while debt level affects the perceived risk. Overall, financial stability and risk exposure are the key drivers behind approval decisions.
 
 ---
 
@@ -1496,12 +1795,12 @@ target_column: "churn"
 analysis_mode: "directional"
 direction: "decrease"
 shap_values: [
-  {"feature": "tenure", "shap_value": -0.24},
-  {"feature": "contract_type", "shap_value": -0.19}
+{"feature": "tenure", "shap_value": -0.24},
+{"feature": "contract_type", "shap_value": -0.19}
 ]
 
 Output example:
-Longer customer tenure is the strongest factor that keeps customers from leaving, as people who stay longer tend to remain loyal. Having a long-term contract also reduces the chances of churn by creating stability. These factors together make customers much more likely to stay. Overall, long-term commitment is the key to reducing churn.
+Longer customer relationships are the strongest factor in reducing churn, as customers who stay longer tend to remain loyal. Long-term commitments also provide stability and lower the likelihood of leaving. Together, these factors support retention. Overall, sustained engagement is key to reducing customer loss.
 
 ---
 
@@ -1511,22 +1810,21 @@ Input example:
 target_column: "loan_status"
 target_class: "Rejected"
 shap_values: [
-  {"feature": "debt_ratio", "shap_value": 0.45},
-  {"feature": "credit_score", "shap_value": 0.38},
-  {"feature": "income", "shap_value": 0.22}
+{"feature": "debt_ratio", "shap_value": 0.45},
+{"feature": "credit_score", "shap_value": 0.38},
+{"feature": "income", "shap_value": 0.22}
 ]
 
 Output example:
-Loan rejection is mainly driven by a high debt level, which signals financial risk. A lower credit score also strongly contributes, making the applicant less reliable. Limited income adds further concern about repayment ability. Together, these factors make rejection much more likely. Overall, financial pressure and risk indicators are the main reasons applications get rejected.
+Loan rejection is mainly driven by high financial pressure, reflected in elevated debt levels. A weaker credit profile also contributes significantly, reducing reliability. Lower income adds further concern about repayment ability. Together, these factors justify the decision, as they indicate increased financial risk.
 
 ---
 
 Execution rules:
 
 - Match the structure of the closest example
-- Always start with the conclusion
-- Then explain the strongest reasons
-- Keep it simple and natural
+- Always start with the conclusion Then explain the strongest reasons
+- Keep it simple, clear, and compliant-focused
 - Do not mention technical terms
 
 Output only the final explanation.
