@@ -208,3 +208,45 @@ export interface BackendMessage {
   CHAT_ID: number;
   Response: { RESPONSE_ID: number; answer: string; explanation: string; created_at: string }[] | null;
 }
+
+// ─── Dashboard Overview ───────────────────────────────────────────────────────
+
+export interface DashboardTopDriver {
+  feature: string;
+  importance: number;
+}
+
+export interface DashboardRecentResult {
+  id_value: string | null;
+  prediction: string | null;
+  confidence: number | null; // already 0-100 percentage from backend
+}
+
+export interface DashboardOverviewNoData {
+  stage: 'no_data' | 'no_target';
+  message: string;
+}
+
+export interface DashboardOverviewTrained {
+  stage: 'trained';
+  target_column: string;
+  task_type: 'classification' | 'regression';
+  records_processed: number;
+  top_drivers: DashboardTopDriver[];
+  recent_results: DashboardRecentResult[];
+  // classification only
+  avg_confidence?: number | null;
+  outcome_split?: { label: string; count: number; rate: number }[];
+  // regression only
+  prediction_stats?: { avg: number | null; min: number | null; max: number | null };
+}
+
+export type DashboardOverview = DashboardOverviewNoData | DashboardOverviewTrained;
+
+export async function getDashboardOverviewAPI(chatId: number, token: string): Promise<DashboardOverview> {
+  const res = await fetch(`${BASE}/dashboard/overview?chat_id=${chatId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Dashboard fetch failed: ${res.status}`);
+  return res.json();
+}

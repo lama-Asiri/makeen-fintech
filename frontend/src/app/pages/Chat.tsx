@@ -23,7 +23,7 @@ import { DefaultAvatar } from '@/app/components/DefaultAvatar';
 import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
-import { supabase } from '@/lib/supabase';
+import { supabase, getToken } from '@/lib/supabase';
 import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, type ParseResult } from '@/lib/chatApi';
 
 // Tracks message IDs that have already finished the typewriter animation.
@@ -691,8 +691,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
     const delayedBackendId = chat.backendId;
     const delayedChatId = chat.id;
     (async () => {
-      const { data: { session: fresh } } = await supabase.auth.refreshSession();
-      const token = fresh?.access_token ?? session?.access_token ?? '';
+      const token = await getToken();
       try {
         await uploadFileAPI(token, selectedFile, delayedBackendId);
         let parseResult: ParseResult | null = null;
@@ -1080,9 +1079,13 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
 
     if (selectedFile && backendId !== undefined && session?.access_token) {
       setUploadStep('loading');
-      const { data: { session: fresh } } = await supabase.auth.refreshSession();
-      const token = fresh?.access_token ?? session.access_token;
+      const token = await getToken();
       try {
+        // DEBUG — remove after confirming token is fresh
+        try {
+          const p = JSON.parse(atob(token.split('.')[1]));
+          console.log(`📤 [uploadFile] using token exp=${new Date(p.exp*1000).toISOString()} EXPIRED=${Date.now()>p.exp*1000}`);
+        } catch { console.log('📤 [uploadFile] could not decode upload token'); }
         await uploadFileAPI(token, selectedFile, backendId);
         let parseResult: ParseResult | null = null;
         try {
@@ -1301,8 +1304,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
     setIsModelUploading(true);
     setModelUploadError(null);
     try {
-      const { data: { session: fresh } } = await supabase.auth.refreshSession();
-      const token = fresh?.access_token ?? session.access_token;
+      const token = await getToken();
       await uploadModelAPI(token, byomBackendId, selectedTargetColumn, selectedTaskType, selectedModelFile);
       setIsModelUploading(false);
       setUploadMode('auto');
@@ -1449,8 +1451,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
         }
 
         const apiUrl = import.meta.env.VITE_API_URL;
-        const { data: { session: fresh } } = await supabase.auth.refreshSession();
-        const token = fresh?.access_token ?? session.access_token;
+        const token = await getToken();
         const controller = new AbortController();
         abortControllerRef.current = controller;
         const res = await fetch(`${apiUrl}/processQuestion`, {
