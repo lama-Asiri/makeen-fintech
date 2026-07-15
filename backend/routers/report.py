@@ -9,98 +9,95 @@ import json
 
 router = APIRouter()
 
-
 # ----------------------------
-# GET CHAT DATA FROM SUPABASE
+# GET CHAT DATA (ROBUST)
 # ----------------------------
 def get_chat_data(chat_id: int):
-    res = supabase.table("Query") \
-        .select("*, Response(RESPONSE_ID, answer, explanation, created_at)") \
+    # 1. Fetch queries
+    query_res = supabase.table("Query") \
+        .select("*") \
         .eq("CHAT_ID", chat_id) \
-        .order("created_at", desc=False) \
         .execute()
+
+    if not query_res.data:
+        return []
 
     chat_data = []
 
-    for row in res.data:
-        query_text = row.get("query_text")
+    for q in query_res.data:
+        query_id = q.get("QUERY_ID")
+        query_text = q.get("query_text")
 
-        responses = row.get("Response", [])
+        if not query_id:
+            continue
 
-        # Ensure responses is iterable
-        if isinstance(responses, str):
+        # 2. Fetch responses per query (NO JOINS)
+        resp_res = supabase.table("Response") \
+            .select("*") \
+            .eq("QUERY_ID", query_id) \
+            .order("created_at", desc=True) \
+            .limit(1) \
+            .execute()
+
+        if not resp_res.data:
+            continue
+
+        r = resp_res.data[0]
+
+        shap_values = None
+        prediction = None
+
+        explanation_raw = r.get("explanation")
+
+        if explanation_raw:
             try:
-                responses = json.loads(responses)
-            except:
-                responses = [responses]
+                parsed = explanation_raw
 
-        for r in responses:
+                # handle string → dict
+                if isinstance(parsed, str):
+                    parsed = json.loads(parsed)
 
-            # Normalize r to dict
-            if isinstance(r, str):
-                try:
-                    r = json.loads(r)
-                except:
-                    r = {"answer": r, "explanation": None}
+                # handle double-encoded JSON
+                if isinstance(parsed, str):
+                    parsed = json.loads(parsed)
 
-            if not isinstance(r, dict):
-                continue
+                if isinstance(parsed, dict):
+                    shap_values = (
+                        parsed.get("shapValues")
+                        or parsed.get("shap_values")
+                        or parsed.get("limeValues")
+                        or parsed.get("lime_values")
+                    )
 
-            shap_values = None
-            prediction = None
+                    prediction = parsed.get("prediction")
 
-            explanation_raw = r.get("explanation")
+                    # nested fallback
+                    if not shap_values:
+                        for key in ["data", "result", "output"]:
+                            nested = parsed.get(key)
+                            if isinstance(nested, dict):
+                                shap_values = (
+                                    nested.get("shapValues")
+                                    or nested.get("limeValues")
+                                )
+                                if shap_values:
+                                    break
 
-            if explanation_raw:
-                try:
-                    parsed = explanation_raw
+                if shap_values and not isinstance(shap_values, dict):
+                    shap_values = None
 
-                    # Handle string → dict
-                    if isinstance(parsed, str):
-                        parsed = json.loads(parsed)
+            except Exception:
+                shap_values = None
+                prediction = None
 
-                    # Handle double-encoded JSON
-                    if isinstance(parsed, str):
-                        parsed = json.loads(parsed)
-
-                    if isinstance(parsed, dict):
-                        # Direct keys
-                        shap_values = (
-                            parsed.get("shapValues")
-                            or parsed.get("shap_values")
-                            or parsed.get("limeValues")
-                            or parsed.get("lime_values")
-                        )
-
-                        prediction = parsed.get("prediction")
-
-                        # Nested fallback
-                        if not shap_values:
-                            for key in ["data", "result", "output"]:
-                                if key in parsed and isinstance(parsed[key], dict):
-                                    nested = parsed[key]
-                                    shap_values = (
-                                        nested.get("shapValues")
-                                        or nested.get("limeValues")
-                                    )
-                                    if shap_values:
-                                        break
-
-                    # Ensure valid format
-                    if shap_values and not isinstance(shap_values, dict):
-                        shap_values = None
-
-                except Exception:
-                    pass
-
-            chat_data.append({
-                "query": {"query_text": query_text},
-                "response": {
-                    "answer": r.get("answer"),
-                    "prediction": prediction,
-                    "shapValues": shap_values
-                }
-            })
+        chat_data.append({
+            "query": {"query_text": query_text},
+            "response": {
+                "answer": r.get("answer"),
+                "prediction": prediction,
+                "shapValues": shap_values
+            }
+        })
 
     return chat_data
 
@@ -108,38 +105,59 @@ def get_chat_data(chat_id: int):
 # ----------------------------
 # LLM CALL
 # ----------------------------
-def llm_generate_summary(prompt: str) -> str:
-    response = openai_client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You generate audit summaries."},
-            {"role": "user", "content": prompt}
-        ]
-    )
+async def llm_generate_summary(prompt: str) -> str:
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+           messages = [
+    {
+        "role": "system",
+        "content": (
+    "You generate a concise overall summary of multiple cases.\n"
+    "Do NOT repeat or restate the cases.\n"
+    "Do NOT include 'Case' sections.\n\n"
+    "Only output:\n"
+    "- Key patterns across cases\n"
+    "- Main risk drivers\n"
+    "- Any anomalies or inconsistencies\n\n"
+    "Maximum 120 words."
+)
+    },
+    {
+        "role": "user",
+        "content": prompt
+    }
+]
+        )
 
-    return response.choices[0].message.content
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"Summary generation failed: {str(e)}"
 
 
 # ----------------------------
 # ENDPOINT
 # ----------------------------
 @router.post("/generate-report/{chat_id}")
-def generate_report_endpoint(chat_id: int):
+async def generate_report_endpoint(chat_id: int):
 
     chat_data = get_chat_data(chat_id)
 
+    # IMPORTANT: only fail if truly nothing exists
     if not chat_data:
-        raise HTTPException(status_code=404, detail="No data found")
+        raise HTTPException(
+            status_code=404,
+            detail="No valid query-response data found for this chat"
+        )
 
     try:
-        file_path = generate_report(chat_data, llm_generate_summary)
+        report_text = await generate_report(chat_data,llm_generate_summary)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return FileResponse(
-        file_path,
-        media_type="application/pdf",
-        filename="audit_report.pdf"
-    )
+    return {
+    "report": report_text
+}

@@ -1,125 +1,62 @@
 # backend/services/report_generator.py
 
-from fpdf import FPDF
-from typing import List, Dict, Callable
+from typing import List, Dict, Any
 
 
-# ----------------------------
-# FORMAT SHAP TABLE
-# ----------------------------
-def format_shap_table(shap_values):
-    if not shap_values or not isinstance(shap_values, dict):
-        return []
+async def generate_report(cases, summary_fn):
+    full_report_text = ""
 
-    table = [["Feature", "Impact"]]
+    if not cases:
+        return "No data found"
 
-    for k, v in shap_values.items():
-        try:
-            table.append([k, round(float(v), 4)])
-        except:
-            table.append([k, str(v)])
+    # Remove duplicates
+    seen = set()
+    unique_cases = []
+    for case in cases:
+        key = (
+    case.get("query", {}).get("query_text"),
+    case.get("response", {}).get("answer")
+)
+        if key not in seen:
+            seen.add(key)
+            unique_cases.append(case)
 
-    return table
+    # Build report
+    for i, case in enumerate(unique_cases, start=1):
+        query = case.get("query", {}).get("query_text", "N/A")
+        query = query.strip().rstrip("\\")
+        response = case.get("response", {})
 
+        answer = response.get("answer", "N/A")
+        prediction = response.get("prediction", "None")
+        shap = response.get("shapValues")
 
-# ----------------------------
-# GENERATE PDF
-# ----------------------------
-def generate_pdf(sections, summary, path="report.pdf"):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
+        full_report_text += f"Case {i}\n"
+        full_report_text += "-" * 50 + "\n"
 
-    pdf.add_page()
+        full_report_text += f"Query:\n{query}\n\n"
+        full_report_text += f"Answer:\n{answer}\n\n"
+        full_report_text += f"Prediction: {prediction}\n\n"
 
-    # Title
-    pdf.set_font("Arial", "B", 16)
-    pdf.cell(0, 10, "Audit Report", ln=True)
-
-    pdf.ln(5)
-
-    # Summary
-    pdf.set_font("Arial", "", 12)
-    pdf.multi_cell(0, 8, f"Summary:\n{summary}")
-
-    pdf.ln(5)
-
-    # Sections
-    for i, section in enumerate(sections, start=1):
-        pdf.set_font("Arial", "B", 12)
-        pdf.cell(0, 8, f"Case {i}", ln=True)
-
-        pdf.set_font("Arial", "", 11)
-
-        query = section.get("query", "")
-        answer = section.get("answer", "")
-        prediction = section.get("prediction", "")
-
-        pdf.multi_cell(0, 6, f"Query: {query}")
-        pdf.multi_cell(0, 6, f"Answer: {answer}")
-        pdf.multi_cell(0, 6, f"Prediction: {prediction}")
-
-        pdf.ln(3)
-
-        # SHAP table
-        table = section.get("shap_table", [])
-
-        if table:
-            for row in table:
-                pdf.cell(90, 6, str(row[0]), border=1)
-                pdf.cell(90, 6, str(row[1]), border=1)
-                pdf.ln()
+        if shap and isinstance(shap, dict):
+            full_report_text += "Feature Impact\n"
+            for f, v in shap.items():
+                clean_feature = str(f).replace("\n", " ").strip()
+                full_report_text += f"{clean_feature:<40} {v:.4f}\n"
         else:
-            pdf.cell(0, 6, "No explainability data available", ln=True)
+            full_report_text += "No explainability data available\n"
 
-        pdf.ln(5)
-
-    pdf.output(path)
-    return path
-
-
-# ----------------------------
-# MAIN GENERATOR
-# ----------------------------
-def generate_report(
-    chat_data: List[Dict],
-    llm_generate_summary: Callable[[str], str]
-):
-    sections = []
-
-    for item in chat_data:
-        query = item.get("query", {}).get("query_text", "")
-        response = item.get("response", {})
-
-        answer = response.get("answer", "")
-        prediction = response.get("prediction", "")
-        shap_values = response.get("shapValues")
-
-        shap_table = format_shap_table(shap_values)
-
-        sections.append({
-            "query": query,
-            "answer": answer,
-            "prediction": prediction,
-            "shap_table": shap_table
-        })
-
-    # DO NOT CRASH if SHAP is missing
-    if not any(section.get("shap_table") for section in sections):
-        for section in sections:
-            section["shap_table"] = [["Feature", "Impact"], ["No data", "N/A"]]
-
-    # Build LLM prompt
-    prompt = "Generate a concise audit summary for the following cases:\n\n"
-
-    for s in sections:
-        prompt += f"- Query: {s['query']}\n"
-        prompt += f"  Prediction: {s['prediction']}\n"
+        full_report_text += "\n-------------------\n\n"
 
     # Generate summary
     try:
-        summary = llm_generate_summary(prompt)
+        summary = await summary_fn(full_report_text)
     except Exception:
         summary = "Summary generation failed."
 
-    # Generate PDF
-    return generate_pdf(sections, summary)
+    full_report_text += "\n" + "=" * 50 + "\n"
+    full_report_text += "OVERALL SUMMARY\n"
+    full_report_text += "=" * 50 + "\n"
+    full_report_text += summary
+
+    return full_report_text
