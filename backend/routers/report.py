@@ -25,7 +25,26 @@ def get_chat_data(chat_id: int):
     for row in res.data:
         query_text = row.get("query_text")
 
-        for r in row.get("Response", []):
+        responses = row.get("Response", [])
+
+        # Ensure responses is iterable
+        if isinstance(responses, str):
+            try:
+                responses = json.loads(responses)
+            except:
+                responses = [responses]
+
+        for r in responses:
+
+            # Normalize r to dict
+            if isinstance(r, str):
+                try:
+                    r = json.loads(r)
+                except:
+                    r = {"answer": r, "explanation": None}
+
+            if not isinstance(r, dict):
+                continue
 
             shap_values = None
             prediction = None
@@ -34,10 +53,42 @@ def get_chat_data(chat_id: int):
 
             if explanation_raw:
                 try:
-                    parsed = json.loads(explanation_raw)
+                    parsed = explanation_raw
 
-                    shap_values = parsed.get("shapValues")
-                    prediction = parsed.get("prediction")
+                    # Handle string → dict
+                    if isinstance(parsed, str):
+                        parsed = json.loads(parsed)
+
+                    # Handle double-encoded JSON
+                    if isinstance(parsed, str):
+                        parsed = json.loads(parsed)
+
+                    if isinstance(parsed, dict):
+                        # Direct keys
+                        shap_values = (
+                            parsed.get("shapValues")
+                            or parsed.get("shap_values")
+                            or parsed.get("limeValues")
+                            or parsed.get("lime_values")
+                        )
+
+                        prediction = parsed.get("prediction")
+
+                        # Nested fallback
+                        if not shap_values:
+                            for key in ["data", "result", "output"]:
+                                if key in parsed and isinstance(parsed[key], dict):
+                                    nested = parsed[key]
+                                    shap_values = (
+                                        nested.get("shapValues")
+                                        or nested.get("limeValues")
+                                    )
+                                    if shap_values:
+                                        break
+
+                    # Ensure valid format
+                    if shap_values and not isinstance(shap_values, dict):
+                        shap_values = None
 
                 except Exception:
                     pass
@@ -55,14 +106,9 @@ def get_chat_data(chat_id: int):
 
 
 # ----------------------------
-# LLM CALL (USES YOUR CLIENT)
+# LLM CALL
 # ----------------------------
 def llm_generate_summary(prompt: str) -> str:
-    """
-    Adapt this to how your openai_client works.
-    Below is a typical pattern.
-    """
-
     response = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -89,6 +135,8 @@ def generate_report_endpoint(chat_id: int):
         file_path = generate_report(chat_data, llm_generate_summary)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     return FileResponse(
         file_path,
