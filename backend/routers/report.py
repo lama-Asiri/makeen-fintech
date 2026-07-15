@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, HTTPException, Header
 from services.report_generator import generate_report
+from services.compliance import map_compliance_requirements
 from core.supabase_client import supabase
 from core.openai_client import openai_client
 from routers.auth import _get_user_id
@@ -12,7 +13,7 @@ router = APIRouter()
 # ----------------------------
 # GET CHAT DATA (ROBUST)
 # ----------------------------
-def get_chat_data(chat_id: int):
+def get_chat_data(chat_id: int, target_column: str | None = None):
     # 1. Fetch queries
     query_res = supabase.table("Query") \
         .select("*") \
@@ -46,6 +47,10 @@ def get_chat_data(chat_id: int):
 
         shap_values = None
         prediction = None
+        # Defaults to the chat-level target passed in; overridden below if this
+        # specific case saved its own target_column (see data_processor.py).
+        # Falls back here for responses saved before that field existed.
+        case_target_column = target_column
 
         explanation_raw = r.get("explanation")
 
@@ -71,6 +76,11 @@ def get_chat_data(chat_id: int):
 
                     prediction = parsed.get("prediction")
 
+                    # Per-case target — a chat can retrain on a different target
+                    # between questions, so each case's own saved target_column
+                    # takes precedence over the chat-level fallback.
+                    case_target_column = parsed.get("target_column") or target_column
+
                     # nested fallback
                     if not shap_values:
                         for key in ["data", "result", "output"]:
@@ -90,13 +100,25 @@ def get_chat_data(chat_id: int):
                 shap_values = None
                 prediction = None
 
+        # Build compliance mapping for this case — needs top_features as a sorted
+        # list of {feature, shap_value}, but shap_values here is a flat dict
+        # ({feature: value}), so convert before calling the mapper.
+        top_features = []
+        if shap_values:
+            top_features = [
+                {"feature": f, "shap_value": v}
+                for f, v in sorted(shap_values.items(), key=lambda kv: abs(kv[1]), reverse=True)[:3]
+            ]
+        compliance = map_compliance_requirements(case_target_column, prediction, top_features)
+
         chat_data.append({
             "query": {"query_text": query_text},
             "response": {
                 "answer": r.get("answer"),
                 "prediction": prediction,
-                "shapValues": shap_values
-            }
+                "shapValues": shap_values,
+                "compliance": compliance,
+            },
         })
 
     return chat_data
@@ -160,7 +182,22 @@ async def generate_report_endpoint(chat_id: int, authorization: str = Header(Non
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
 
-    chat_data = get_chat_data(chat_id)
+    # Fallback target column — used only for cases saved before target_column
+    # started being stored per-response (see data_processor.py). New cases
+    # carry their own target_column and take precedence in get_chat_data.
+    try:
+        file_res = (
+            supabase.table("File")
+            .select("target_column")
+            .eq("CHAT_ID", chat_id)
+            .maybe_single()
+            .execute()
+        )
+        target_column = (file_res.data or {}).get("target_column") if file_res else None
+    except Exception:
+        target_column = None  # non-fatal — compliance mapping just omits domain-specific text
+
+    chat_data = get_chat_data(chat_id, target_column)
 
     # IMPORTANT: only fail if truly nothing exists
     if not chat_data:

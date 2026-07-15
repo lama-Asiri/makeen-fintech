@@ -1635,7 +1635,8 @@ async def process_question(body: ProcessQuestionRequest, authorization: str = He
                 shap_source = result.get("shap_values") if pred_mode == "local_single" else result.get("shap_aggregate")
                 if shap_source:
                     shap_map = {e["feature"]: e["shap_value"] for e in shap_source}
-                    explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "mode": pred_mode, "shapValues": shap_map})
+                    explanation_to_save = json.dumps({"prediction": result.get("prediction", ""), "mode": pred_mode, "shapValues": shap_map,"target_column": (trained_models.get(chat_id) or {}).get("target_column"),
+})
 
             r = supabase.table("Response").insert({"answer": full_answer, "explanation": explanation_to_save, "QUERY_ID": query_id}).execute()
             response_id = r.data[0]["RESPONSE_ID"]

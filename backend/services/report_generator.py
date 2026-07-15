@@ -30,6 +30,7 @@ async def generate_report(cases, summary_fn):
         answer = response.get("answer", "N/A")
         prediction = response.get("prediction", "None")
         shap = response.get("shapValues")
+        compliance = response.get("compliance") or []
 
         full_report_text += f"Case {i}\n"
         full_report_text += "-" * 50 + "\n"
@@ -45,6 +46,11 @@ async def generate_report(cases, summary_fn):
                 full_report_text += f"{clean_feature:<40} {v:.4f}\n"
         else:
             full_report_text += "No explainability data available\n"
+
+        if compliance:
+            full_report_text += "\nCompliance Basis\n"
+            for entry in compliance:
+                full_report_text += f"{entry['regulation']}\n{entry['text']}\n\n"
 
         full_report_text += "\n-------------------\n\n"
 
