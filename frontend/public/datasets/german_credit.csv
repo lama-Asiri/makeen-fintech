@@ -1,0 +1,151 @@
+applicant_id,age,credit_history,loan_amount,employment_years,installment_rate,housing,existing_credits,job_type,credit_risk
+A001,20,all paid,12649,8,2,own,1,unskilled,good
+A002,21,all paid,988,2,2,rent,1,skilled,good
+A003,63,all paid,9428,13,4,rent,3,unskilled,good
+A004,29,delayed previously,11938,13,3,own,2,management,good
+A005,43,delayed previously,2084,11,3,own,4,unskilled,bad
+A006,43,delayed previously,1791,17,3,rent,2,unskilled,good
+A007,33,existing paid,13165,9,2,own,4,management,bad
+A008,72,delayed previously,6477,5,3,own,3,unskilled,good
+A009,29,all paid,9251,7,4,free,3,skilled,good
+A010,72,all paid,13088,1,1,free,4,management,good
+A011,55,all paid,14858,10,4,free,4,skilled,bad
+A012,34,delayed previously,12705,17,4,rent,4,management,bad
+A013,27,existing paid,8848,15,1,own,2,skilled,bad
+A014,46,critical/other,10271,2,4,rent,4,management,good
+A015,74,delayed previously,688,3,3,own,3,self-employed,good
+A016,19,all paid,12330,8,1,rent,3,skilled,bad
+A017,67,existing paid,3146,17,3,free,1,unskilled,bad
+A018,75,all paid,14126,9,1,own,1,unskilled,good
+A019,71,all paid,1633,17,2,rent,4,skilled,good
+A020,74,all paid,10438,13,2,rent,3,self-employed,bad
+A021,60,critical/other,6618,14,1,own,2,unskilled,good
+A022,56,all paid,9575,7,1,own,1,skilled,good
+A023,21,existing paid,14584,10,2,free,4,skilled,bad
+A024,65,critical/other,14956,18,2,free,4,skilled,good
+A025,61,critical/other,7562,11,4,free,1,unskilled,bad
+A026,65,all paid,6059,3,2,own,4,skilled,bad
+A027,36,existing paid,8079,7,4,rent,1,unskilled,good
+A028,53,existing paid,14197,0,2,own,4,self-employed,good
+A029,74,all paid,7070,1,4,own,4,management,good
+A030,69,critical/other,7954,9,4,own,2,management,good
+A031,22,existing paid,9989,17,3,own,1,self-employed,bad
+A032,73,existing paid,9201,5,1,own,1,unskilled,good
+A033,34,all paid,7115,3,1,rent,1,self-employed,good
+A034,55,delayed previously,9065,10,2,rent,3,skilled,good
+A035,27,delayed previously,11504,20,4,free,1,unskilled,bad
+A036,55,all paid,2138,2,3,own,3,unskilled,good
+A037,42,critical/other,5169,5,3,rent,1,management,good
+A038,25,delayed previously,14887,4,1,own,2,management,good
+A039,32,all paid,12257,10,3,rent,4,management,bad
+A040,73,critical/other,1332,2,3,own,1,management,good
+A041,59,critical/other,4791,5,4,rent,1,unskilled,good
+A042,75,existing paid,11821,4,3,rent,2,self-employed,bad
+A043,38,delayed previously,6474,1,2,rent,2,unskilled,bad
+A044,54,all paid,14985,13,2,own,2,self-employed,good
+A045,66,all paid,5942,13,3,own,1,self-employed,bad
+A046,73,all paid,8211,7,4,free,3,skilled,good
+A047,61,delayed previously,3664,12,3,own,3,management,bad
+A048,44,delayed previously,11633,17,1,own,3,skilled,good
+A049,35,critical/other,1126,3,3,rent,3,self-employed,good
+A050,51,all paid,2394,12,3,own,4,unskilled,good
+A051,70,delayed previously,9321,6,4,own,3,management,good
+A052,26,delayed previously,12292,9,4,free,4,management,good
+A053,31,all paid,7388,12,3,free,1,management,good
+A054,46,delayed previously,13373,18,4,free,4,skilled,bad
+A055,69,existing paid,13542,5,3,rent,3,unskilled,good
+A056,67,all paid,4348,9,2,own,1,unskilled,good
+A057,49,critical/other,10515,2,4,rent,2,self-employed,bad
+A058,34,existing paid,2917,20,1,free,2,skilled,good
+A059,63,existing paid,8986,14,2,own,4,skilled,good
+A060,61,delayed previously,9202,17,4,rent,4,self-employed,good
+A061,66,critical/other,14614,15,3,own,3,self-employed,good
+A062,36,delayed previously,7706,2,2,free,3,management,good
+A063,24,all paid,2767,4,4,rent,2,skilled,good
+A064,45,critical/other,5921,17,4,own,2,self-employed,bad
+A065,68,critical/other,10069,0,4,own,3,management,good
+A066,73,all paid,14192,13,4,own,3,self-employed,good
+A067,43,all paid,6007,12,4,own,1,self-employed,good
+A068,61,critical/other,944,2,2,free,2,unskilled,good
+A069,39,delayed previously,3967,14,3,free,3,self-employed,bad
+A070,24,existing paid,8205,0,3,own,1,unskilled,bad
+A071,34,all paid,3766,0,2,own,4,unskilled,good
+A072,32,delayed previously,8119,8,2,rent,1,skilled,good
+A073,25,delayed previously,9981,0,4,free,2,unskilled,good
+A074,72,existing paid,10776,7,3,rent,1,unskilled,good
+A075,46,existing paid,11338,11,3,own,4,self-employed,good
+A076,42,all paid,10913,14,4,own,3,self-employed,bad
+A077,71,delayed previously,12477,18,3,own,1,management,good
+A078,34,critical/other,12795,14,3,own,4,management,good
+A079,32,delayed previously,6313,8,3,rent,3,unskilled,bad
+A080,31,critical/other,1902,7,4,rent,2,self-employed,good
+A081,50,existing paid,7842,0,3,own,4,skilled,good
+A082,56,delayed previously,6546,15,4,rent,3,management,good
+A083,36,all paid,5523,8,1,rent,2,management,good
+A084,53,all paid,12987,5,2,rent,4,management,bad
+A085,67,delayed previously,9095,19,1,own,3,skilled,good
+A086,38,all paid,731,17,3,own,1,management,good
+A087,27,existing paid,10950,15,1,rent,3,self-employed,good
+A088,40,delayed previously,3520,1,4,own,1,self-employed,good
+A089,55,all paid,10812,1,2,rent,3,unskilled,good
+A090,26,all paid,9643,13,4,free,4,management,good
+A091,46,existing paid,5503,18,1,own,2,management,good
+A092,29,existing paid,4429,5,2,own,4,self-employed,good
+A093,49,all paid,5271,1,3,rent,3,self-employed,good
+A094,33,all paid,4834,20,4,own,2,skilled,bad
+A095,71,existing paid,2830,2,2,free,3,self-employed,good
+A096,63,delayed previously,5482,12,4,free,1,unskilled,bad
+A097,66,delayed previously,5780,19,1,own,2,unskilled,good
+A098,62,existing paid,13958,8,2,free,4,management,good
+A099,56,critical/other,7641,20,1,free,3,self-employed,bad
+A100,61,delayed previously,2213,5,4,rent,4,management,good
+A101,44,existing paid,13829,17,4,own,3,management,good
+A102,68,existing paid,7122,16,4,free,1,skilled,good
+A103,58,critical/other,12893,15,1,own,3,skilled,good
+A104,47,existing paid,14931,15,1,rent,2,skilled,good
+A105,19,existing paid,9548,13,2,own,4,unskilled,good
+A106,28,delayed previously,8665,9,4,free,4,skilled,good
+A107,28,all paid,6784,6,1,free,4,management,good
+A108,51,delayed previously,4877,0,3,rent,4,skilled,good
+A109,49,critical/other,6154,10,4,free,2,skilled,good
+A110,33,existing paid,14524,13,3,rent,4,self-employed,good
+A111,61,all paid,13482,20,4,own,2,management,good
+A112,74,existing paid,14345,14,4,own,2,self-employed,good
+A113,28,delayed previously,1725,15,3,rent,4,unskilled,good
+A114,73,critical/other,11548,17,3,rent,4,unskilled,good
+A115,34,all paid,10840,9,1,free,1,unskilled,good
+A116,63,existing paid,5406,0,3,own,3,management,good
+A117,28,critical/other,4500,16,2,own,2,unskilled,good
+A118,43,critical/other,10653,7,2,own,4,management,good
+A119,61,delayed previously,653,14,2,own,4,management,good
+A120,38,delayed previously,10968,13,4,free,2,self-employed,good
+A121,25,delayed previously,4386,12,3,rent,3,unskilled,good
+A122,61,existing paid,6984,8,1,rent,4,management,good
+A123,33,all paid,10446,11,2,rent,3,skilled,good
+A124,59,delayed previously,11089,1,4,own,3,skilled,good
+A125,37,all paid,5852,13,2,own,3,management,bad
+A126,35,delayed previously,14011,15,3,own,4,unskilled,good
+A127,33,delayed previously,14592,12,1,free,1,management,bad
+A128,48,critical/other,6538,8,3,own,2,self-employed,good
+A129,75,all paid,9698,10,1,rent,4,management,bad
+A130,26,existing paid,2790,1,3,free,1,unskilled,good
+A131,53,critical/other,2722,12,3,rent,4,skilled,bad
+A132,60,critical/other,2122,15,3,own,3,skilled,good
+A133,34,existing paid,14515,11,3,rent,3,unskilled,good
+A134,31,existing paid,2501,14,2,rent,1,unskilled,good
+A135,34,all paid,2563,18,1,rent,2,skilled,good
+A136,33,existing paid,5883,4,3,own,2,management,good
+A137,26,all paid,11330,0,1,free,2,management,good
+A138,35,critical/other,1358,4,1,rent,1,self-employed,bad
+A139,42,existing paid,8908,18,4,rent,2,unskilled,good
+A140,74,delayed previously,11295,16,4,rent,1,unskilled,good
+A141,73,existing paid,7080,13,4,rent,4,unskilled,good
+A142,39,existing paid,10466,4,2,free,3,self-employed,good
+A143,52,critical/other,5331,14,1,rent,1,skilled,good
+A144,75,delayed previously,4243,13,4,free,4,unskilled,good
+A145,39,delayed previously,11397,8,2,rent,4,unskilled,good
+A146,24,existing paid,2027,13,3,own,1,management,bad
+A147,45,existing paid,6293,13,3,rent,3,management,good
+A148,51,critical/other,3985,4,2,own,3,management,bad
+A149,36,critical/other,9906,7,1,rent,3,unskilled,bad
+A150,63,delayed previously,12991,9,3,own,2,skilled,bad
