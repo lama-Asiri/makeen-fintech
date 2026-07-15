@@ -137,7 +137,7 @@ async def llm_generate_summary(prompt: str) -> str:
 
 
 # ----------------------------
-# ENDPOINT
+# ENDPOINT TODO: link this to front end and put in a pdf @lama
 # ----------------------------
 @router.post("/generate-report/{chat_id}")
 async def generate_report_endpoint(chat_id: int):
