@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from routers import auth
 from routers import data_processor
 from routers import dashboard
+from routers import report 
 
 app = FastAPI()
 
@@ -31,3 +32,4 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(data_processor.router)
 app.include_router(dashboard.router)
+app.include_router(report.router)
