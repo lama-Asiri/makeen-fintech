@@ -1,10 +1,10 @@
 # backend/routers/report.py
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, Header
 from services.report_generator import generate_report
 from core.supabase_client import supabase
 from core.openai_client import openai_client
+from routers.auth import _get_user_id
 import json
 
 router = APIRouter()
@@ -137,10 +137,28 @@ async def llm_generate_summary(prompt: str) -> str:
 
 
 # ----------------------------
-# ENDPOINT TODO: link this to front end and put in a pdf @lama
+# ENDPOINT
 # ----------------------------
 @router.post("/generate-report/{chat_id}")
-async def generate_report_endpoint(chat_id: int):
+async def generate_report_endpoint(chat_id: int, authorization: str = Header(None)):
+    user_id = _get_user_id(authorization)
+
+    # Verify chat ownership — mirrors the pattern used by /train, /uploadModel, etc.
+    try:
+        chat_check = (
+            supabase.table("Chat")
+            .select("CHAT_ID")
+            .eq("CHAT_ID", chat_id)
+            .eq("USER_ID", user_id)
+            .single()
+            .execute()
+        )
+        if not chat_check.data:
+            raise HTTPException(status_code=404, detail="Chat not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
 
     chat_data = get_chat_data(chat_id)
 

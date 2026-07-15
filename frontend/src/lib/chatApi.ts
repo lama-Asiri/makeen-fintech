@@ -181,6 +181,19 @@ export async function uploadModelAPI(
   return { taskType: data.task_type, classLabels: data.class_labels ?? null, topFeatures: data.top_features ?? null };
 }
 
+// Full-chat report — aggregates every Q&A pair for this chat plus an AI-written overall
+// summary of patterns/risk drivers across all cases. Hits /generate-report/{chat_id}
+// directly (no /auth prefix — matches whatIfAPI's /whatif below).
+export async function generateReportAPI(token: string, chatId: number): Promise<string> {
+  const res = await fetch(`${BASE}/generate-report/${chatId}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const data = await res.json();
+  return data.report as string;
+}
+
 export interface WhatIfResult {
   prediction: string;
   confidence: number | null;

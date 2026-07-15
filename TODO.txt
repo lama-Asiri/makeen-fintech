@@ -82,6 +82,30 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  SECTION 11 — DASHBOARD DATA DISAPPEARING ON RESTART (FIXED)
+  Owner: Lama
+
+  [x] FIXED: Dashboard numbers vanished after a backend restart (Railway redeploy/crash/
+        cold start, or a local uvicorn --reload) even though the chat's real Q&A history
+        was safely in Supabase. Root cause: /dashboard/overview computed everything live
+        from cleaned_data_cache/trained_models (routers/auth.py) — plain Python dicts that
+        live only in the backend process's RAM and are wiped on restart. Nothing about a
+        batch prediction's full results was ever durably persisted anywhere.
+        Fix: new backend/core/dashboard_shaping.py shapes the small dashboard payload
+        (records processed, top drivers, recent results, confidence/outcome split) and
+        durably saves it to a new Chat.dashboard_snapshot column — written immediately
+        after every batch prediction (data_processor.py) AND write-through on every live
+        dashboard view (dashboard.py). When the RAM cache is cold, /dashboard/overview
+        now falls back to the last durable snapshot instead of the empty state.
+        Manual Supabase step done: ALTER TABLE "Chat" ADD COLUMN dashboard_snapshot text.
+        Verified live: real batch prediction → dashboard shows real data → restarted the
+        backend → dashboard still shows the same real data (previously would've gone
+        empty). Genuinely-empty accounts (zero chats, or uploaded but never predicted-on)
+        still correctly show their empty states — confirmed unaffected.
+        16 new tests (12 unit + 4 integration), full suite 134/134 passing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 

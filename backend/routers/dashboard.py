@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Header, HTTPException
-from collections import Counter
-import pandas as pd
 
 from routers.auth import _get_user_id, cleaned_data_cache, trained_models
 from routers.data_processor import predict_local_batch, explain_shap_local_batch
 from core.supabase_client import supabase
+from core.dashboard_shaping import shape_dashboard_payload, save_dashboard_snapshot, load_dashboard_snapshot
 
 router = APIRouter(prefix="/dashboard")
 
@@ -57,61 +56,12 @@ def build_dashboard_payload(chat_id: int) -> dict:
     except Exception:
         shap_result = {"aggregate": []}
 
-    results = batch_result.get("results", [])
-    records_processed = len(results)
-
-    top_drivers = [
-        {"feature": e["feature"], "importance": e["shap_value"]}
-        for e in shap_result.get("aggregate", [])[:6]
-    ]
-
-    recent_results = [
-        {
-            "id_value": r.get("id_value"),
-            "prediction": r.get("prediction"),
-            "confidence": r.get("confidence"),
-        }
-        for r in results[:50]
-    ]
-
-    payload = {
-        "stage": "trained",
-        "target_column": target_column,
-        "task_type": task_type,
-        "records_processed": records_processed,
-        "top_drivers": top_drivers,
-        "recent_results": recent_results,
-    }
-
-    if task_type == "classification":
-        confidences = [r.get("confidence") for r in results if r.get("confidence") is not None]
-        avg_confidence = round(sum(confidences) / len(confidences), 1) if confidences else None
-
-        label_counts = Counter(r.get("prediction") for r in results)
-        outcome_split = [
-            {
-                "label": label,
-                "count": count,
-                "rate": round(count / records_processed * 100, 1) if records_processed else 0,
-            }
-            for label, count in label_counts.most_common()
-        ]
-
-        payload.update({
-            "avg_confidence": avg_confidence,
-            "outcome_split": outcome_split,
-        })
-
-    else:  # Regression
-        # Regression has no discrete labels or confidence — show a value summary (avg/min/max of predicted numbers) instead.
-        values = [float(r["prediction"]) for r in results if r.get("prediction") not in (None, "")]
-        payload.update({
-            "prediction_stats": {
-                "avg": round(sum(values) / len(values), 2) if values else None,
-                "min": round(min(values), 2) if values else None,
-                "max": round(max(values), 2) if values else None,
-            }
-        })
+    payload = shape_dashboard_payload(
+        batch_result.get("results", []),
+        shap_result.get("aggregate", []),
+        target_column,
+        task_type,
+    )
 
     # Store this computation so the next call can skip recompute if unchanged.
     _dashboard_cache[chat_id] = {"data_id": data_id, "model_id": model_id, "payload": payload}
@@ -138,4 +88,16 @@ async def get_dashboard_overview(chat_id: int, authorization: str = Header(None)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Chat lookup failed: {e}")
 
-    return build_dashboard_payload(chat_id)
+    payload = build_dashboard_payload(chat_id)
+
+    if payload.get("stage") == "trained":
+        # Write-through: keep the durable copy fresh every time we have live data,
+        # so a later restart (RAM caches wiped) has something real to fall back to.
+        save_dashboard_snapshot(chat_id, payload)
+        return payload
+
+    # RAM cache is cold (e.g. right after a backend restart) — this is exactly the bug
+    # being fixed: the chat may still have a real, durable snapshot from before the
+    # restart even though cleaned_data_cache/trained_models don't have it anymore.
+    snapshot = load_dashboard_snapshot(chat_id)
+    return snapshot if snapshot else payload

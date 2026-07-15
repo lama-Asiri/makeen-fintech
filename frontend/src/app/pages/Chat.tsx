@@ -24,7 +24,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase, getToken } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, type ParseResult } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, generateReportAPI, type ParseResult } from '@/lib/chatApi';
 
 // Tracks message IDs that have already finished the typewriter animation.
 // Module-level so it survives chat switches (component unmount/remount).
@@ -425,6 +425,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   const [renamingChatId, setRenamingChatId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [shareModalChat, setShareModalChat] = useState<Chat | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [shareMessageModal, setShareMessageModal] = useState<{ messageId: string; content: string } | null>(null);
@@ -2070,6 +2071,61 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
     URL.revokeObjectURL(url);
     setToastMessage('CSV downloaded');
     handleCloseShareModal();
+  };
+
+  // Full-chat report (all Q&A pairs + AI-written overall summary from the backend) —
+  // same header/style block as buildExportHTML for visual consistency, but prints the
+  // backend's report text verbatim in a <pre> block rather than re-deriving from local
+  // message state. Escaped here since this is new code rendering server/LLM-sourced text.
+  const buildReportHTML = (chat: Chat, reportText: string): string => {
+    const escaped = reportText
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Makeen Report — ${chat.title}</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #111; }
+  h1 { color: #7760bd; }
+  .meta { color: #9e9e9e; font-size: 13px; margin-bottom: 24px; }
+  pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<h1>Makeen — ${chat.title}</h1>
+<p class="meta">Full report generated on ${new Date().toLocaleString()}${chat.fileAttachment ? ` &nbsp;|&nbsp; File: ${chat.fileAttachment.name}` : ''}</p>
+<pre>${escaped}</pre>
+</body></html>`;
+  };
+
+  const handleGenerateReport = async () => {
+    if (!shareModalChat?.backendId || !session?.access_token) return;
+    setIsGeneratingReport(true);
+    try {
+      const { data: { session: fresh } } = await supabase.auth.refreshSession();
+      const token = fresh?.access_token ?? session.access_token;
+      const reportText = await generateReportAPI(token, shareModalChat.backendId);
+      const html = buildReportHTML(shareModalChat, reportText);
+      const win = window.open('', '_blank');
+      if (!win) {
+        setToastMessage('Could not open report — please allow pop-ups and try again.');
+        return;
+      }
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+      setTimeout(() => { win.print(); }, 500);
+      setToastMessage('Print dialog opened — save as PDF');
+      handleCloseShareModal();
+    } catch (err) {
+      console.error('[generateReport] failed:', err);
+      setToastMessage(parseUploadError(err));
+    } finally {
+      setIsGeneratingReport(false);
+    }
   };
 
   // Handle "Turn on" button in banner
@@ -3976,6 +4032,29 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
                   </p>
                   <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
                     Download prediction and SHAP values as spreadsheet
+                  </p>
+                </div>
+              </button>
+
+              {/* Full report — aggregates every Q&A pair in this chat + an AI-written
+                  overall summary, unlike the three options above which only look at the
+                  most recent prediction from local state. */}
+              <button
+                onClick={handleGenerateReport}
+                disabled={isGeneratingReport}
+                className="w-full flex items-center gap-[16px] p-[16px] bg-[#2c2c2c] hover:bg-[#3a3a3a] hover:border-[#7760bd] border-2 border-transparent rounded-[12px] transition-all cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <div className="w-[40px] h-[40px] bg-[#7760bd]/20 rounded-[8px] flex items-center justify-center group-hover:bg-[#7760bd]/30 transition-colors">
+                  <svg className="w-[20px] h-[20px]" fill="none" viewBox="0 0 24 24" stroke="#7760bd" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="font-sans font-semibold text-[1rem] text-white">
+                    {isGeneratingReport ? 'Generating…' : 'Generate Full Report'}
+                  </p>
+                  <p className="font-sans text-[0.8125rem] text-[#9e9e9e]">
+                    AI summary across every question in this chat
                   </p>
                 </div>
               </button>

@@ -16,6 +16,7 @@ from lime.lime_tabular import LimeTabularExplainer
 from core.openai_client import openai_client
 from core.supabase_client import supabase
 from core.safe_unpickle import safe_load_model, validate_uploaded_model
+from core.dashboard_shaping import shape_dashboard_payload, save_dashboard_snapshot
 from routers.auth import cleaned_data_cache, trained_models, prediction_cache, chat_history_cache, _get_user_id, _clean_dataframe
 
 router = APIRouter()
@@ -1186,6 +1187,22 @@ class QuestionProcessor:
                     predicted_as[label] = []
                 if len(predicted_as[label]) < 50:
                     predicted_as[label].append(row["id_value"])
+
+            # Persist a durable dashboard snapshot immediately, not just the next time
+            # someone happens to open the Dashboard — closes the gap where a chat that's
+            # never been viewed there would otherwise have nothing to fall back to after
+            # a backend restart wipes cleaned_data_cache/trained_models. Best-effort: a
+            # failed snapshot write must never break this chat response.
+            try:
+                dashboard_payload = shape_dashboard_payload(
+                    shap_result["per_row"],
+                    shap_result["aggregate"],
+                    self.model_cache.get("target_column") if self.model_cache else None,
+                    self.model_cache.get("task_type") if self.model_cache else None,
+                )
+                save_dashboard_snapshot(chat_id, dashboard_payload)
+            except Exception:
+                pass
 
             return {
                 "type":           "PREDICTION",
