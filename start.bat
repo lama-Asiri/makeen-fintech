@@ -1,7 +1,7 @@
 @echo off
 echo Starting Makeen...
 
-start "Backend" cmd /k "cd /d %~dp0backend && uvicorn app:app --reload --host 0.0.0.0"
+start "Backend" cmd /k "cd /d %~dp0backend && uvicorn app:app --host 0.0.0.0"
 
 timeout /t 2 /nobreak >nul
 
