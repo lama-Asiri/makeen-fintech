@@ -292,7 +292,9 @@ export function DashboardScreen({ onLogout, onNavigateChat }: DashboardScreenPro
 
                 {topDrivers.length > 0 && (
                   <ChartCard delay={isClassification ? 0.18 : 0.1}>
-                    <Eyebrow>Factor Importance · SHAP</Eyebrow>
+                    <p className="text-[#8a75d4] text-[13px] font-sans font-semibold uppercase tracking-[0.2em]">
+                      Factor Importance · SHAP
+                    </p>
                     <h2 className="font-serif font-medium text-[1.125rem] md:text-[1.25rem] text-[#fffcfe] mt-[4px] mb-[16px]">
                       Top drivers
                     </h2>
@@ -304,7 +306,7 @@ export function DashboardScreen({ onLogout, onNavigateChat }: DashboardScreenPro
                             type="category"
                             dataKey="label"
                             width={110}
-                            tick={{ fill: '#9e9e9e', fontSize: 12 }}
+                            tick={{ fill: '#9e9e9e', fontSize: 13 }}
                             axisLine={false}
                             tickLine={false}
                           />

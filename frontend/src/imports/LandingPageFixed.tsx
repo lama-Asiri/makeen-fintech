@@ -356,7 +356,7 @@ function FeaturesSection() {
               <h3 className="md:col-span-4 font-sans font-semibold text-[20px] text-white leading-tight">
                 {feature.title}
               </h3>
-              <p className="md:col-span-5 font-sans text-[15px] leading-[1.7] text-[#9e9e9e]">
+              <p className="md:col-span-5 font-sans text-[16px] leading-[1.7] text-[#9e9e9e]">
                 {feature.description}
               </p>
             </motion.div>
@@ -405,7 +405,7 @@ function HowItWorksSection() {
           <h2 className="font-serif font-medium text-[clamp(2.25rem,4vw,3.25rem)] text-[#fffcfe] leading-[1.1] mb-4">
             How it works
           </h2>
-          <p className="font-sans text-[16px] text-[#9e9e9e] max-w-[480px]">
+          <p className="font-sans text-[17px] text-[#9e9e9e] max-w-[480px]">
             Three steps from applicant data to a credit decision you can trust and defend.
           </p>
         </motion.div>
@@ -421,7 +421,7 @@ function HowItWorksSection() {
             >
               <p className="font-serif font-medium text-[4rem] leading-none text-[#7760bd]/80 mb-4">{step.number}</p>
               <h3 className="font-sans font-semibold text-[19px] text-white mb-3">{step.title}</h3>
-              <p className="font-sans text-[14.5px] text-[#9e9e9e] leading-[1.7]">{step.description}</p>
+              <p className="font-sans text-[15.5px] text-[#9e9e9e] leading-[1.7]">{step.description}</p>
             </motion.div>
           ))}
         </div>
@@ -476,7 +476,7 @@ function XaiExplainerSection() {
           <h2 className="font-serif font-medium text-[clamp(2.25rem,4vw,3.25rem)] text-[#fffcfe] leading-[1.1] mb-4">
             A short glossary
           </h2>
-          <p className="font-sans text-[16px] text-[#9e9e9e] max-w-[520px]">
+          <p className="font-sans text-[17px] text-[#9e9e9e] max-w-[520px]">
             No technical background needed. Here's what these words actually mean — and why they matter for your data.
           </p>
         </motion.div>
@@ -498,8 +498,8 @@ function XaiExplainerSection() {
                 </p>
               </div>
               <div className="md:col-span-9 space-y-3">
-                <p className="font-sans text-[15px] text-[#9e9e9e] leading-[1.7] italic">"{c.analogy}"</p>
-                <p className="font-sans text-[14.5px] text-white/80 leading-[1.7]">{c.forYou}</p>
+                <p className="font-sans text-[16px] text-[#9e9e9e] leading-[1.7] italic">"{c.analogy}"</p>
+                <p className="font-sans text-[15.5px] text-white/80 leading-[1.7]">{c.forYou}</p>
               </div>
             </motion.div>
           ))}
@@ -507,7 +507,7 @@ function XaiExplainerSection() {
         </div>
 
         <motion.p
-          className="text-center font-sans text-[13px] text-[#666] mt-10"
+          className="text-center font-sans text-[14px] text-[#666] mt-10"
           initial={prefersReducedMotion ? {} : { opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: SECTION_DURATION, delay: 0.5, ease: SECTION_EASE }}
@@ -550,7 +550,7 @@ function MissionSection() {
           initial={prefersReducedMotion ? {} : { opacity: 0 }}
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 1, delay: 0.35, ease: SECTION_EASE }}
-          className="font-sans text-[15.5px] leading-[1.8] text-[#9e9e9e] max-w-[560px] mx-auto"
+          className="font-sans text-[16.5px] leading-[1.8] text-[#9e9e9e] max-w-[560px] mx-auto"
         >
           Credit decisions are only defensible if you can understand and justify them. We built Makeen Fintech because loan officers, risk analysts, and credit committees shouldn't need a data science degree to trust — or challenge — what a risk model predicts. Every credit assessment comes with a plain-language explanation backed by SHAP attributions.
         </motion.p>
@@ -606,7 +606,7 @@ function TeamSection() {
                 <p className="font-serif text-[19px] text-white leading-tight">{member.name}</p>
                 <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.15em] text-[#7760bd] mt-1">{member.role}</p>
               </div>
-              <p className="md:col-span-6 font-sans text-[14.5px] text-[#9e9e9e] leading-[1.6]">
+              <p className="md:col-span-6 font-sans text-[15.5px] text-[#9e9e9e] leading-[1.6]">
                 {member.description}
               </p>
               <div className="md:col-span-2 md:text-right">
@@ -697,7 +697,7 @@ function FAQSection({ onOpenHelpCenter }: { onOpenHelpCenter: () => void }) {
                   transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
                   className="overflow-hidden"
                 >
-                  <p className="font-sans text-[14.5px] md:text-[15px] text-[#9e9e9e] leading-relaxed pb-6 max-w-[640px]">
+                  <p className="font-sans text-[15.5px] md:text-[16px] text-[#9e9e9e] leading-relaxed pb-6 max-w-[640px]">
                     {faq.a}
                   </p>
                 </motion.div>
@@ -711,7 +711,7 @@ function FAQSection({ onOpenHelpCenter }: { onOpenHelpCenter: () => void }) {
           initial={prefersReducedMotion ? {} : { opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.9, delay: 0.5, ease: SECTION_EASE }}
-          className="text-center mt-10 text-[14px] font-sans text-[#9e9e9e]"
+          className="text-center mt-10 text-[15px] font-sans text-[#9e9e9e]"
         >
           Need more answers? Visit our{' '}
           <a
@@ -822,7 +822,7 @@ function Footer({ onOpenTerms }: { onOpenTerms: () => void }) {
 
         {/* Copyright */}
         <div className="mt-10 pt-8 border-t border-white/[0.08] text-center">
-          <p className="text-[#888] text-[13px] font-sans">
+          <p className="text-[#888] text-[14px] font-sans">
             Copyright © 2026 Makeen | All Rights Reserved | <a href="#" onClick={(e) => { e.preventDefault(); onOpenTerms(); }} className="text-white/80 hover:text-[#7760bd] transition-colors cursor-pointer">Terms and Policies</a>
           </p>
         </div>

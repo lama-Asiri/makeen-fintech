@@ -1,7 +1,7 @@
+import type { RefObject } from 'react';
 import imgImage39 from '@/assets/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png';
 import { Tooltip } from '@/app/components/Tooltip';
 import { DefaultAvatar } from '@/app/components/DefaultAvatar';
-import type { AccountMenuState } from '@/app/components/AccountMenu';
 
 // Slim, persistent nav rail — separate from Chat.tsx's own (chat-specific) sidebar,
 // so switching between Dashboard/Chat never requires touching that sidebar's logic.
@@ -11,13 +11,23 @@ import type { AccountMenuState } from '@/app/components/AccountMenu';
 const RAIL_WIDTH = 72;
 export { RAIL_WIDTH };
 
+// Only the pieces AppRail's account button actually needs — deliberately narrower than
+// AccountMenuState so both Dashboard's full useAccountMenu() hook and Chat's own inline
+// dropdown state (which pre-dates that hook) can each satisfy this by structural typing.
+interface AccountMenuTrigger {
+  accountTriggerRef: RefObject<HTMLButtonElement | null>;
+  openAccountDropdown: () => void;
+  avatarUrl: string;
+  displayName: string;
+}
+
 interface AppRailProps {
   active: 'dashboard' | 'chat';
   onNavigateDashboard: () => void;
   onNavigateChat: () => void;
-  // Optional: only Dashboard renders its own account trigger here — Chat already
-  // has one at the bottom of its existing sidebar, so it omits this prop.
-  accountMenu?: AccountMenuState;
+  // The account trigger button only renders when this is passed — every screen using
+  // AppRail wires up its own account menu state and passes the trigger through here.
+  accountMenu?: AccountMenuTrigger;
 }
 
 export function AppRail({ active, onNavigateDashboard, onNavigateChat, accountMenu }: AppRailProps) {
@@ -66,22 +76,24 @@ export function AppRail({ active, onNavigateDashboard, onNavigateChat, accountMe
       </Tooltip>
 
       {accountMenu && (
-        <Tooltip text="Account" position="right">
-          <button
-            ref={accountMenu.accountTriggerRef}
-            onClick={accountMenu.openAccountDropdown}
-            className="mt-auto w-[40px] h-[40px] rounded-full hover:ring-2 hover:ring-[#7760bd] transition-all cursor-pointer"
-            aria-label="Account"
-          >
-            {accountMenu.avatarUrl ? (
-              <div className="w-full h-full rounded-full overflow-hidden">
-                <img alt="User" className="w-full h-full object-cover" src={accountMenu.avatarUrl} />
-              </div>
-            ) : (
-              <DefaultAvatar displayName={accountMenu.displayName} size={40} />
-            )}
-          </button>
-        </Tooltip>
+        <div className="mt-auto">
+          <Tooltip text="Account" position="right">
+            <button
+              ref={accountMenu.accountTriggerRef}
+              onClick={accountMenu.openAccountDropdown}
+              className="w-[40px] h-[40px] rounded-full hover:ring-2 hover:ring-[#7760bd] transition-all cursor-pointer"
+              aria-label="Account"
+            >
+              {accountMenu.avatarUrl ? (
+                <div className="w-full h-full rounded-full overflow-hidden">
+                  <img alt="User" className="w-full h-full object-cover" src={accountMenu.avatarUrl} />
+                </div>
+              ) : (
+                <DefaultAvatar displayName={accountMenu.displayName} size={40} />
+              )}
+            </button>
+          </Tooltip>
+        </div>
       )}
     </div>
   );

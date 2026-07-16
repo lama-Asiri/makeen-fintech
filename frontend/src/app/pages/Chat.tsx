@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'motion/react';
 import svgPaths from '@/imports/svg-i4pd84glzg';
 import svgPathsAnswer from '@/imports/svg-durn51uks6';
 import svgPathsSettings from '@/imports/svg-92ly2gkslu';
-import imgImage39 from '@/assets/f2078903bc60d007ab38f14e8f06bb0ac47cb5a0.png';
 import { ImageWithFallback } from '@/app/components/figma/ImageWithFallback';
 import { AppRail } from '@/app/components/AppRail';
 import { Tooltip } from '@/app/components/Tooltip';
@@ -19,7 +18,6 @@ import { ReportBugModal } from '@/app/components/ReportBugModal';
 import { HelpCenter } from '@/app/pages/HelpCenter';
 import { TermsAndPolicies } from '@/app/pages/TermsAndPolicies';
 import { SubscriptionPage } from '@/app/pages/Subscription';
-import { DefaultAvatar } from '@/app/components/DefaultAvatar';
 import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
@@ -100,9 +98,9 @@ function TypewriterText({
 
 // Small tracked-out eyebrow label — same editorial signature used on the landing page,
 // reused here to mark data "exhibits" (e.g. the XAI results card) as structured content.
-function Eyebrow({ children }: { children: React.ReactNode }) {
+function Eyebrow({ children, className = 'text-[10px]' }: { children: React.ReactNode; className?: string }) {
   return (
-    <p className="text-[#7760bd] text-[10px] font-sans font-semibold uppercase tracking-[0.2em]">
+    <p className={`text-[#7f5fd6] font-sans font-bold uppercase tracking-[0.2em] ${className}`}>
       {children}
     </p>
   );
@@ -404,7 +402,6 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   const initialState = loadFromLocalStorage();
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => window.innerWidth < 768);
-  const [isHoveredOverToggle, setIsHoveredOverToggle] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [chats, setChats] = useState<Chat[]>(initialState.chats);
   const [activeChatId, setActiveChatId] = useState<string | null>(initialState.activeChatId);
@@ -2436,7 +2433,21 @@ ${casesHTML}
 
       {/* Main Chat Page */}
       <div className="bg-[#141414] relative w-full h-screen overflow-hidden">
-      <AppRail active="chat" onNavigateDashboard={onNavigateDashboard ?? (() => {})} onNavigateChat={() => {}} />
+      <AppRail
+        active="chat"
+        onNavigateDashboard={onNavigateDashboard ?? (() => {})}
+        onNavigateChat={() => {}}
+        accountMenu={{
+          accountTriggerRef: userCardRef,
+          openAccountDropdown: () => {
+            const rect = userCardRef.current?.getBoundingClientRect();
+            setAccountDropdownRect(rect);
+            setShowAccountDropdown(!showAccountDropdown);
+          },
+          avatarUrl,
+          displayName,
+        }}
+      />
 
       {/* Mobile backdrop — tap outside to close sidebar */}
       {!isSidebarCollapsed && (
@@ -2448,8 +2459,8 @@ ${casesHTML}
 
       {/* Left Sidebar */}
       <div
-        className={`fixed md:absolute left-0 md:left-[72px] top-0 bottom-0 z-50 md:z-20 bg-[#2c2c2c] rounded-[16px] flex flex-col transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-[80px]' : 'translate-x-0 w-[300px]'
+        className={`fixed md:absolute left-0 md:left-[72px] top-0 bottom-0 z-50 md:z-20 bg-[#2c2c2c] rounded-none flex flex-col transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? '-translate-x-full md:translate-x-0 md:w-[80px]' : 'translate-x-0 w-[260px]'
         }`}
       >
         {/* Top Section - Fixed */}
@@ -2459,58 +2470,23 @@ ${casesHTML}
           }`}
         >
           {/* Brand Header */}
-          <div
-            className={`flex items-center ${
-              isSidebarCollapsed ? 'justify-center' : 'justify-between'
-            }`}
-          >
+          <div className="flex items-center justify-end">
             {isSidebarCollapsed ? (
               <Tooltip text="Open sidebar" position="right">
                 <button
                   onClick={toggleSidebar}
                   className="p-[4px] hover:bg-[#3a3a3a] rounded-[4px] transition-colors cursor-pointer relative"
-                  onMouseEnter={() => setIsHoveredOverToggle(true)}
-                  onMouseLeave={() => setIsHoveredOverToggle(false)}
                 >
-                  {isHoveredOverToggle ? (
-                    <svg className="w-[28.5px] h-[28.5px]" fill="none" viewBox="0 0 28.5 28.5">
-                      <path d="M24.9375 11.875H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 7.125H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 16.625H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                      <path d="M24.9375 21.375H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
-                    </svg>
-                  ) : (
-                    <div className="w-[40px] h-[40px]">
-                      <img
-                        alt="Makeen Logo"
-                        className="w-full h-full object-cover rounded-[4px]"
-                        src={imgImage39}
-                      />
-                    </div>
-                  )}
+                  <svg className="w-[28.5px] h-[28.5px]" fill="none" viewBox="0 0 28.5 28.5">
+                    <path d="M24.9375 11.875H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M24.9375 7.125H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M24.9375 16.625H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                    <path d="M24.9375 21.375H3.5625" stroke="#9e9e9e" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                  </svg>
                 </button>
               </Tooltip>
             ) : (
-              <>
-                <button
-                  onClick={handleNewChat}
-                  className="flex items-center gap-[8px] hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  <div className="w-[56px] h-[56px] rounded-[6px] overflow-hidden">
-                    <img
-                      alt="Makeen Logo"
-                      className="w-full h-full object-cover"
-                      src={imgImage39}
-                    />
-                  </div>
-                  <p
-                    className="font-serif font-semibold text-[1.5rem] text-[#fffcfe]"
-                    style={{ fontVariationSettings: "'wdth' 100" }}
-                  >
-                    Makeen
-                  </p>
-                </button>
-                <Tooltip text="Close sidebar" position="right">
+              <Tooltip text="Close sidebar" position="right">
                   <button
                     onClick={toggleSidebar}
                     className="p-[4px] hover:bg-[#3a3a3a] rounded-[4px] transition-colors cursor-pointer"
@@ -2523,7 +2499,6 @@ ${casesHTML}
                     </svg>
                   </button>
                 </Tooltip>
-              </>
             )}
           </div>
 
@@ -2739,65 +2714,12 @@ ${casesHTML}
           </>
         )}
 
-        {/* Bottom Section - Fixed */}
-        <div className="flex-shrink-0 mt-auto p-[24px]">
-          {/* Profile Widget / Account Trigger */}
-          {isSidebarCollapsed ? (
-            <button 
-              ref={userCardRef}
-              onClick={() => {
-                const rect = userCardRef.current?.getBoundingClientRect();
-                setAccountDropdownRect(rect);
-                setShowAccountDropdown(!showAccountDropdown);
-              }}
-              className="w-[40px] h-[40px] rounded-full hover:ring-2 hover:ring-[#7760bd] transition-all cursor-pointer"
-            >
-              {avatarUrl ? (
-                <div className="w-full h-full rounded-full overflow-hidden">
-                  <img
-                    alt="User Profile"
-                    className="w-full h-full object-cover"
-                    src={avatarUrl}
-                  />
-                </div>
-              ) : (
-                <DefaultAvatar displayName={displayName} size={40} />
-              )}
-            </button>
-          ) : (
-            <button
-              ref={userCardRef}
-              onClick={() => {
-                const rect = userCardRef.current?.getBoundingClientRect();
-                setAccountDropdownRect(rect);
-                setShowAccountDropdown(!showAccountDropdown);
-              }}
-              className="bg-[#3a3a3a] flex items-center gap-[16px] px-[16px] py-[16px] rounded-[8px] hover:bg-[#3a3a3a] transition-colors cursor-pointer w-full"
-            >
-              {avatarUrl ? (
-                <div className="w-[40px] h-[40px] rounded-full overflow-hidden flex-shrink-0">
-                  <img
-                    alt="User Profile"
-                    className="w-full h-full object-cover"
-                    src={avatarUrl}
-                  />
-                </div>
-              ) : (
-                <DefaultAvatar displayName={displayName} size={40} />
-              )}
-              <div className="flex flex-col gap-[4px] flex-1 min-w-0 text-left">
-                <p className="font-sans font-semibold text-[0.875rem] text-[#fffcfe] truncate text-left">{displayName}</p>
-                <p className="font-sans font-semibold text-[0.75rem] text-[#9e9e9e] truncate text-left">{userEmail}</p>
-              </div>
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Main Content Area */}
       <div
         className={`h-full flex flex-col relative transition-all duration-300 ease-in-out ${
-          isSidebarCollapsed ? 'ml-0 md:ml-[152px]' : 'ml-0 md:ml-[372px]'
+          isSidebarCollapsed ? 'ml-0 md:ml-[152px]' : 'ml-0 md:ml-[332px]'
         }`}
       >
         {/* Mobile hamburger — only visible on small screens */}
@@ -3219,7 +3141,7 @@ ${casesHTML}
                           const maxImp = Math.max(...features.map((f) => f.importance), 0.0001);
                           return features.map((f) => (
                             <div key={f.name} className="flex items-center gap-[10px] mb-[7px] last:mb-0">
-                              <p className="font-sans text-[0.6875rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
+                              <p className="font-sans text-[0.8125rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{f.name}</p>
                               <div className="flex-1 h-[6px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                 <motion.div className="h-full rounded-full bg-[#7760bd]" initial={{ width: 0 }} animate={{ width: `${(f.importance / maxImp) * 100}%` }} transition={{ duration: 0.5, ease: 'easeOut' }} />
                               </div>
@@ -3448,7 +3370,7 @@ ${casesHTML}
 
                           {/* SHAP Feature Importance Chart — presented as a data exhibit: eyebrow label, thin bars, hairline-separated rows */}
                           <div className="px-[20px] py-[16px]">
-                            <Eyebrow>Factor Importance · SHAP</Eyebrow>
+                            <Eyebrow className="text-[12px]">Factor Importance · SHAP</Eyebrow>
                             <div className="mt-[12px]">
                             {(() => {
                               const entries = Object.entries(message.xaiData.shapValues);
@@ -3462,7 +3384,7 @@ ${casesHTML}
                                     <div key={feature}>
                                       {i > 0 && <HairlineDivider className="my-[8px]" />}
                                       <div title={`${feature} ${positive ? 'pushed toward' : 'pushed against'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] py-[2px] cursor-default">
-                                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                        <p className="font-sans text-[0.8125rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
                                         <div className="flex-1 h-[5px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                           <motion.div
                                             className={`h-full rounded-full ${positive ? 'bg-[#7760bd]' : 'bg-[#e05a5a]'}`}
@@ -3485,7 +3407,7 @@ ${casesHTML}
                           {/* LIME Feature Importance Chart — local_single only */}
                           {message.xaiData.mode === 'local_single' && message.xaiData.limeValues && Object.keys(message.xaiData.limeValues).length > 0 && (
                             <div className="px-[20px] pb-[16px] border-t border-white/[0.08] pt-[16px]">
-                              <Eyebrow>Feature Importance · LIME</Eyebrow>
+                              <Eyebrow className="text-[12px]">Feature Importance · LIME</Eyebrow>
                               <div className="mt-[12px]">
                               {(() => {
                                 const entries = Object.entries(message.xaiData.limeValues).sort(([, a], [, b]) => Math.abs(b) - Math.abs(a));
@@ -3497,7 +3419,7 @@ ${casesHTML}
                                     <div key={feature}>
                                       {i > 0 && <HairlineDivider className="my-[8px]" />}
                                       <div title={`${feature} ${positive ? 'supports' : 'opposes'} prediction (${positive ? '+' : ''}${value.toFixed(3)})`} className="flex items-center gap-[10px] py-[2px] cursor-default">
-                                        <p className="font-sans text-[0.75rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
+                                        <p className="font-sans text-[0.8125rem] text-[#9e9e9e] w-[110px] flex-shrink-0 truncate text-right">{feature}</p>
                                         <div className="flex-1 h-[5px] bg-[#3a3a3a] rounded-full overflow-hidden">
                                           <motion.div
                                             className={`h-full rounded-full ${positive ? 'bg-[#08B839]' : 'bg-[#FFC107]'}`}
