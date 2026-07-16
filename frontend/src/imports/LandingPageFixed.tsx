@@ -5,6 +5,7 @@ import imgEllipse1700 from "@/assets/2d43ad35cf16e098dec1368159bbfed4db4e60be.pn
 import imgEllipse1701 from "@/assets/873063e7e03a5e4ec249ed8b32559e0a52fa2f3f.png";
 import imgEllipse1702 from "@/assets/c4a0bb29824c69e89d7b251f1e56b81e29ecd9c0.png";
 import imgEllipse1703 from "@/assets/02d4010f3bb889503125b18a67d28ac3e6a98a86.png";
+import imgSaudiMadeLogo from "@/assets/saudi-made-logo.png";
 import { HelpCenter } from "@/app/pages/HelpCenter";
 import { TermsAndPolicies } from "@/app/pages/TermsAndPolicies";
 
@@ -803,17 +804,20 @@ function Footer({ onOpenTerms }: { onOpenTerms: () => void }) {
             <a href="#faq" className="hover:text-[#7760bd] transition-colors">FAQ</a>
           </div>
 
-          {/* Email only */}
-          <a
-            href="mailto:makeen.chat@gmail.com"
-            title="makeen.chat@gmail.com"
-            className="w-10 h-10 bg-white/[0.04] border border-white/[0.08] rounded-md flex items-center justify-center hover:border-[#7760bd]/50 hover:bg-[#7760bd]/10 transition-colors"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="4" width="20" height="16" rx="2"/>
-              <path d="M22 7L13.03 12.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-            </svg>
-          </a>
+          {/* Saudi Made badge + Email */}
+          <div className="flex items-center gap-5">
+            <img src={imgSaudiMadeLogo} alt="Saudi Made" className="h-12 w-auto" />
+            <a
+              href="mailto:makeen.chat@gmail.com"
+              title="makeen.chat@gmail.com"
+              className="w-10 h-10 bg-white/[0.04] border border-white/[0.08] rounded-md flex items-center justify-center hover:border-[#7760bd]/50 hover:bg-[#7760bd]/10 transition-colors"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="4" width="20" height="16" rx="2"/>
+                <path d="M22 7L13.03 12.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+            </a>
+          </div>
         </div>
 
         {/* Copyright */}

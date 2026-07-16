@@ -207,12 +207,10 @@ async def generate_report_endpoint(chat_id: int, authorization: str = Header(Non
         )
 
     try:
-        report_text = await generate_report(chat_data,llm_generate_summary)
+        report_data = await generate_report(chat_data, llm_generate_summary)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-    return {
-    "report": report_text
-}
+    return report_data

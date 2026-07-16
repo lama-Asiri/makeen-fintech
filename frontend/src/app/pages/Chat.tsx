@@ -24,7 +24,7 @@ import { WelcomeHeader } from '@/app/components/WelcomeHeader';
 import { Toast } from '@/app/components/Toast';
 import { useAuth } from '@/app/context/AuthContext';
 import { supabase, getToken } from '@/lib/supabase';
-import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, generateReportAPI, type ParseResult } from '@/lib/chatApi';
+import { addChatAPI, viewHistoryAPI, deleteChatAPI, deleteAllChatsAPI, saveMessageAPI, getMessagesAPI, uploadFileAPI, renameChatAPI, parseFileAPI, whatIfAPI, uploadModelAPI, generateReportAPI, type ParseResult, type ReportData } from '@/lib/chatApi';
 
 // Tracks message IDs that have already finished the typewriter animation.
 // Module-level so it survives chat switches (component unmount/remount).
@@ -2074,30 +2074,110 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
   };
 
   // Full-chat report (all Q&A pairs + AI-written overall summary from the backend) —
-  // same header/style block as buildExportHTML for visual consistency, but prints the
-  // backend's report text verbatim in a <pre> block rather than re-deriving from local
-  // message state. Escaped here since this is new code rendering server/LLM-sourced text.
-  const buildReportHTML = (chat: Chat, reportText: string): string => {
-    const escaped = reportText
+  // same header/style block as buildExportHTML for visual consistency. The backend now
+  // returns structured cases (query/answer/prediction/shapValues/compliance) instead of
+  // a flattened text blob, so feature impact renders as real bar charts here rather than
+  // a monospace text dump. All server/LLM-sourced strings are escaped since they're
+  // interpolated straight into an HTML string.
+  const escapeHtml = (s: string): string =>
+    String(s ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
+
+  const buildReportHTML = (chat: Chat, report: ReportData): string => {
+    const casesHTML = report.cases
+      .map((c) => {
+        const maxAbs = Math.max(...c.shapValues.map((f) => Math.abs(f.value)), 0.0001);
+        const barsHTML = c.shapValues.length
+          ? c.shapValues
+              .map((f) => {
+                const pct = Math.max((Math.abs(f.value) / maxAbs) * 100, 2);
+                const positive = f.value >= 0;
+                const color = positive ? '#7760bd' : '#e05a5a';
+                return `<div class="bar-row">
+                  <span class="bar-label">${escapeHtml(f.feature)}</span>
+                  <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+                  <span class="bar-value" style="color:${color}">${positive ? '+' : ''}${f.value.toFixed(3)}</span>
+                </div>`;
+              })
+              .join('')
+          : `<p class="no-data">No explainability data available</p>`;
+
+        const complianceHTML = c.compliance.length
+          ? `<div class="compliance">
+              <h4>Compliance Basis</h4>
+              ${c.compliance
+                .map(
+                  (entry) =>
+                    `<div class="compliance-entry"><span class="reg-tag">${escapeHtml(entry.regulation)}</span><p>${escapeHtml(entry.text)}</p></div>`
+                )
+                .join('')}
+            </div>`
+          : '';
+
+        return `<section class="case-card">
+          <div class="case-header">
+            <h3>Case ${c.index}</h3>
+            <span class="prediction-badge">${escapeHtml(c.prediction)}</span>
+          </div>
+          <div class="qa">
+            <p class="qa-label">Query</p>
+            <p class="qa-text">${escapeHtml(c.query)}</p>
+            <p class="qa-label">Answer</p>
+            <p class="qa-text">${escapeHtml(c.answer)}</p>
+          </div>
+          <div class="feature-impact">
+            <h4>Feature Impact</h4>
+            ${barsHTML}
+          </div>
+          ${complianceHTML}
+        </section>`;
+      })
+      .join('');
+
     return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>Makeen Report — ${chat.title}</title>
+<title>Makeen Report — ${escapeHtml(chat.title)}</title>
 <style>
-  body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #111; }
-  h1 { color: #7760bd; }
-  .meta { color: #9e9e9e; font-size: 13px; margin-bottom: 24px; }
-  pre { white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.5; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; max-width: 860px; margin: 40px auto; color: #1a1a1a; padding: 0 24px; }
+  h1 { color: #7760bd; margin-bottom: 4px; }
+  .meta { color: #9e9e9e; font-size: 13px; margin-bottom: 28px; }
+  .summary { background: #f5f3fb; border-left: 4px solid #7760bd; border-radius: 8px; padding: 18px 20px; margin-bottom: 32px; }
+  .summary h2 { margin: 0 0 8px; font-size: 15px; color: #7760bd; text-transform: uppercase; letter-spacing: 0.06em; }
+  .summary p { margin: 0; line-height: 1.6; font-size: 14px; white-space: pre-wrap; }
+  .case-card { border: 1px solid #e5e5e5; border-radius: 10px; padding: 20px 22px; margin-bottom: 20px; page-break-inside: avoid; }
+  .case-header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 14px; }
+  .case-header h3 { margin: 0; font-size: 16px; color: #333; }
+  .prediction-badge { background: #7760bd1a; color: #7760bd; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px; }
+  .qa-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #999; margin: 10px 0 2px; }
+  .qa-text { margin: 0; font-size: 14px; line-height: 1.5; }
+  .feature-impact { margin-top: 18px; }
+  .feature-impact h4, .compliance h4 { margin: 0 0 10px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #777; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+  .bar-label { width: 150px; flex-shrink: 0; font-size: 12px; color: #555; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { flex: 1; height: 8px; background: #eee; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .bar-value { width: 60px; flex-shrink: 0; font-size: 12px; font-weight: 600; text-align: left; }
+  .no-data { font-size: 13px; color: #999; font-style: italic; }
+  .compliance { margin-top: 18px; border-top: 1px solid #eee; padding-top: 14px; }
+  .compliance-entry { margin-bottom: 10px; }
+  .reg-tag { display: inline-block; background: #333; color: #fff; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 4px; }
+  .compliance-entry p { margin: 4px 0 0; font-size: 12.5px; line-height: 1.5; color: #444; }
+  @media print { .case-card { break-inside: avoid; } }
 </style>
 </head>
 <body>
-<h1>Makeen — ${chat.title}</h1>
-<p class="meta">Full report generated on ${new Date().toLocaleString()}${chat.fileAttachment ? ` &nbsp;|&nbsp; File: ${chat.fileAttachment.name}` : ''}</p>
-<pre>${escaped}</pre>
+<h1>Makeen — ${escapeHtml(chat.title)}</h1>
+<p class="meta">Full report generated on ${new Date().toLocaleString()}${chat.fileAttachment ? ` &nbsp;|&nbsp; File: ${escapeHtml(chat.fileAttachment.name)}` : ''}</p>
+<div class="summary">
+  <h2>Overall Summary</h2>
+  <p>${escapeHtml(report.summary)}</p>
+</div>
+${casesHTML}
 </body></html>`;
   };
 
@@ -2107,8 +2187,8 @@ ${lastXai ? `<h2>Prediction Result</h2><p><strong>Prediction:</strong> ${lastXai
     try {
       const { data: { session: fresh } } = await supabase.auth.refreshSession();
       const token = fresh?.access_token ?? session.access_token;
-      const reportText = await generateReportAPI(token, shareModalChat.backendId);
-      const html = buildReportHTML(shareModalChat, reportText);
+      const reportData = await generateReportAPI(token, shareModalChat.backendId);
+      const html = buildReportHTML(shareModalChat, reportData);
       const win = window.open('', '_blank');
       if (!win) {
         setToastMessage('Could not open report — please allow pop-ups and try again.');
