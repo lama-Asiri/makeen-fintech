@@ -106,6 +106,45 @@
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+  SECTION 12 — SUGGESTED QUESTIONS + COLUMN PREVIEW BUGS (FIXED)
+  Owner: Lama
+
+  [x] FIXED: Suggested-question chips didn't appear after using a sample dataset card
+        (German Credit Risk / Loan Default / Credit Fraud) on a brand-new chat. Root
+        cause was a race in Chat.tsx: the sample-card click handler set
+        sampleSuggestedQuestions + tried to attach suggestedQuestions onto the chat
+        object in `chats` — but for a brand-new chat, that chat doesn't exist in `chats`
+        yet (it gets created moments later inside handleFileUpload), so the update was a
+        silent no-op. The freshly-created Chat object then had no suggestedQuestions
+        field, and the activeChatId-change restore effect (~Chat.tsx:600) immediately
+        synced sampleSuggestedQuestions back down to `[]` from that empty field, wiping
+        out what had just been set. Fixed with a ref (pendingSampleQuestionsRef) that
+        survives the gap — handleFileUpload now reads it when building/updating the Chat
+        object in all 3 chat-creation code paths, so suggestedQuestions is present from
+        the start instead of getting created-then-erased. Verified live: all 5 hardcoded
+        questions now appear for a fresh chat + sample dataset.
+
+  [x] FIXED: Real bug in ID-column detection causing "columns missing" — the ID-pattern
+        check in _clean_dataframe (routers/auth.py) was `endswith(('_id', 'id'))`, which
+        is effectively just `endswith('id')` — any real feature column whose name merely
+        ends in the letters "id" (paid, valid, grid, liquid, avoid, etc.) got misclassified
+        as an ID column. It stayed visible in the preview (ID columns aren't dropped from
+        df) but got silently excluded from the model's feature set / SHAP output in
+        data_processor.py — which is what "some columns show up as missing" was actually
+        describing. Fixed: only match an exact "_id" suffix now; bare "id"/"uid"/"pk" etc.
+        are still caught by the existing exact-match id_patterns set, so real ID columns
+        (loan_id, applicant_id, customer_id, transaction_id — all 3 sample datasets use
+        this convention) are unaffected. Also added a de-dup safeguard for column names
+        that collapse to the same string after the space/hyphen-to-underscore cleaning
+        (e.g. "Customer ID" and "Customer-ID" both -> "customer_id") — previously pandas
+        would silently keep both as duplicate labels with one visually swallowing the
+        other in any UI keyed off column name; now the second one gets suffixed
+        ("Customer_ID_1"). Verified live via a real upload with a "paid" column — now
+        correctly kept as a feature (id_columns only contains the real "applicant_id").
+        4 new unit tests, full suite 137/137 passing.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   SECTION 0 — DECISIONS & SETUP
   Owner: whole team
 

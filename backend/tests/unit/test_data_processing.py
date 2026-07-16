@@ -74,6 +74,42 @@ def test_non_id_column_not_flagged(sample_df):
     assert "stroke" not in id_cols
 
 
+def test_bare_id_suffix_false_positive_not_flagged():
+    # Regression guard: columns merely ending in the letters "id" (no underscore)
+    # must NOT be misclassified as ID columns and silently excluded from training —
+    # only an exact "_id" suffix (or an exact id_patterns match) counts.
+    df = pd.DataFrame({
+        "paid": [1, 0], "valid": [1, 0], "grid": [1, 0], "age": [30, 40], "stroke": [0, 1],
+    })
+    df_out, id_cols = _clean_dataframe(_to_csv_bytes(df), "csv")
+    assert "paid" not in id_cols
+    assert "valid" not in id_cols
+    assert "grid" not in id_cols
+    # and they must still be present as real columns
+    for col in ["paid", "valid", "grid"]:
+        assert col in df_out.columns
+
+
+def test_underscore_id_suffix_still_flagged():
+    df = pd.DataFrame({"loan_id": [1, 2], "applicant_id": [1, 2], "age": [30, 40], "stroke": [0, 1]})
+    _, id_cols = _clean_dataframe(_to_csv_bytes(df), "csv")
+    assert "loan_id" in id_cols
+    assert "applicant_id" in id_cols
+
+
+# ── Duplicate column name collision after cleaning ────────────────────────────
+
+def test_columns_colliding_after_cleaning_are_deduplicated():
+    # "Customer ID" and "Customer-ID" both clean to "customer_id" — without dedup,
+    # pandas would keep two identically-named columns and one visually swallows the
+    # other in any UI keyed off column name.
+    df = pd.DataFrame([[1, 2, 30, 0]], columns=["Customer ID", "Customer-ID", "age", "stroke"])
+    df_out, _ = _clean_dataframe(_to_csv_bytes(df), "csv")
+    assert len(df_out.columns) == len(set(df_out.columns))
+    assert "Customer_ID" in df_out.columns
+    assert "Customer_ID_1" in df_out.columns
+
+
 # ── Duplicate removal ─────────────────────────────────────────────────────────
 
 def test_duplicate_rows_removed():

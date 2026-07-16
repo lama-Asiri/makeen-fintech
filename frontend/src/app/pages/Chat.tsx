@@ -503,6 +503,14 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
   // Set to true when handleFileUpload is called but addChatAPI hasn't resolved yet.
   // The useEffect below watches chats for backendId and auto-triggers upload when it arrives.
   const waitingForBackendIdRef = useRef(false);
+  // Set when a sample-dataset card is picked, read by handleFileUpload when it builds/
+  // updates the Chat object. Needed because for a brand-new chat, the sample-card click
+  // handler runs before the real Chat record exists — setChats(...)'s map() there is a
+  // no-op (nothing matches activeChatId yet), and the fresh Chat object handleFileUpload
+  // constructs moments later has no suggestedQuestions field, so the activeChatId-change
+  // restore effect (~line 600) immediately wipes sampleSuggestedQuestions back to [].
+  // This ref survives that gap. Cleared whenever a regular (non-sample) file is picked.
+  const pendingSampleQuestionsRef = useRef<string[] | null>(null);
 
   // Handle entry greeting mode (shown once per session)
   useEffect(() => {
@@ -1000,6 +1008,12 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
           size: 1024,
         };
 
+    // Captured once, then cleared — the Chat object(s) built/updated below carry this
+    // forward explicitly so the activeChatId-change restore effect doesn't wipe it
+    // (see pendingSampleQuestionsRef's declaration for the full race explanation).
+    const pendingSuggestions = pendingSampleQuestionsRef.current;
+    pendingSampleQuestionsRef.current = null;
+
     let backendId = pendingNewChat?.backendId ?? activeChat?.backendId;
 
     // CASE: pendingNewChat exists but no backendId.
@@ -1010,7 +1024,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
       const capturedTitle = pendingNewChat.title;
       const capturedChatId = pendingNewChat.id;
       // Move to chats so the .then() below can update it with backendId
-      setChats((prev) => [...prev, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
+      setChats((prev) => [...prev, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date(), ...(pendingSuggestions ? { suggestedQuestions: pendingSuggestions } : {}) }]);
       setPendingNewChat(null);
       waitingForBackendIdRef.current = true;
       addChatAPI(session.access_token, capturedTitle)
@@ -1047,6 +1061,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
         lastUsedAt: new Date(),
         fileAttachment: null,
         isPersisted: saveChatHistory,
+        suggestedQuestions: pendingSuggestions ?? undefined,
       };
       try {
         backendId = await addChatAPI(session.access_token, newChat.title);
@@ -1064,7 +1079,7 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
     } else {
       // Add file to local chat state immediately (optimistic update)
       if (pendingNewChat) {
-        setChats((prevChats) => [...prevChats, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date() }]);
+        setChats((prevChats) => [...prevChats, { ...pendingNewChat, fileAttachment, lastUsedAt: new Date(), ...(pendingSuggestions ? { suggestedQuestions: pendingSuggestions } : {}) }]);
         setPendingNewChat(null);
       } else if (activeChat) {
         setChats((prevChats) =>
@@ -1134,6 +1149,10 @@ export function ChatPage({ onLogout, entryMode = null, onNavigateDashboard }: Ch
 
 
   const handleFileSelect = (file: File) => {
+    // Clear any pending sample-dataset suggested questions — a manual file pick means
+    // this isn't the sample-dataset flow (which re-sets this ref right after calling
+    // this function, if that's actually where we came from).
+    pendingSampleQuestionsRef.current = null;
     setUploadError(null);
     const fileName = file.name.toLowerCase();
     const validExtensions = ['.csv', '.xlsx'];
@@ -4385,6 +4404,11 @@ ${casesHTML}
                       const blob = await response.blob();
                       const file = new File([blob], ds.filename, { type: 'text/csv' });
                       handleFileSelect(file);
+                      // handleFileSelect() just cleared this ref — re-set it after, since for
+                      // a brand-new chat the real Chat record (and the chats-array entry the
+                      // line below maps over) doesn't exist yet. handleFileUpload reads this
+                      // ref when it builds/updates that Chat object.
+                      pendingSampleQuestionsRef.current = [...ds.suggestedQuestions];
                       setSampleSuggestedQuestions([...ds.suggestedQuestions]);
                       setChats((prev) => prev.map((c) => c.id === activeChatId ? { ...c, suggestedQuestions: [...ds.suggestedQuestions] } : c));
                       setSelectedSampleDataset(null);

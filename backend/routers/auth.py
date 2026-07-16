@@ -509,10 +509,31 @@ def _clean_dataframe(file_bytes: bytes, file_type: str) -> tuple[pd.DataFrame, l
 
     df.columns = [_clean_col(c) for c in df.columns]
 
-    # detect ID columns — kept in df, excluded only when feeding the ML model
+    # De-duplicate column names that collapsed to the same string after cleaning
+    # (e.g. "Customer ID" and "Customer-ID" both -> "customer_id") — without this,
+    # pandas silently keeps both as duplicate labels and one visually swallows the
+    # other in any UI that keys off column name, looking like a column went missing.
+    # Done before ID detection so it operates on the final, unique column names.
+    seen_cols: dict[str, int] = {}
+    deduped_columns = []
+    for col in df.columns:
+        if col in seen_cols:
+            seen_cols[col] += 1
+            deduped_columns.append(f"{col}_{seen_cols[col]}")
+        else:
+            seen_cols[col] = 0
+            deduped_columns.append(col)
+    df.columns = deduped_columns
+
+    # detect ID columns — kept in df, excluded only when feeding the ML model.
+    # Only match a trailing "_id" (word boundary), not a bare "id" suffix — the latter
+    # false-positives on any real feature column that happens to end in those two
+    # letters (e.g. "paid", "valid", "grid", "liquid"), silently dropping it from the
+    # model's feature set even though it still shows in the preview. Exact matches for
+    # bare "id"/"uid"/"pk" etc. are still caught by the id_patterns set below.
     id_patterns = {'id', 'user_id', 'customer_id', 'transaction_id', 'index', 'uid', 'pk'}
     id_columns = [c for c in df.columns
-                  if c.lower() in id_patterns or c.lower().endswith(('_id', 'id'))]
+                  if c.lower() in id_patterns or c.lower().endswith('_id')]
 
     df = df.drop_duplicates(keep='first')
     df = df.dropna(axis=1, thresh=len(df) * 0.4)
