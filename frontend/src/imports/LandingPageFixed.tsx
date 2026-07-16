@@ -451,7 +451,7 @@ function XaiExplainerSection() {
       tagline: "Which factors matter most?",
       analogy: "Imagine deciding whether to bring an umbrella. SHAP tells you: clouds count for 60% of the decision, humidity 30%, and season 10%. Each factor gets a score.",
       forYou: "The bar chart in your results shows how much each column in your data pushed the prediction up or down — so you know where to focus.",
-      color: "#08B839",
+      color: "#C46F94",
     },
     {
       tag: "LIME",
@@ -459,7 +459,7 @@ function XaiExplainerSection() {
       tagline: "Why this specific answer?",
       analogy: "SHAP explains the big picture. LIME zooms in on one specific prediction and explains it in the simplest possible terms — as if you're seeing your data for the first time.",
       forYou: "Used as a second opinion alongside SHAP to confirm or challenge the result, giving you more confidence in what the AI found.",
-      color: "#FFC107",
+      color: "#C17F6E",
     },
   ];
 
