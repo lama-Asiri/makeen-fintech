@@ -419,7 +419,7 @@ function HowItWorksSection() {
               transition={{ duration: 0.9, delay: i * SECTION_STAGGER, ease: SECTION_EASE }}
               className="relative"
             >
-              <p className="font-serif font-medium text-[4rem] leading-none text-[#7760bd]/25 mb-4">{step.number}</p>
+              <p className="font-serif font-medium text-[4rem] leading-none text-[#7760bd]/80 mb-4">{step.number}</p>
               <h3 className="font-sans font-semibold text-[19px] text-white mb-3">{step.title}</h3>
               <p className="font-sans text-[14.5px] text-[#9e9e9e] leading-[1.7]">{step.description}</p>
             </motion.div>
