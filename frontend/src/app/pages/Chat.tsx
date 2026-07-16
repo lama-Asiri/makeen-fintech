@@ -2814,8 +2814,8 @@ ${casesHTML}
 
         {/* Upload Modal Overlay */}
         {showUploadModal && (
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10 p-[16px] md:p-[24px] overflow-y-auto">
-            <div className="w-full max-w-[700px] flex flex-col gap-[32px]">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-start justify-center z-10 p-[16px] md:p-[24px] overflow-y-auto">
+            <div className="w-full max-w-[700px] flex flex-col gap-[32px] my-auto">
               {/* Welcome Header */}
               <WelcomeHeader displayName={displayName} messageIndex={welcomeMessageIndex} mode={welcomeMode} />
               
