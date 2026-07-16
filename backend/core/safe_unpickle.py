@@ -65,10 +65,13 @@ class RestrictedUnpickler(pickle.Unpickler):
 
 
 def _unpickle_worker(file_bytes: bytes, result_queue: "multiprocessing.Queue") -> None:
+    print(f"[safe_unpickle] worker started, {len(file_bytes)} bytes, header={file_bytes[:16]!r}")
     try:
         obj = RestrictedUnpickler(io.BytesIO(file_bytes)).load()
+        print(f"[safe_unpickle] worker loaded OK -> {type(obj).__name__}")
         result_queue.put(("ok", obj))
     except Exception as e:  # noqa: BLE001 — deliberately broad, we relay it as a load failure
+        print(f"[safe_unpickle] worker failed: {type(e).__name__}: {e}")
         result_queue.put(("error", f"{type(e).__name__}: {e}"))
 
 
@@ -79,6 +82,8 @@ def safe_load_model(file_bytes: bytes, timeout_seconds: int = 15) -> Any:
     on any failure (disallowed reference, malformed pickle, or timeout) — callers
     should turn this into an HTTP 400, not a 500.
     """
+    print(f"[safe_unpickle] safe_load_model called with {len(file_bytes)} bytes, "
+          f"header={file_bytes[:16]!r}")
     ctx = multiprocessing.get_context("spawn")
     result_queue: multiprocessing.Queue = ctx.Queue()
     proc = ctx.Process(target=_unpickle_worker, args=(file_bytes, result_queue))
@@ -94,13 +99,18 @@ def safe_load_model(file_bytes: bytes, timeout_seconds: int = 15) -> Any:
         status, payload = result_queue.get(timeout=timeout_seconds)
     except queue.Empty:
         if proc.is_alive():
+            print(f"[safe_unpickle] worker still alive after {timeout_seconds}s, terminating "
+                  f"(pid={proc.pid})")
             proc.terminate()
             proc.join()
             raise ValueError(f"Model file took too long to load (>{timeout_seconds}s) — rejected.")
+        print(f"[safe_unpickle] worker exited with no result, exitcode={proc.exitcode} "
+              f"(pid={proc.pid}) — likely crashed before it could put() anything")
         proc.join()
         raise ValueError("Model file could not be loaded (process exited unexpectedly).")
 
     proc.join()
+    print(f"[safe_unpickle] safe_load_model returning status={status}")
     if status == "error":
         raise ValueError(f"Model file could not be loaded safely: {payload}")
     return payload

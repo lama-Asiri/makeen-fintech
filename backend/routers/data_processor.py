@@ -342,6 +342,8 @@ async def upload_model(
         raise HTTPException(status_code=400, detail="Only .pkl or .pickle files are allowed")
 
     file_bytes = await file.read()
+    print(f"[uploadModel] chat_id={chat_id} filename={filename!r} "
+          f"received {len(file_bytes)} bytes, header={file_bytes[:16]!r}")
     if len(file_bytes) > MODEL_UPLOAD_MAX_BYTES:
         raise HTTPException(status_code=400, detail="Model file exceeds 20 MB limit")
 
@@ -349,6 +351,7 @@ async def upload_model(
     try:
         uploaded_model = safe_load_model(file_bytes)
     except ValueError as e:
+        print(f"[uploadModel] safe_load_model failed: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
     # 5. validate against this chat's data + wire into the same trained_models cache
