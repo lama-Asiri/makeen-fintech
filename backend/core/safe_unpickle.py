@@ -25,6 +25,7 @@ listed as roadmap, not implemented here — this is an accepted MVP tradeoff.
 import io
 import pickle
 import multiprocessing
+import queue
 from typing import Any
 
 # Allowed by exact module + name (things that aren't simply "any name under this prefix").
@@ -82,17 +83,24 @@ def safe_load_model(file_bytes: bytes, timeout_seconds: int = 15) -> Any:
     result_queue: multiprocessing.Queue = ctx.Queue()
     proc = ctx.Process(target=_unpickle_worker, args=(file_bytes, result_queue))
     proc.start()
-    proc.join(timeout_seconds)
 
-    if proc.is_alive():
-        proc.terminate()
+    # Must read from the queue before/instead of proc.join() — a Queue.put() on the
+    # child side blocks once the unpickled object is larger than the OS pipe buffer,
+    # until someone drains it. join()ing first (the old code) means the parent never
+    # reads while the child is stuck writing: a guaranteed deadlock for any realistically
+    # sized model, resolved only by hitting this function's own timeout. Small test
+    # objects never hit the buffer limit, which is why this went unnoticed.
+    try:
+        status, payload = result_queue.get(timeout=timeout_seconds)
+    except queue.Empty:
+        if proc.is_alive():
+            proc.terminate()
+            proc.join()
+            raise ValueError(f"Model file took too long to load (>{timeout_seconds}s) — rejected.")
         proc.join()
-        raise ValueError(f"Model file took too long to load (>{timeout_seconds}s) — rejected.")
-
-    if result_queue.empty():
         raise ValueError("Model file could not be loaded (process exited unexpectedly).")
 
-    status, payload = result_queue.get()
+    proc.join()
     if status == "error":
         raise ValueError(f"Model file could not be loaded safely: {payload}")
     return payload
