@@ -295,7 +295,7 @@ function FeaturesSection() {
       title: "Ask Questions About Credit Risk",
       description: "Ask about applicant creditworthiness in natural English — no coding needed. Get clear answers about credit risk you can defend to regulators and credit committees.",
       icon: (
-        <svg className="w-[26px] h-[26px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
+        <svg className="w-[34px] h-[34px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8 10h8M8 14h5M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-3.155-.502l-4.345 2.17v-3.233C3.612 15.55 3 13.86 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
         </svg>
       ),
@@ -305,7 +305,7 @@ function FeaturesSection() {
       title: "Credit Risk Assessment",
       description: "Generate loan risk assessments instantly from applicant data. Each result comes with clear factor-by-factor explanations and confidence scores for defensible decisions.",
       icon: (
-        <svg className="w-[26px] h-[26px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
+        <svg className="w-[34px] h-[34px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v16.5A1.5 1.5 0 004.5 21H21M7 16l4-6 3 3 5-8" />
         </svg>
       ),
@@ -315,7 +315,7 @@ function FeaturesSection() {
       title: "Built for Credit Teams",
       description: "A simple, intuitive interface built for loan officers, risk analysts, and credit committees. Evaluate applicant risk transparently and with confidence for every lending decision.",
       icon: (
-        <svg className="w-[26px] h-[26px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
+        <svg className="w-[34px] h-[34px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.4">
           <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m5-5.13a4 4 0 100-8 4 4 0 000 8zm6 3.13a4 4 0 10-3-7.26" />
         </svg>
       ),
@@ -348,7 +348,7 @@ function FeaturesSection() {
               className="group grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-8 items-start py-10"
             >
               <div className="md:col-span-2">
-                <span className="font-tabular text-[15px] text-[#7760bd]">{feature.number}</span>
+                <span className="font-tabular text-[23px] text-[#7760bd]">{feature.number}</span>
               </div>
               <div className="md:col-span-1 text-[#7760bd]/70 group-hover:text-[#7760bd] transition-colors">
                 {feature.icon}
