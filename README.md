@@ -1,6 +1,6 @@
 # Makeen — AI-Powered Data Analysis Platform
 
-**Live App:** [https://makeen-fintech.vercel.app](https://https://makeen-fintech.vercel.app)
+**Live App:** [https://makeen-fintech.vercel.app](https://makeen-fintech.vercel.app)
 **API:** [https://makeen-production.up.railway.app](https://makeen-production.up.railway.app)
 
 Makeen is a web-based platform that allows non-technical users to upload a dataset, train a machine learning model, and explore predictions and explanations through a conversational AI interface — no coding required.
