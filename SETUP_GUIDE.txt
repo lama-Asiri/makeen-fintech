@@ -48,8 +48,8 @@ To verify everything is installed, open a terminal and run:
 STEP 2 — CLONE THE PROJECT
 ──────────────────────────
 
-  git clone https://github.com/lama-Asiri/Makeen.git
-  cd Makeen
+  git clone https://github.com/lama-Asiri/makeen-fintech.git
+  cd makeen-fintech
 
 
 STEP 3 — BACKEND SETUP (Python / FastAPI)
@@ -153,11 +153,11 @@ Then open your browser at: http://localhost:5173
 RUNNING THE TEST SUITE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-The project has 148 automated tests split across backend and frontend.
+The project has 200 automated tests split across backend and frontend.
 Tests run fully offline — no API keys or internet connection required.
 
 
---- BACKEND TESTS (85 tests) ---
+--- BACKEND TESTS (137 tests) ---
 
   The backend tests use pytest. Because pytest is installed globally
   (not inside the venv), use python -m pytest instead of pytest directly.
@@ -172,7 +172,7 @@ Tests run fully offline — no API keys or internet connection required.
     python -m pytest tests/unit/test_data_processing.py -v
     python -m pytest tests/integration/test_auth_endpoints.py -v
 
-  Expected result: 85 passed, 0 failed
+  Expected result: 137 passed, 0 failed
 
 
 --- FRONTEND TESTS (63 tests) ---
@@ -190,14 +190,19 @@ Tests run fully offline — no API keys or internet connection required.
 
   backend/tests/
   ├── conftest.py                        # Shared fixtures (mocked Supabase + OpenAI)
-  ├── unit/
-  │   ├── test_data_processing.py        # _clean_dataframe — 18 tests
-  │   ├── test_ml_pipeline.py            # _run_train — 11 tests
+  ├── unit/                              # 88 tests
   │   ├── test_classifier.py             # QuestionClassifier — 9 tests
-  │   └── test_llm_message.py            # _build_llm_user_message — 11 tests
-  └── integration/
+  │   ├── test_dashboard_shaping.py      # dashboard.py shaping + snapshot helpers — 12 tests
+  │   ├── test_data_processing.py        # _clean_dataframe — 21 tests
+  │   ├── test_llm_message.py            # _build_llm_user_message — 11 tests
+  │   ├── test_ml_pipeline.py            # _run_train — 11 tests
+  │   ├── test_model_adapter_pipeline.py # bring-your-own-model adapter pipeline — 14 tests
+  │   └── test_safe_unpickle.py          # safe_load_model / validate_uploaded_model — 10 tests
+  └── integration/                       # 49 tests
       ├── test_auth_endpoints.py         # /auth/* endpoints — 29 tests
-      └── test_process_question.py       # /processQuestion — 7 tests
+      ├── test_dashboard_endpoint.py     # /overview endpoint — 4 tests
+      ├── test_process_question.py       # /processQuestion — 7 tests
+      └── test_upload_model_endpoint.py  # /uploadModel endpoint — 9 tests
 
   frontend/src/__tests__/
   ├── setup.ts                           # Vitest global setup

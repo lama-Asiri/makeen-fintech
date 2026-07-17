@@ -9,11 +9,13 @@ Makeen is a web-based platform that allows non-technical users to upload a datas
 
 ## What It Does
 
-1. **Upload** a CSV or Excel dataset
+1. **Upload** a CSV or Excel dataset — or bring your own pre-trained model
 2. **Train** a machine learning model automatically (classification or regression)
 3. **Ask questions** in plain English — _"Which patients are at risk of a stroke?"_
 4. **Get predictions** with SHAP and LIME explanations that show _why_ the model made each decision
-5. **Save and revisit** conversations across sessions
+5. **View a dashboard** overview of the dataset and model performance
+6. **Generate reports** summarizing a conversation
+7. **Save and revisit** conversations across sessions
 
 ---
 
@@ -34,21 +36,28 @@ Makeen is a web-based platform that allows non-technical users to upload a datas
 ## Project Structure
 
 ```
-Makeen/
+makeen-fintech/
 ├── backend/
 │   ├── app.py                  # FastAPI entry point
 │   ├── requirements.txt        # Python dependencies
 │   ├── pytest.ini              # Test configuration
 │   ├── core/
 │   │   ├── supabase_client.py  # Supabase connection
-│   │   └── openai_client.py    # OpenAI async client
+│   │   ├── openai_client.py    # OpenAI async client
+│   │   ├── dashboard_shaping.py # Dashboard payload shaping + snapshot helpers
+│   │   └── safe_unpickle.py    # Safe loading/validation of uploaded models
 │   ├── routers/
 │   │   ├── auth.py             # Auth, upload, chat, and data endpoints
-│   │   └── data_processor.py  # ML pipeline + question processing + streaming
+│   │   ├── data_processor.py   # ML pipeline + question processing + streaming
+│   │   ├── dashboard.py        # Dashboard overview endpoint (/overview)
+│   │   └── report.py           # Report generation endpoint
+│   ├── services/
+│   │   ├── compliance.py       # Compliance checks
+│   │   └── report_generator.py # Report generation logic
 │   └── tests/
 │       ├── conftest.py         # Shared fixtures
-│       ├── unit/               # Unit tests (49 tests)
-│       └── integration/        # Integration tests (36 tests)
+│       ├── unit/                # Unit tests (88 tests)
+│       └── integration/         # Integration tests (49 tests)
 │
 └── frontend/
     ├── vite.config.ts          # Vite + Vitest config
@@ -93,10 +102,10 @@ Both `backend/.env` and `frontend/.env` must be created with the correct keys be
 
 ## Running the Tests
 
-The project includes **148 automated tests** covering the backend pipeline and frontend components. All tests run fully offline — no API keys or internet connection required.
+The project includes **200 automated tests** covering the backend pipeline and frontend components. All tests run fully offline — no API keys or internet connection required.
 
 ```bash
-# Backend — 85 tests
+# Backend — 137 tests
 cd backend
 python -m pytest -v
 
@@ -107,11 +116,11 @@ npm test
 
 | Suite | Files | Tests |
 |-------|-------|-------|
-| Backend Unit | 4 | 49 |
-| Backend Integration | 2 | 36 |
+| Backend Unit | 7 | 88 |
+| Backend Integration | 4 | 49 |
 | Frontend Unit | 2 | 26 |
 | Frontend Component | 3 | 37 |
-| **Total** | **11** | **148** |
+| **Total** | **16** | **200** |
 
 ---
 
